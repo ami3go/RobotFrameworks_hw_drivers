@@ -1,2 +1,9 @@
 rf_votsch_climate_chamber_v26.04.zip
 *.zip
+
+# Robot Framework run artifacts (regenerated per run, not source)
+log.html
+output.xml
+report.html
+__pycache__/
+*.pyc
