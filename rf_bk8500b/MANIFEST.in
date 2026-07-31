@@ -1,0 +1,11 @@
+include README.md PACKAGE_CONTENTS.md LICENSE CHANGELOG.md CONTRIBUTING.md SECURITY.md IMPLEMENTATION_REPORT.md ROBOT_LIBRARY_IMPLEMENTATION_REPORT.md VERSION release.json
+recursive-include docs *.md *.html .nojekyll
+recursive-include guide *.md
+recursive-include history *.md
+recursive-include review *.md
+recursive-include examples *.py *.robot
+recursive-include tests *.py *.json *.robot
+recursive-include scripts *.py *.sh *.ps1 *.bat
+recursive-include .github *.yml
+recursive-include ai *.yaml *.lock *.json
+recursive-include bench *.yaml *.md

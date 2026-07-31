@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RF BK8500B v26.04</title>
+  <meta name="description" content="Robot Framework driver for B&K Precision 8500B Series DC electronic loads.">
+  <style>
+    :root { color-scheme: light dark; font-family: Inter, system-ui, sans-serif; }
+    body { margin: 0; line-height: 1.55; }
+    header, main, footer { max-width: 1050px; margin: auto; padding: 1.4rem; }
+    header { padding-top: 4rem; padding-bottom: 3rem; }
+    h1 { font-size: clamp(2.2rem, 6vw, 4.5rem); line-height: 1.05; margin: 0 0 1rem; }
+    h2 { margin-top: 2.5rem; }
+    .tag { display: inline-block; border: 1px solid currentColor; border-radius: 999px; padding: .25rem .7rem; margin-right: .5rem; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; }
+    .card { border: 1px solid color-mix(in srgb, currentColor 25%, transparent); border-radius: 14px; padding: 1rem 1.1rem; }
+    code, pre { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }
+    pre { overflow-x: auto; padding: 1rem; border-radius: 10px; background: color-mix(in srgb, currentColor 8%, transparent); }
+    a { color: inherit; text-underline-offset: .18em; }
+    .status { font-weight: 700; }
+    footer { opacity: .75; padding-bottom: 3rem; }
+  </style>
+</head>
+<body>
+<header>
+  <span class="tag">Release v26.04</span>
+  <span class="tag">Robot Framework 7.x</span>
+  <span class="tag">Python 3.10–3.13</span>
+  <h1>RF BK8500B</h1>
+  <p>Safety-aware Robot Framework automation for B&amp;K Precision 8500B Series DC electronic loads, backed by the bundled production Python driver.</p>
+</header>
+<main>
+  <section class="grid">
+    <article class="card">
+      <h2>Keyword Reference</h2>
+      <p>Browse the complete generated Robot Framework Libdoc.</p>
+      <p><a href="BK8500BLibrary.html">Open BK8500BLibrary documentation</a></p>
+    </article>
+    <article class="card">
+      <h2>Release Format</h2>
+      <p><code>rf_bk8500b_v26.04.zip</code></p>
+      <p>Stable extracted root: <code>rf_bk8500b/</code></p>
+    </article>
+    <article class="card">
+      <h2>Qualification</h2>
+      <p class="status">Software verification complete; real-hardware qualification pending.</p>
+      <p><a href="HARDWARE_VALIDATION.md">Read the validation plan</a></p>
+    </article>
+  </section>
+
+  <h2>Capabilities</h2>
+  <div class="grid">
+    <div class="card"><strong>Load modes</strong><br>CC, CV, CP/CW, CR, dynamic, LED, and impedance workflows.</div>
+    <div class="card"><strong>Measurements</strong><br>Voltage, current, power, resistance, snapshots, assertions, and polling.</div>
+    <div class="card"><strong>Automation</strong><br>Alias-based multi-load sessions, CSV logging, diagnostics, trigger, state, and transient control.</div>
+    <div class="card"><strong>Safety</strong><br>Input-off disconnect, verified writes, guarded short mode, and rollback-oriented setup.</div>
+  </div>
+
+  <h2>Minimal example</h2>
+  <pre><code>*** Settings ***
+Library           BK8500BLibrary
+Suite Setup       Connect To Electronic Load    %{BK8500B_PORT}
+Suite Teardown    Disconnect All Electronic Loads
+Test Teardown     Disable Electronic Load Input
+
+*** Test Cases ***
+Verify Constant Current Load
+    Configure And Enable Load    CC    1.0    current_limit=1.2
+    Current Should Be Within Range    0.95    1.05
+    Voltage Should Be Within Range    11.5    12.5</code></pre>
+
+  <h2>Documentation</h2>
+  <div class="grid">
+    <div class="card"><a href="KEYWORDS.md">Keyword categories</a></div>
+    <div class="card"><a href="SAFETY.md">Safety guide</a></div>
+    <div class="card"><a href="ARCHITECTURE.md">Architecture</a></div>
+    <div class="card"><a href="MIGRATION_FROM_PYTHON_DRIVER.md">Migration guide</a></div>
+    <div class="card"><a href="RELEASE_CHECKLIST.md">Release checklist</a></div>
+    <div class="card"><a href="requirements_traceability.md">Requirements traceability</a></div>
+    <div class="card"><a href="AI_CONTRACT.md">RFDS-017 AI contract</a></div>
+    <div class="card"><a href="RFDS018_BENCH_TEMPLATE.md">RFDS-018 bench template</a></div>
+  </div>
+
+  <h2>Release note</h2>
+  <p>v26.04 adds a machine-validated RFDS-017 contract for all 74 exact Robot keywords, a public-interface lock, and a conservative RFDS-018 bench-integration template. Protocol and public keyword behavior are unchanged.</p>
+</main>
+<footer>RF BK8500B v26.04 · MIT License · 2026-07-21</footer>
+</body>
+</html>

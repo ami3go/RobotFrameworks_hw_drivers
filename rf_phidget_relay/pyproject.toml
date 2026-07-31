@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rf-phidget-relay"
+version = "26.2"
+description = "Robot Framework library for two PhidgetInterfaceKit 0/0/4 relay boards"
+readme = "README.md"
+requires-python = ">=3.9"
+license = "MIT"
+authors = [{name = "OpenBench"}]
+dependencies = ["robotframework>=6.1", "Phidget22>=1.17"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Framework :: Robot Framework :: Library",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff>=0.5", "PyYAML>=6.0"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["rf_phidget_relay*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"

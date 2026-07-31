@@ -1,0 +1,74 @@
+schema:
+  name: rfds-capability-model
+  version: "1.0"
+driver:
+  id: rf_hp34401a
+  name: HP/Agilent/Keysight 34401A Robot Framework Driver
+  version: "26.06"
+  api_version: "1.1"
+  capability_model_version: "1.0"
+source:
+  discovery_mode: static
+  generated_at: STATIC
+  connected: false
+  stale: false
+identity:
+  manufacturer: UNKNOWN
+  model: UNKNOWN
+  serial_number: UNKNOWN
+  firmware_version: UNKNOWN
+features:
+  multi_session: true
+  simulation: true
+  raw_scpi_guarded: true
+resources:
+  - resource_id: dmm.acquisition
+    access: exclusive_operation
+capabilities:
+  - capability_id: connection.session.open
+    binding: {robot_keyword: Connect}
+    support_state: supported
+    risk: low
+  - capability_id: connection.session.close
+    binding: {robot_keyword: Disconnect}
+    support_state: supported
+    risk: low
+  - capability_id: identity.device.read
+    binding: {robot_keyword: Get Identity}
+    support_state: supported
+    risk: none
+  - capability_id: measure.voltage.dc
+    binding: {robot_keyword: Measure DC Voltage}
+    support_state: supported
+    risk: low
+    returns: {type: number, unit: V, quantity: electric_potential}
+  - capability_id: measure.voltage.ac
+    binding: {robot_keyword: Measure AC Voltage}
+    support_state: supported
+    risk: low
+    returns: {type: number, unit: V, quantity: electric_potential}
+  - capability_id: measure.current.dc
+    binding: {robot_keyword: Measure DC Current}
+    support_state: supported
+    risk: low
+    returns: {type: number, unit: A, quantity: electric_current}
+  - capability_id: measure.current.ac
+    binding: {robot_keyword: Measure AC Current}
+    support_state: supported
+    risk: low
+    returns: {type: number, unit: A, quantity: electric_current}
+  - capability_id: measure.resistance.two_wire
+    binding: {robot_keyword: Measure 2 Wire Resistance}
+    support_state: supported
+    risk: low
+    returns: {type: number, unit: ohm, quantity: resistance}
+  - capability_id: measure.resistance.four_wire
+    binding: {robot_keyword: Measure 4 Wire Resistance}
+    support_state: supported
+    risk: low
+    returns: {type: number, unit: ohm, quantity: resistance}
+validation:
+  valid: true
+  errors: []
+  warnings: []
+extensions: {}

@@ -1,0 +1,19 @@
+schema: RFDS-018-driver-fragment
+schema_version: "1.0"
+driver_id: rf_phidget_relay
+provides: [RELAY_CH1, RELAY_CH2, RELAY_CH3, RELAY_CH4, RELAY_CH5, RELAY_CH6, RELAY_CH7, RELAY_CH8]
+consumes_exclusively: [USB_PHIDGET_DEVICE_A, USB_PHIDGET_DEVICE_B]
+topology_questions:
+  - "What source and sink are wired to each relay contact?"
+  - "Are any channel combinations forbidden?"
+  - "What are contact voltage/current/power ratings for the installed relay modules?"
+  - "What switching and measurement settling delays are required?"
+  - "Is OPEN produced by de-energized or energized DigitalOutput state?"
+preferred_role: "DMM or signal multiplexer with one channel closed at a time"
+scheduling:
+  parallel_limit: 1
+  bank_lock_required: true
+  write_operations_are_sequential: true
+global_safety_contribution:
+  safe_command: Emergency Open All Relays
+  verification: "Independent electrical measurement; command readback is insufficient"

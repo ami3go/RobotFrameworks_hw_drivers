@@ -1,0 +1,94 @@
+%YAML 1.2
+---
+# RFDS-018 bench contract FRAGMENT — example only.
+#
+# This is not a complete bench contract. It shows how this RFDS-017 driver
+# registers into an RFDS-018 laboratory model, so that a planner can combine it
+# with a source and a meter. Replace the placeholder entries (marked TODO) with
+# the real bench before using it.
+
+available_drivers:
+  - name: bk8500_load
+    robot_library: BK8500Library
+    version: "26.16.0"
+    contract: drivers/bk8500_load/ai/ai_contract.yaml
+    instrument: B&K Precision 8500 DC electronic load
+    instance_id: LOAD_1
+    role: sink
+  # TODO: add the source and meter drivers for your bench.
+  # - name: psu_driver
+  #   role: source
+  # - name: dmm_driver
+  #   role: meter
+
+physical_topology:
+  nodes:
+    - {id: NODE_DUT_OUT, description: DUT output rail under test}
+  connections:
+    - {from: DUT.output, to: LOAD_1.input_terminals, wiring: 4 mm banana, rating_a: 30}
+    - {from: DUT.output, to: LOAD_1.sense_terminals, wiring: sense pair, note: Required if remote sensing is enabled}
+    # TODO: PSU, relay matrix and DMM connections.
+
+shared_resources:
+  serial_ports:
+    - {port: /dev/ttyUSB0, owner: LOAD_1, exclusive: true, preferred_baudrate: 9600, auto_detect_baudrate: true, baudrate_candidates: [4800, 9600, 19200, 38400]}
+  notes: One driver instance per serial port; the 26 byte protocol has no framing recovery.
+
+signal_graph:
+  producers:
+    - {signal: dut_output_voltage, source: DUT, node: NODE_DUT_OUT}
+  consumers:
+    - {signal: dut_output_voltage, sink: LOAD_1, quantity_drawn: controlled_current}
+  measurement_points:
+    - {node: NODE_DUT_OUT, measurable: [dc_voltage, dc_current, dc_power], instruments: [LOAD_1]}
+
+preferred_measurement_sources:
+  dc_current_at_NODE_DUT_OUT: LOAD_1
+  dc_power_at_NODE_DUT_OUT: LOAD_1
+  # A 6.5 digit DMM is the better reference for voltage when one is present.
+  dc_voltage_at_NODE_DUT_OUT: LOAD_1   # TODO: change to DMM_1 when a meter is fitted
+
+bench_constraints:
+  operator_actions:
+    - Connect the DUT with the correct polarity before any suite runs.
+    - Confirm wiring and fixture ratings above the highest programmed current.
+  safety_zones:
+    - {zone: LOAD_1 terminals, hazard: High current and hot surfaces during sustained discharge}
+  max_simultaneous_operations: 1   # single load on this example bench
+  environmental_limits: {ambient_c: [0, 40], airflow: Unobstructed intake and exhaust on LOAD_1}
+
+scheduling_rules:
+  resource_conflicts:
+    - No two suites may hold /dev/ttyUSB0 at the same time.
+  driver_ordering:
+    - The source is configured and enabled before LOAD_1 closes its input.
+    - LOAD_1 opens its input before the source is disabled.
+  stabilization_rules:
+    - Allow at least 100 ms after Load Input On before the first oracle; longer for sources with a slow control loop.
+  parallel_execution_limits:
+    - Keyword calls against one LOAD_1 alias are strictly serial.
+
+global_safety:
+  forbidden_sequences:
+    - {sequence: [Disable source while LOAD_1 input is closed], reason: Leaves a sink across a collapsing rail}
+    - {sequence: [Set Load Function Unchecked SHORT, Load Input On], reason: Full rated sink current into the DUT}
+  emergency_shutdown:
+    ordered_steps:
+      - LOAD_1 Load Input Off
+      - Disable the source
+      - LOAD_1 Reset Load To Safe State
+      - Close All Load Connections
+
+test_templates:
+  - name: source_regulation_under_step_load
+    description: Load a source at two current levels and verify its output stays in specification.
+    drivers: [bk8500_load]   # TODO: add the source driver
+    outline:
+      - Suite setup per the driver contract's setup_teardown_contract.
+      - Apply Constant Current at level 1, wait for stability, verify voltage.
+      - Apply Constant Current at level 2, wait for stability, verify voltage.
+      - Load Input Off, then suite teardown.
+
+requirement_coverage:
+  # TODO: map bench requirements to drivers and verification objectives.
+  - {requirement: REQ-PSU-REG-01, driver: bk8500_load, verification_objectives: [VO-CC-REG, VO-POWER-CONSISTENCY]}

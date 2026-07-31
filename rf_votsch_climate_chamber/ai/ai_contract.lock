@@ -1,0 +1,11 @@
+{
+  "schema": "RFDS-017-LOCK-1.0",
+  "driver_release": "v26.02",
+  "contract_file": "ai/ai_contract.yaml",
+  "contract_sha256": "ba28687d32a597f3e9211e48e9084e6b1151c232f57394fb388a83abbb134235",
+  "keyword_source": "votsch_climate_chamber/robot_library.py",
+  "keyword_count": 36,
+  "keyword_manifest_sha256": "c6cb6ac2e48614c69574d6991b0ac12eb315826f5dabb4cb0ac2255acd609800",
+  "generated_at_utc": "2026-07-21T19:10:33Z",
+  "generator": "scripts/update_ai_contract_lock.py"
+}

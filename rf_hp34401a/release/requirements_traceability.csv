@@ -1,0 +1,11 @@
+requirement_id,result,implementation,verification,evidence,deviation_id
+RFDS-001-CLS-001,PASS,release/release_manifest.yaml,release class D0 declared,review/v26.06_release_readiness.md,
+RFDS-002-API,PASS,rf_hp34401a/library.py; api/public_api.yaml,scripts/validate_ai_contract.py,api/public_api.yaml,
+RFDS-005-PKG,PASS,project tree; scripts/build_release.py,archive validation,release/release_manifest.yaml,
+RFDS-007-ERR,PASS,rf_hp34401a/exceptions.py,tests/unit/test_rfds_v2604.py,review/v26.06_code_review.md,
+RFDS-009-HIL,PENDING,tests/hil/verify_all_public_api_real_hardware.robot,release-site physical execution,results/real_hardware_all_api,HP34401A-DEV-003
+RFDS-013-CAP,PASS,capability/; rf_hp34401a/capabilities.py,tests/unit/test_rfds_v2604.py,capability/examples/capability_snapshot.json,
+RFDS-014-CFG,PASS,config/; rf_hp34401a/configuration.py,tests/unit/test_rfds_v2604.py,config/schema.lock,
+RFDS-015-PLUGIN,PASS_WITH_DEVIATION,rf_hp34401a/plugin.py; plugin_manifest.json,tests/unit/test_rfds_v2604.py,release/compatibility_report.json,HP34401A-DEV-001
+RFDS-017-AI,PASS,ai/ai_contract.yaml,scripts/validate_ai_contract.py,ai/ai_contract.lock,
+RFDS-019-CONFORMANCE,STATIC_PASS_RUNTIME_PENDING,tests/conformance/,scripts/validate_call_protocol_conformance.py,tests/conformance/data/protocol_vectors.yaml,HP34401A-DEV-004

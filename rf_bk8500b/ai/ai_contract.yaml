@@ -1,0 +1,3906 @@
+rfds017_version: '3.0'
+identity:
+  driver_name: BK8500BLibrary
+  driver_version: 26.4.0
+  contract_version: 1.0.0
+  supported_models:
+  - 8500B
+  - 8502B
+  - 8510B
+  - 8514B
+  - 8542B
+  instrument_class: LOAD
+  primary_role: Controls a programmable DC electronic load that sinks voltage-dependent current or power from a DUT or source.
+mental_model:
+  physical_object: One or more B&K Precision 8500B-series DC electronic loads connected through exclusive serial or VISA-compatible
+    sessions and selected by Robot Framework alias.
+  configuration_persistence: PERSISTS_UNTIL_RESET
+  concurrency:
+    max_parallel_sessions: 1
+    thread_safe: false
+  ownership: Each alias owns one exclusive instrument transport; the SUITE-scoped library owns all aliases until explicit
+    disconnect or suite teardown.
+  blocking_behavior: All public keywords are synchronous. Polling and CSV logging have finite iteration or timeout limits.
+  configuration_scope: Configuration is per physical instrument. Selecting another alias does not copy state.
+state_machine:
+  states:
+  - DISCONNECTED
+  - CONNECTING
+  - CONNECTED_UNSYNCHRONIZED
+  - CONNECTED_READY_INPUT_OFF
+  - CONNECTED_READY_INPUT_ON
+  - DEGRADED
+  - RECONNECTING
+  - CLOSING
+  - FAILED
+  initial_state: DISCONNECTED
+  transitions:
+  - from: DISCONNECTED
+    to: CONNECTING
+    via_capability: Connect To Electronic Load
+  - from: CONNECTING
+    to: CONNECTED_UNSYNCHRONIZED
+    via_capability: Connect To Electronic Load
+  - from: CONNECTED_UNSYNCHRONIZED
+    to: CONNECTED_READY_INPUT_OFF
+    via_capability: Synchronize Electronic Load State
+  - from: CONNECTED_READY_INPUT_OFF
+    to: CONNECTED_READY_INPUT_ON
+    via_capability: Enable Electronic Load Input
+  - from: CONNECTED_READY_INPUT_OFF
+    to: CONNECTED_READY_INPUT_ON
+    via_capability: Configure And Enable Load
+  - from: CONNECTED_READY_INPUT_ON
+    to: CONNECTED_READY_INPUT_OFF
+    via_capability: Disable Electronic Load Input
+  - from: CONNECTED_READY_INPUT_OFF
+    to: DEGRADED
+    via_capability: Write Raw SCPI
+  - from: CONNECTED_READY_INPUT_ON
+    to: DEGRADED
+    via_capability: Write Raw SCPI
+  - from: DEGRADED
+    to: CONNECTED_READY_INPUT_OFF
+    via_capability: Synchronize Electronic Load State
+  - from: DEGRADED
+    to: RECONNECTING
+    via_capability: Reconnect Electronic Load
+  - from: RECONNECTING
+    to: CONNECTED_READY_INPUT_OFF
+    via_capability: Reconnect Electronic Load
+  - from: CONNECTED_READY_INPUT_OFF
+    to: CLOSING
+    via_capability: Disconnect Electronic Load
+  - from: CONNECTED_READY_INPUT_ON
+    to: CLOSING
+    via_capability: Disconnect Electronic Load
+  - from: FAILED
+    to: CLOSING
+    via_capability: Disconnect Electronic Load
+  - from: CLOSING
+    to: DISCONNECTED
+    via_capability: Disconnect Electronic Load
+resources:
+  consumes:
+  - name: SERIAL_OR_VISA_SESSION
+    access: EXCLUSIVE
+    description: Exclusive serial/USB-serial or VISA-compatible session to one electronic load per alias.
+  - name: HOST_FILESYSTEM_PATH
+    access: SHARED_WRITE
+    description: Host path used for CSV and JSON evidence output.
+  - name: DUT_OR_SOURCE_OUTPUT
+    access: EXCLUSIVE
+    description: Electrical source connected to the load input terminals during active-load operations.
+  provides:
+  - name: PROGRAMMABLE_DC_LOAD
+    description: Programmable CC, CV, CP/CW, CR, dynamic, LED, and impedance loading.
+  - name: LOAD_TELEMETRY
+    description: Voltage, current, power, resistance, status, protection, peak, and diagnostic measurements.
+  - name: ROBOT_EVIDENCE_FILES
+    description: Optional CSV measurement logs and JSON diagnostic snapshots.
+  physical_signals:
+    inputs:
+    - name: LOAD_INPUT_VOLTAGE
+      unit: V
+      range:
+      - 0
+      - 500
+    - name: LOAD_INPUT_CURRENT
+      unit: A
+      range:
+      - 0
+      - 240
+    - name: LOAD_INPUT_POWER
+      unit: W
+      range:
+      - 0
+      - 1500
+    outputs: []
+dependencies:
+  requires_before:
+  - ProgrammablePowerSupplyLibrary
+  enables_after:
+  - DmmLibrary
+  - OscilloscopeLibrary
+  - DutControlLibrary
+  conflicts_with:
+  - Any driver or process owning the same serial/VISA resource or directly controlling the same load input.
+connection_points:
+  inputs:
+  - name: LOAD_POSITIVE
+    signal: DC_POWER
+    connector: BINDING_POST_OR_MODEL_SPECIFIC_TERMINAL
+  - name: LOAD_NEGATIVE
+    signal: DC_RETURN
+    connector: BINDING_POST_OR_MODEL_SPECIFIC_TERMINAL
+  - name: REMOTE_SENSE_POSITIVE
+    signal: DC_SENSE
+    connector: MODEL_SPECIFIC_TERMINAL
+  - name: REMOTE_SENSE_NEGATIVE
+    signal: DC_SENSE_RETURN
+    connector: MODEL_SPECIFIC_TERMINAL
+  outputs: []
+measurement_quality:
+  voltage:
+    preferred_for:
+    - MONITORING
+    - PROTECTION_DIAGNOSTICS
+    confidence: MEDIUM
+    accuracy_source: MANUFACTURER_SPEC_REQUIRED_FOR_EXACT_MODEL
+  current:
+    preferred_for:
+    - MONITORING
+    - LOAD_REGULATION_CHECK
+    confidence: MEDIUM
+    accuracy_source: MANUFACTURER_SPEC_REQUIRED_FOR_EXACT_MODEL
+  power:
+    preferred_for:
+    - MONITORING
+    confidence: MEDIUM
+    accuracy_source: DERIVED_OR_INSTRUMENT_SPEC
+  resistance:
+    preferred_for:
+    - DEBUG
+    confidence: LOW
+    accuracy_source: MODE_AND_MODEL_DEPENDENT
+implementation_status:
+  maturity: RELEASE_CANDIDATE
+  validation:
+  - UNIT_TESTED
+  - FAKE_TRANSPORT_VALIDATED
+  - ROBOT_ACCEPTANCE_VALIDATED
+  - PACKAGE_VALIDATED
+  not_validated:
+  - HIL_VALIDATED
+  - LONG_DURATION_TESTED
+  - MULTI_PROCESS_VALIDATED
+capabilities:
+- keyword: Connect To Electronic Load
+  signature: Connect To Electronic Load(port=None, alias='default', protocol='scpi', baud_rate=9600, address=0, read_timeout=2.0,
+    write_timeout=2.0, query_timeout=2.0, verify_writes=True, turn_input_off_on_close=True, require_enable_token=False, allow_short=False,
+    reconnect=False)
+  purpose: Connect to an electronic load and select it as the active session.
+  risk_level: LOW
+  blocking: BLOCKING
+  idempotency: NON_IDEMPOTENT
+  retry: RETRY_AFTER_RESET
+  typical_execution_time_s: 3.0
+  stabilization_time_s: 0.0
+  valid_in_states:
+  - DISCONNECTED
+  resulting_state: CONNECTED_READY_INPUT_OFF
+  arguments:
+  - name: port
+    kind: STRING
+    required: false
+    default: null
+  - name: alias
+    kind: STRING
+    required: false
+    default: default
+  - name: protocol
+    kind: ENUM
+    required: false
+    default: scpi
+    values:
+    - scpi
+    - legacy
+    - auto
+  - name: baud_rate
+    kind: NUMERIC
+    required: false
+    default: 9600
+    unit: '1'
+    range:
+    - 1
+    - 10000000
+  - name: address
+    kind: NUMERIC
+    required: false
+    default: 0
+    unit: '1'
+    range:
+    - 0
+    - 31
+  - name: read_timeout
+    kind: DURATION
+    required: false
+    default: 2.0
+    unit: S
+    range:
+    - 0.001
+    - 3600
+  - name: write_timeout
+    kind: DURATION
+    required: false
+    default: 2.0
+    unit: S
+    range:
+    - 0.001
+    - 3600
+  - name: query_timeout
+    kind: DURATION
+    required: false
+    default: 2.0
+    unit: S
+    range:
+    - 0.001
+    - 3600
+  - name: verify_writes
+    kind: BOOLEAN
+    required: false
+    default: true
+  - name: turn_input_off_on_close
+    kind: BOOLEAN
+    required: false
+    default: true
+  - name: require_enable_token
+    kind: BOOLEAN
+    required: false
+    default: false
+  - name: allow_short
+    kind: BOOLEAN
+    required: false
+    default: false
+  - name: reconnect
+    kind: BOOLEAN
+    required: false
+    default: false
+  returns:
+  - name: result
+    kind: STRING
+    format: ROBOT_DICTIONARY
+  preconditions:
+  - The serial or VISA-compatible port exists and is not owned by another process.
+  - The alias is not already registered.
+  postconditions:
+  - A synchronized session is registered under the requested alias.
+  - The selected alias becomes active.
+  coupling:
+  - 'MUTEX: Only one process may own the physical serial port at a time.'
+  side_effects:
+  - Opens an exclusive transport session.
+  - Queries instrument identity and capabilities.
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - DUPLICATE_ALIAS
+  - INVALID_ARGUMENT
+  - PROTOCOL_ERROR
+  - UNSUPPORTED_MODEL
+  planning_priority: PRIMARY
+- keyword: Disconnect Electronic Load
+  signature: Disconnect Electronic Load(alias=None)
+  purpose: Disconnect one load. The input is turned off first by default.
+  risk_level: MEDIUM
+  blocking: BLOCKING
+  idempotency: CONDITIONALLY_IDEMPOTENT
+  retry: NEVER_RETRY
+  typical_execution_time_s: 1.0
+  stabilization_time_s: 0.0
+  valid_in_states:
+  - CONNECTING
+  - CONNECTED_UNSYNCHRONIZED
+  - CONNECTED_READY_INPUT_OFF
+  - CONNECTED_READY_INPUT_ON
+  - DEGRADED
+  - RECONNECTING
+  - CLOSING
+  - FAILED
+  resulting_state: DISCONNECTED
+  arguments:
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns: []
+  preconditions:
+  - The target alias exists.
+  postconditions:
+  - The transport is closed and the session registry no longer contains the disconnected alias.
+  coupling: []
+  side_effects:
+  - Attempts to disable load input before closing when turn_input_off_on_close is enabled.
+  - Releases the exclusive transport resource.
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INDETERMINATE_OUTCOME
+  - INSTRUMENT_REJECTED
+  - NO_ACTIVE_SESSION
+  planning_priority: PRIMARY
+- keyword: Disconnect All Electronic Loads
+  signature: Disconnect All Electronic Loads()
+  purpose: Disconnect all known loads, raising the first close error after cleanup.
+  risk_level: MEDIUM
+  blocking: BLOCKING
+  idempotency: CONDITIONALLY_IDEMPOTENT
+  retry: NEVER_RETRY
+  typical_execution_time_s: 1.0
+  stabilization_time_s: 0.0
+  valid_in_states:
+  - CONNECTING
+  - CONNECTED_UNSYNCHRONIZED
+  - CONNECTED_READY_INPUT_OFF
+  - CONNECTED_READY_INPUT_ON
+  - DEGRADED
+  - RECONNECTING
+  - CLOSING
+  - FAILED
+  resulting_state: DISCONNECTED
+  arguments: []
+  returns: []
+  preconditions: []
+  postconditions:
+  - The transport is closed and the session registry no longer contains the disconnected alias.
+  coupling: []
+  side_effects:
+  - Attempts to disable load input before closing when turn_input_off_on_close is enabled.
+  - Releases the exclusive transport resource.
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INDETERMINATE_OUTCOME
+  - INSTRUMENT_REJECTED
+  - NO_ACTIVE_SESSION
+  planning_priority: PRIMARY
+- keyword: Switch Electronic Load
+  signature: Switch Electronic Load(alias)
+  purpose: Select which connected alias subsequent keywords use.
+  risk_level: NONE
+  blocking: BLOCKING
+  idempotency: IDEMPOTENT
+  retry: SAFE_TO_RETRY
+  typical_execution_time_s: 0.1
+  stabilization_time_s: 0.0
+  valid_in_states:
+  - DISCONNECTED
+  - CONNECTING
+  - CONNECTED_UNSYNCHRONIZED
+  - CONNECTED_READY_INPUT_OFF
+  - CONNECTED_READY_INPUT_ON
+  - DEGRADED
+  - RECONNECTING
+  - CLOSING
+  - FAILED
+  resulting_state: SAME
+  arguments:
+  - name: alias
+    kind: STRING
+    required: true
+    default: null
+  returns:
+  - name: value
+    kind: STRING
+  preconditions: []
+  postconditions:
+  - No instrument configuration is changed.
+  coupling: []
+  side_effects: []
+  exclusive_resources: []
+  raises:
+  - NO_ACTIVE_SESSION
+  planning_priority: PRIMARY
+- keyword: Get Active Electronic Load
+  signature: Get Active Electronic Load()
+  purpose: Return the current alias, or ``None`` when no session exists.
+  risk_level: NONE
+  blocking: BLOCKING
+  idempotency: IDEMPOTENT
+  retry: SAFE_TO_RETRY
+  typical_execution_time_s: 0.1
+  stabilization_time_s: 0.0
+  valid_in_states:
+  - DISCONNECTED
+  - CONNECTING
+  - CONNECTED_UNSYNCHRONIZED
+  - CONNECTED_READY_INPUT_OFF
+  - CONNECTED_READY_INPUT_ON
+  - DEGRADED
+  - RECONNECTING
+  - CLOSING
+  - FAILED
+  resulting_state: SAME
+  arguments: []
+  returns:
+  - name: value
+    kind: STRING
+  preconditions: []
+  postconditions:
+  - No instrument configuration is changed.
+  coupling: []
+  side_effects: []
+  exclusive_resources: []
+  raises: []
+  planning_priority: PRIMARY
+- keyword: List Electronic Load Sessions
+  signature: List Electronic Load Sessions()
+  purpose: Return aliases and connection states for all sessions.
+  risk_level: NONE
+  blocking: BLOCKING
+  idempotency: IDEMPOTENT
+  retry: SAFE_TO_RETRY
+  typical_execution_time_s: 0.1
+  stabilization_time_s: 0.0
+  valid_in_states:
+  - DISCONNECTED
+  - CONNECTING
+  - CONNECTED_UNSYNCHRONIZED
+  - CONNECTED_READY_INPUT_OFF
+  - CONNECTED_READY_INPUT_ON
+  - DEGRADED
+  - RECONNECTING
+  - CLOSING
+  - FAILED
+  resulting_state: SAME
+  arguments: []
+  returns:
+  - name: items
+    kind: STRING
+    format: ROBOT_LIST
+  preconditions: []
+  postconditions:
+  - No instrument configuration is changed.
+  coupling: []
+  side_effects: []
+  exclusive_resources: []
+  raises: []
+  planning_priority: PRIMARY
+- keyword: Reconnect Electronic Load
+  signature: Reconnect Electronic Load(alias=None)
+  purpose: Run the configured reconnect policy for a connected load.
+  risk_level: LOW
+  blocking: BLOCKING
+  idempotency: CONDITIONALLY_IDEMPOTENT
+  retry: RETRY_AFTER_RESET
+  typical_execution_time_s: 15.0
+  stabilization_time_s: 0.0
+  valid_in_states:
+  - CONNECTED_READY_INPUT_OFF
+  - CONNECTED_READY_INPUT_ON
+  - DEGRADED
+  resulting_state: CONNECTED_READY_INPUT_OFF
+  arguments:
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns: []
+  preconditions:
+  - A selected electronic-load session is connected and synchronized.
+  postconditions:
+  - The selected session remains connected unless a communication failure occurs.
+  coupling: []
+  side_effects:
+  - Closes and reopens the transport according to the configured reconnect policy.
+  - Does not restore output configuration by default.
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INSTRUMENT_REJECTED
+  - NO_ACTIVE_SESSION
+  - PROTOCOL_ERROR
+  - UNSUPPORTED_MODEL
+  planning_priority: PRIMARY
+- keyword: Synchronize Electronic Load State
+  signature: Synchronize Electronic Load State(alias=None)
+  purpose: Read key state from the instrument and return it as a dictionary.
+  risk_level: NONE
+  blocking: BLOCKING
+  idempotency: IDEMPOTENT
+  retry: SAFE_TO_RETRY
+  typical_execution_time_s: 0.5
+  stabilization_time_s: 0.0
+  valid_in_states:
+  - CONNECTED_UNSYNCHRONIZED
+  - CONNECTED_READY_INPUT_OFF
+  - CONNECTED_READY_INPUT_ON
+  - DEGRADED
+  resulting_state: SAME
+  arguments:
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns:
+  - name: result
+    kind: STRING
+    format: ROBOT_DICTIONARY
+  preconditions:
+  - A selected electronic-load session is connected and synchronized.
+  postconditions:
+  - The selected session remains connected unless a communication failure occurs.
+  coupling: []
+  side_effects:
+  - Refreshes cached mode, input, protection, and status information.
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INSTRUMENT_REJECTED
+  - NO_ACTIVE_SESSION
+  - PROTOCOL_ERROR
+  planning_priority: PRIMARY
+- keyword: Electronic Load Should Be Connected
+  signature: Electronic Load Should Be Connected(alias=None)
+  purpose: Fail unless the selected electronic load is connected.
+  risk_level: NONE
+  blocking: BLOCKING
+  idempotency: IDEMPOTENT
+  retry: SAFE_TO_RETRY
+  typical_execution_time_s: 0.1
+  stabilization_time_s: 0.0
+  valid_in_states:
+  - CONNECTED_READY_INPUT_OFF
+  - CONNECTED_READY_INPUT_ON
+  resulting_state: SAME
+  arguments:
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns: []
+  preconditions:
+  - A selected electronic-load session is connected and synchronized.
+  postconditions:
+  - The selected session remains connected unless a communication failure occurs.
+  coupling: []
+  side_effects: []
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INSTRUMENT_REJECTED
+  - NO_ACTIVE_SESSION
+  - PROTOCOL_ERROR
+  planning_priority: PRIMARY
+- keyword: Identify Electronic Load
+  signature: Identify Electronic Load(alias=None)
+  purpose: Return manufacturer, model, serial number, and firmware revision.
+  risk_level: NONE
+  blocking: BLOCKING
+  idempotency: IDEMPOTENT
+  retry: SAFE_TO_RETRY
+  typical_execution_time_s: 0.1
+  stabilization_time_s: 0.0
+  valid_in_states:
+  - CONNECTED_READY_INPUT_OFF
+  - CONNECTED_READY_INPUT_ON
+  resulting_state: SAME
+  arguments:
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns:
+  - name: result
+    kind: STRING
+    format: ROBOT_DICTIONARY
+  preconditions:
+  - A selected electronic-load session is connected and synchronized.
+  postconditions:
+  - The selected session remains connected unless a communication failure occurs.
+  coupling: []
+  side_effects: []
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INSTRUMENT_REJECTED
+  - NO_ACTIVE_SESSION
+  - PROTOCOL_ERROR
+  planning_priority: PRIMARY
+- keyword: Get Electronic Load Capabilities
+  signature: Get Electronic Load Capabilities(refresh=False, alias=None)
+  purpose: Return model ratings, supported features, and evidence metadata.
+  risk_level: NONE
+  blocking: BLOCKING
+  idempotency: IDEMPOTENT
+  retry: SAFE_TO_RETRY
+  typical_execution_time_s: 0.1
+  stabilization_time_s: 0.0
+  valid_in_states:
+  - CONNECTED_READY_INPUT_OFF
+  - CONNECTED_READY_INPUT_ON
+  resulting_state: SAME
+  arguments:
+  - name: refresh
+    kind: BOOLEAN
+    required: false
+    default: false
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns:
+  - name: result
+    kind: STRING
+    format: ROBOT_DICTIONARY
+  preconditions:
+  - A selected electronic-load session is connected and synchronized.
+  postconditions:
+  - The selected session remains connected unless a communication failure occurs.
+  coupling: []
+  side_effects: []
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INSTRUMENT_REJECTED
+  - NO_ACTIVE_SESSION
+  - PROTOCOL_ERROR
+  planning_priority: PRIMARY
+- keyword: Get Electronic Load Status
+  signature: Get Electronic Load Status(alias=None)
+  purpose: Return input, short, mode, status registers, and protection flags.
+  risk_level: NONE
+  blocking: BLOCKING
+  idempotency: IDEMPOTENT
+  retry: SAFE_TO_RETRY
+  typical_execution_time_s: 0.1
+  stabilization_time_s: 0.0
+  valid_in_states:
+  - CONNECTED_READY_INPUT_OFF
+  - CONNECTED_READY_INPUT_ON
+  resulting_state: SAME
+  arguments:
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns:
+  - name: result
+    kind: STRING
+    format: ROBOT_DICTIONARY
+  preconditions:
+  - A selected electronic-load session is connected and synchronized.
+  postconditions:
+  - The selected session remains connected unless a communication failure occurs.
+  coupling: []
+  side_effects: []
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INSTRUMENT_REJECTED
+  - NO_ACTIVE_SESSION
+  - PROTOCOL_ERROR
+  planning_priority: PRIMARY
+- keyword: Run Electronic Load Health Check
+  signature: Run Electronic Load Health Check(alias=None)
+  purpose: Return a health report with latency and consecutive failure count.
+  risk_level: NONE
+  blocking: BLOCKING
+  idempotency: IDEMPOTENT
+  retry: SAFE_TO_RETRY
+  typical_execution_time_s: 0.1
+  stabilization_time_s: 0.0
+  valid_in_states:
+  - CONNECTED_READY_INPUT_OFF
+  - CONNECTED_READY_INPUT_ON
+  resulting_state: SAME
+  arguments:
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns:
+  - name: result
+    kind: STRING
+    format: ROBOT_DICTIONARY
+  preconditions:
+  - A selected electronic-load session is connected and synchronized.
+  postconditions:
+  - The selected session remains connected unless a communication failure occurs.
+  coupling: []
+  side_effects: []
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INSTRUMENT_REJECTED
+  - NO_ACTIVE_SESSION
+  - PROTOCOL_ERROR
+  planning_priority: PRIMARY
+- keyword: Get Electronic Load Diagnostic Snapshot
+  signature: Get Electronic Load Diagnostic Snapshot(alias=None)
+  purpose: Return a structured diagnostic snapshot suitable for report attachments.
+  risk_level: NONE
+  blocking: BLOCKING
+  idempotency: IDEMPOTENT
+  retry: SAFE_TO_RETRY
+  typical_execution_time_s: 0.1
+  stabilization_time_s: 0.0
+  valid_in_states:
+  - CONNECTED_READY_INPUT_OFF
+  - CONNECTED_READY_INPUT_ON
+  resulting_state: SAME
+  arguments:
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns:
+  - name: result
+    kind: STRING
+    format: ROBOT_DICTIONARY
+  preconditions:
+  - A selected electronic-load session is connected and synchronized.
+  postconditions:
+  - The selected session remains connected unless a communication failure occurs.
+  coupling: []
+  side_effects: []
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INSTRUMENT_REJECTED
+  - NO_ACTIVE_SESSION
+  - PROTOCOL_ERROR
+  planning_priority: PRIMARY
+- keyword: Run Electronic Load Self Test
+  signature: Run Electronic Load Self Test(timeout=None, alias=None)
+  purpose: Run ``*TST?`` and fail when the instrument reports a non-zero code.
+  risk_level: LOW
+  blocking: BLOCKING
+  idempotency: CONDITIONALLY_IDEMPOTENT
+  retry: NEVER_RETRY
+  typical_execution_time_s: 120.0
+  stabilization_time_s: 0.0
+  valid_in_states:
+  - CONNECTED_READY_INPUT_OFF
+  - CONNECTED_READY_INPUT_ON
+  resulting_state: SAME
+  arguments:
+  - name: timeout
+    kind: DURATION
+    required: false
+    default: null
+    unit: S
+    range:
+    - 0.001
+    - 86400
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns:
+  - name: result
+    kind: STRING
+    format: ROBOT_DICTIONARY
+  preconditions:
+  - A selected electronic-load session is connected and synchronized.
+  postconditions:
+  - The selected session remains connected unless a communication failure occurs.
+  coupling: []
+  side_effects:
+  - Executes the instrument built-in self-test and may temporarily block normal commands.
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INSTRUMENT_REJECTED
+  - NO_ACTIVE_SESSION
+  - PROTOCOL_ERROR
+  - SELF_TEST_FAILED
+  planning_priority: PRIMARY
+- keyword: Clear Electronic Load Status
+  signature: Clear Electronic Load Status(alias=None)
+  purpose: Clear SCPI status registers and error queue using ``*CLS``.
+  risk_level: LOW
+  blocking: BLOCKING
+  idempotency: CONDITIONALLY_IDEMPOTENT
+  retry: NEVER_RETRY
+  typical_execution_time_s: 0.1
+  stabilization_time_s: 0.0
+  valid_in_states:
+  - CONNECTED_READY_INPUT_OFF
+  - CONNECTED_READY_INPUT_ON
+  resulting_state: SAME
+  arguments:
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns: []
+  preconditions:
+  - A selected electronic-load session is connected and synchronized.
+  postconditions:
+  - The selected session remains connected unless a communication failure occurs.
+  coupling: []
+  side_effects:
+  - Clears SCPI status registers and the error queue.
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INDETERMINATE_OUTCOME
+  - INSTRUMENT_REJECTED
+  - NO_ACTIVE_SESSION
+  - PROTOCOL_ERROR
+  planning_priority: PRIMARY
+- keyword: Drain Electronic Load Error Queue
+  signature: Drain Electronic Load Error Queue(maximum=None, alias=None)
+  purpose: Read errors until the instrument reports no error or ``maximum`` is reached.
+  risk_level: NONE
+  blocking: BLOCKING
+  idempotency: NON_IDEMPOTENT
+  retry: NEVER_RETRY
+  typical_execution_time_s: 0.1
+  stabilization_time_s: 0.0
+  valid_in_states:
+  - CONNECTED_READY_INPUT_OFF
+  - CONNECTED_READY_INPUT_ON
+  resulting_state: SAME
+  arguments:
+  - name: maximum
+    kind: NUMERIC
+    required: false
+    default: null
+    unit: UNKNOWN
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns:
+  - name: items
+    kind: STRING
+    format: ROBOT_LIST
+  preconditions:
+  - A selected electronic-load session is connected and synchronized.
+  postconditions:
+  - The selected session remains connected unless a communication failure occurs.
+  coupling: []
+  side_effects:
+  - Destructively consumes queued instrument errors.
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INSTRUMENT_REJECTED
+  - INVALID_ARGUMENT
+  - NO_ACTIVE_SESSION
+  - PROTOCOL_ERROR
+  planning_priority: PRIMARY
+- keyword: Set Electronic Load Mode
+  signature: Set Electronic Load Mode(mode, alias=None)
+  purpose: Set CC, CV, CP/CW, CR, dynamic, LED, or impedance mode.
+  risk_level: LOW
+  blocking: BLOCKING
+  idempotency: IDEMPOTENT
+  retry: NEVER_RETRY
+  typical_execution_time_s: 0.3
+  stabilization_time_s: 0.05
+  valid_in_states:
+  - CONNECTED_READY_INPUT_OFF
+  resulting_state: CONNECTED_READY_INPUT_OFF
+  arguments:
+  - name: mode
+    kind: ENUM
+    required: true
+    default: null
+    values:
+    - CC
+    - CV
+    - CP
+    - CW
+    - CR
+    - dynamic
+    - LED
+    - impedance
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns:
+  - name: value
+    kind: STRING
+  preconditions:
+  - Input is OFF when the configured safety policy requires off-before-reconfiguration.
+  postconditions:
+  - The requested configuration is written and read back when write verification is enabled.
+  coupling: []
+  side_effects:
+  - Changes volatile instrument configuration.
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INDETERMINATE_OUTCOME
+  - INSTRUMENT_REJECTED
+  - INVALID_ARGUMENT
+  - NO_ACTIVE_SESSION
+  - PROTOCOL_ERROR
+  - RANGE_REJECTED
+  - UNSAFE_OPERATION
+  planning_priority: PRIMARY
+- keyword: Get Electronic Load Mode
+  signature: Get Electronic Load Mode(alias=None)
+  purpose: Return the current driver mode token.
+  risk_level: NONE
+  blocking: BLOCKING
+  idempotency: IDEMPOTENT
+  retry: SAFE_TO_RETRY
+  typical_execution_time_s: 0.1
+  stabilization_time_s: 0.0
+  valid_in_states:
+  - CONNECTED_READY_INPUT_OFF
+  - CONNECTED_READY_INPUT_ON
+  resulting_state: SAME
+  arguments:
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns:
+  - name: value
+    kind: STRING
+  preconditions:
+  - A selected electronic-load session is connected and synchronized.
+  postconditions:
+  - The selected session remains connected unless a communication failure occurs.
+  coupling: []
+  side_effects: []
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INSTRUMENT_REJECTED
+  - NO_ACTIVE_SESSION
+  - PROTOCOL_ERROR
+  planning_priority: PRIMARY
+- keyword: Enable Electronic Load Input
+  signature: Enable Electronic Load Input(alias=None)
+  purpose: Enable input. A short-lived safety token is supplied when policy requires it.
+  risk_level: HIGH
+  blocking: BLOCKING
+  idempotency: CONDITIONALLY_IDEMPOTENT
+  retry: NEVER_RETRY
+  typical_execution_time_s: 0.4
+  stabilization_time_s: 0.2
+  valid_in_states:
+  - CONNECTED_READY_INPUT_OFF
+  resulting_state: CONNECTED_READY_INPUT_ON
+  arguments:
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns: []
+  preconditions:
+  - The source is current-limited and wiring is rated for the requested load.
+  - The load mode, setpoint, ranges, and protections are configured.
+  - No protection flag is active.
+  postconditions:
+  - The electronic-load input is verified ON.
+  coupling:
+  - 'REQUIRES: Configure mode and safe setpoints before enabling input.'
+  - 'FORBIDS: Do not enable input with unknown DUT limits or unknown wiring state.'
+  side_effects:
+  - Begins sinking energy from the connected source or DUT.
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INDETERMINATE_OUTCOME
+  - INSTRUMENT_REJECTED
+  - NO_ACTIVE_SESSION
+  - PROTECTION_TRIPPED
+  - PROTOCOL_ERROR
+  - UNSAFE_OPERATION
+  planning_priority: PRIMARY
+- keyword: Disable Electronic Load Input
+  signature: Disable Electronic Load Input(alias=None)
+  purpose: Disable load input and verify the state when verification is enabled.
+  risk_level: MEDIUM
+  blocking: BLOCKING
+  idempotency: IDEMPOTENT
+  retry: NEVER_RETRY
+  typical_execution_time_s: 0.4
+  stabilization_time_s: 0.1
+  valid_in_states:
+  - CONNECTED_READY_INPUT_OFF
+  - CONNECTED_READY_INPUT_ON
+  resulting_state: CONNECTED_READY_INPUT_OFF
+  arguments:
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns: []
+  preconditions:
+  - A selected electronic-load session is connected and synchronized.
+  postconditions:
+  - The electronic-load input is verified OFF.
+  coupling: []
+  side_effects:
+  - Stops normal energy sinking from the connected source.
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INDETERMINATE_OUTCOME
+  - INSTRUMENT_REJECTED
+  - NO_ACTIVE_SESSION
+  - PROTOCOL_ERROR
+  planning_priority: PRIMARY
+- keyword: Electronic Load Input Should Be On
+  signature: Electronic Load Input Should Be On(alias=None)
+  purpose: Fail unless load input is on.
+  risk_level: NONE
+  blocking: BLOCKING
+  idempotency: IDEMPOTENT
+  retry: SAFE_TO_RETRY
+  typical_execution_time_s: 0.1
+  stabilization_time_s: 0.0
+  valid_in_states:
+  - CONNECTED_READY_INPUT_OFF
+  - CONNECTED_READY_INPUT_ON
+  resulting_state: SAME
+  arguments:
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns: []
+  preconditions:
+  - A selected electronic-load session is connected and synchronized.
+  postconditions:
+  - The selected session remains connected unless a communication failure occurs.
+  coupling: []
+  side_effects: []
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - ASSERTION_FAILED
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INSTRUMENT_REJECTED
+  - NO_ACTIVE_SESSION
+  - PROTOCOL_ERROR
+  planning_priority: PRIMARY
+- keyword: Electronic Load Input Should Be Off
+  signature: Electronic Load Input Should Be Off(alias=None)
+  purpose: Fail unless load input is off.
+  risk_level: NONE
+  blocking: BLOCKING
+  idempotency: IDEMPOTENT
+  retry: SAFE_TO_RETRY
+  typical_execution_time_s: 0.1
+  stabilization_time_s: 0.0
+  valid_in_states:
+  - CONNECTED_READY_INPUT_OFF
+  - CONNECTED_READY_INPUT_ON
+  resulting_state: SAME
+  arguments:
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns: []
+  preconditions:
+  - A selected electronic-load session is connected and synchronized.
+  postconditions:
+  - The selected session remains connected unless a communication failure occurs.
+  coupling: []
+  side_effects: []
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - ASSERTION_FAILED
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INSTRUMENT_REJECTED
+  - NO_ACTIVE_SESSION
+  - PROTOCOL_ERROR
+  planning_priority: PRIMARY
+- keyword: Configure And Enable Load
+  signature: Configure And Enable Load(mode, setpoint, current_limit=None, power_limit=None, remote_sense=False, alias=None)
+  purpose: Safely configure a fixed mode and enable input as one rollback-aware operation.
+  risk_level: HIGH
+  blocking: BLOCKING
+  idempotency: NON_IDEMPOTENT
+  retry: NEVER_RETRY
+  typical_execution_time_s: 1.5
+  stabilization_time_s: 0.2
+  valid_in_states:
+  - CONNECTED_READY_INPUT_OFF
+  resulting_state: CONNECTED_READY_INPUT_ON
+  arguments:
+  - name: mode
+    kind: ENUM
+    required: true
+    default: null
+    values:
+    - CC
+    - CV
+    - CP
+    - CW
+    - CR
+  - name: setpoint
+    kind: NUMERIC
+    required: true
+    default: null
+    unit: UNKNOWN
+  - name: current_limit
+    kind: NUMERIC
+    required: false
+    default: null
+    unit: A
+    range:
+    - 0
+    - 240
+  - name: power_limit
+    kind: NUMERIC
+    required: false
+    default: null
+    unit: W
+    range:
+    - 0
+    - 1500
+  - name: remote_sense
+    kind: BOOLEAN
+    required: false
+    default: false
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns:
+  - name: result
+    kind: STRING
+    format: ROBOT_DICTIONARY
+  preconditions:
+  - The source is current-limited and the requested setpoint is safe for the DUT and load model.
+  - Input is OFF before configuration.
+  postconditions:
+  - Mode, optional limits, and remote sense are configured and input is verified ON.
+  - On failure, the driver attempts an input-OFF rollback.
+  coupling:
+  - 'REQUIRES: Use only CC, CV, CP/CW, or CR fixed modes.'
+  - 'FORBIDS: Do not use model-independent limits above the connected instrument rating.'
+  side_effects:
+  - Applies the requested load and begins sinking energy.
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INDETERMINATE_OUTCOME
+  - INSTRUMENT_REJECTED
+  - INVALID_ARGUMENT
+  - NO_ACTIVE_SESSION
+  - PROTECTION_TRIPPED
+  - PROTOCOL_ERROR
+  - RANGE_REJECTED
+  - UNSAFE_OPERATION
+  planning_priority: PRIMARY
+- keyword: Set Current Setpoint
+  signature: Set Current Setpoint(amperes, alias=None)
+  purpose: Set and read back the CC setpoint in amperes.
+  risk_level: LOW
+  blocking: BLOCKING
+  idempotency: IDEMPOTENT
+  retry: NEVER_RETRY
+  typical_execution_time_s: 0.3
+  stabilization_time_s: 0.05
+  valid_in_states:
+  - CONNECTED_READY_INPUT_OFF
+  resulting_state: CONNECTED_READY_INPUT_OFF
+  arguments:
+  - name: amperes
+    kind: NUMERIC
+    required: true
+    default: null
+    unit: A
+    range:
+    - 0
+    - 240
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns:
+  - name: result
+    kind: STRING
+    format: ROBOT_DICTIONARY
+  preconditions:
+  - Input is OFF when the configured safety policy requires off-before-reconfiguration.
+  postconditions:
+  - The requested configuration is written and read back when write verification is enabled.
+  coupling: []
+  side_effects:
+  - Changes volatile instrument configuration.
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INDETERMINATE_OUTCOME
+  - INSTRUMENT_REJECTED
+  - INVALID_ARGUMENT
+  - NO_ACTIVE_SESSION
+  - PROTOCOL_ERROR
+  - RANGE_REJECTED
+  - UNSAFE_OPERATION
+  planning_priority: PRIMARY
+- keyword: Get Current Setpoint
+  signature: Get Current Setpoint(alias=None)
+  purpose: Get Current Setpoint.
+  risk_level: NONE
+  blocking: BLOCKING
+  idempotency: IDEMPOTENT
+  retry: SAFE_TO_RETRY
+  typical_execution_time_s: 0.1
+  stabilization_time_s: 0.0
+  valid_in_states:
+  - CONNECTED_READY_INPUT_OFF
+  - CONNECTED_READY_INPUT_ON
+  resulting_state: SAME
+  arguments:
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns:
+  - name: value
+    kind: NUMERIC
+    unit: A
+  preconditions:
+  - A selected electronic-load session is connected and synchronized.
+  postconditions:
+  - The selected session remains connected unless a communication failure occurs.
+  coupling: []
+  side_effects: []
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INSTRUMENT_REJECTED
+  - NO_ACTIVE_SESSION
+  - PROTOCOL_ERROR
+  planning_priority: PRIMARY
+- keyword: Set Voltage Setpoint
+  signature: Set Voltage Setpoint(volts, alias=None)
+  purpose: Set and read back the CV setpoint in volts.
+  risk_level: LOW
+  blocking: BLOCKING
+  idempotency: IDEMPOTENT
+  retry: NEVER_RETRY
+  typical_execution_time_s: 0.3
+  stabilization_time_s: 0.05
+  valid_in_states:
+  - CONNECTED_READY_INPUT_OFF
+  resulting_state: CONNECTED_READY_INPUT_OFF
+  arguments:
+  - name: volts
+    kind: NUMERIC
+    required: true
+    default: null
+    unit: V
+    range:
+    - 0
+    - 500
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns:
+  - name: result
+    kind: STRING
+    format: ROBOT_DICTIONARY
+  preconditions:
+  - Input is OFF when the configured safety policy requires off-before-reconfiguration.
+  postconditions:
+  - The requested configuration is written and read back when write verification is enabled.
+  coupling: []
+  side_effects:
+  - Changes volatile instrument configuration.
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INDETERMINATE_OUTCOME
+  - INSTRUMENT_REJECTED
+  - INVALID_ARGUMENT
+  - NO_ACTIVE_SESSION
+  - PROTOCOL_ERROR
+  - RANGE_REJECTED
+  - UNSAFE_OPERATION
+  planning_priority: PRIMARY
+- keyword: Get Voltage Setpoint
+  signature: Get Voltage Setpoint(alias=None)
+  purpose: Get Voltage Setpoint.
+  risk_level: NONE
+  blocking: BLOCKING
+  idempotency: IDEMPOTENT
+  retry: SAFE_TO_RETRY
+  typical_execution_time_s: 0.1
+  stabilization_time_s: 0.0
+  valid_in_states:
+  - CONNECTED_READY_INPUT_OFF
+  - CONNECTED_READY_INPUT_ON
+  resulting_state: SAME
+  arguments:
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns:
+  - name: value
+    kind: NUMERIC
+    unit: V
+  preconditions:
+  - A selected electronic-load session is connected and synchronized.
+  postconditions:
+  - The selected session remains connected unless a communication failure occurs.
+  coupling: []
+  side_effects: []
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INSTRUMENT_REJECTED
+  - NO_ACTIVE_SESSION
+  - PROTOCOL_ERROR
+  planning_priority: PRIMARY
+- keyword: Set Power Setpoint
+  signature: Set Power Setpoint(watts, alias=None)
+  purpose: Set and read back the CP setpoint in watts.
+  risk_level: LOW
+  blocking: BLOCKING
+  idempotency: IDEMPOTENT
+  retry: NEVER_RETRY
+  typical_execution_time_s: 0.3
+  stabilization_time_s: 0.05
+  valid_in_states:
+  - CONNECTED_READY_INPUT_OFF
+  resulting_state: CONNECTED_READY_INPUT_OFF
+  arguments:
+  - name: watts
+    kind: NUMERIC
+    required: true
+    default: null
+    unit: W
+    range:
+    - 0
+    - 1500
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns:
+  - name: result
+    kind: STRING
+    format: ROBOT_DICTIONARY
+  preconditions:
+  - Input is OFF when the configured safety policy requires off-before-reconfiguration.
+  postconditions:
+  - The requested configuration is written and read back when write verification is enabled.
+  coupling: []
+  side_effects:
+  - Changes volatile instrument configuration.
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INDETERMINATE_OUTCOME
+  - INSTRUMENT_REJECTED
+  - INVALID_ARGUMENT
+  - NO_ACTIVE_SESSION
+  - PROTOCOL_ERROR
+  - RANGE_REJECTED
+  - UNSAFE_OPERATION
+  planning_priority: PRIMARY
+- keyword: Get Power Setpoint
+  signature: Get Power Setpoint(alias=None)
+  purpose: Get Power Setpoint.
+  risk_level: NONE
+  blocking: BLOCKING
+  idempotency: IDEMPOTENT
+  retry: SAFE_TO_RETRY
+  typical_execution_time_s: 0.1
+  stabilization_time_s: 0.0
+  valid_in_states:
+  - CONNECTED_READY_INPUT_OFF
+  - CONNECTED_READY_INPUT_ON
+  resulting_state: SAME
+  arguments:
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns:
+  - name: value
+    kind: NUMERIC
+    unit: W
+  preconditions:
+  - A selected electronic-load session is connected and synchronized.
+  postconditions:
+  - The selected session remains connected unless a communication failure occurs.
+  coupling: []
+  side_effects: []
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INSTRUMENT_REJECTED
+  - NO_ACTIVE_SESSION
+  - PROTOCOL_ERROR
+  planning_priority: PRIMARY
+- keyword: Set Resistance Setpoint
+  signature: Set Resistance Setpoint(ohms, alias=None)
+  purpose: Set and read back the CR setpoint in ohms.
+  risk_level: LOW
+  blocking: BLOCKING
+  idempotency: IDEMPOTENT
+  retry: NEVER_RETRY
+  typical_execution_time_s: 0.3
+  stabilization_time_s: 0.05
+  valid_in_states:
+  - CONNECTED_READY_INPUT_OFF
+  resulting_state: CONNECTED_READY_INPUT_OFF
+  arguments:
+  - name: ohms
+    kind: NUMERIC
+    required: true
+    default: null
+    unit: OHM
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns:
+  - name: result
+    kind: STRING
+    format: ROBOT_DICTIONARY
+  preconditions:
+  - Input is OFF when the configured safety policy requires off-before-reconfiguration.
+  postconditions:
+  - The requested configuration is written and read back when write verification is enabled.
+  coupling: []
+  side_effects:
+  - Changes volatile instrument configuration.
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INDETERMINATE_OUTCOME
+  - INSTRUMENT_REJECTED
+  - INVALID_ARGUMENT
+  - NO_ACTIVE_SESSION
+  - PROTOCOL_ERROR
+  - RANGE_REJECTED
+  - UNSAFE_OPERATION
+  planning_priority: PRIMARY
+- keyword: Get Resistance Setpoint
+  signature: Get Resistance Setpoint(alias=None)
+  purpose: Get Resistance Setpoint.
+  risk_level: NONE
+  blocking: BLOCKING
+  idempotency: IDEMPOTENT
+  retry: SAFE_TO_RETRY
+  typical_execution_time_s: 0.1
+  stabilization_time_s: 0.0
+  valid_in_states:
+  - CONNECTED_READY_INPUT_OFF
+  - CONNECTED_READY_INPUT_ON
+  resulting_state: SAME
+  arguments:
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns:
+  - name: value
+    kind: NUMERIC
+    unit: OHM
+  preconditions:
+  - A selected electronic-load session is connected and synchronized.
+  postconditions:
+  - The selected session remains connected unless a communication failure occurs.
+  coupling: []
+  side_effects: []
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INSTRUMENT_REJECTED
+  - NO_ACTIVE_SESSION
+  - PROTOCOL_ERROR
+  planning_priority: PRIMARY
+- keyword: Set Current Protection
+  signature: Set Current Protection(amperes, alias=None)
+  purpose: Set over-current protection in amperes.
+  risk_level: LOW
+  blocking: BLOCKING
+  idempotency: IDEMPOTENT
+  retry: NEVER_RETRY
+  typical_execution_time_s: 0.3
+  stabilization_time_s: 0.05
+  valid_in_states:
+  - CONNECTED_READY_INPUT_OFF
+  resulting_state: CONNECTED_READY_INPUT_OFF
+  arguments:
+  - name: amperes
+    kind: NUMERIC
+    required: true
+    default: null
+    unit: A
+    range:
+    - 0
+    - 240
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns:
+  - name: result
+    kind: STRING
+    format: ROBOT_DICTIONARY
+  preconditions:
+  - Input is OFF when the configured safety policy requires off-before-reconfiguration.
+  postconditions:
+  - The requested configuration is written and read back when write verification is enabled.
+  coupling: []
+  side_effects:
+  - Changes volatile instrument configuration.
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INDETERMINATE_OUTCOME
+  - INSTRUMENT_REJECTED
+  - INVALID_ARGUMENT
+  - NO_ACTIVE_SESSION
+  - PROTOCOL_ERROR
+  - RANGE_REJECTED
+  - UNSAFE_OPERATION
+  planning_priority: PRIMARY
+- keyword: Get Current Protection
+  signature: Get Current Protection(alias=None)
+  purpose: Get Current Protection.
+  risk_level: NONE
+  blocking: BLOCKING
+  idempotency: IDEMPOTENT
+  retry: SAFE_TO_RETRY
+  typical_execution_time_s: 0.1
+  stabilization_time_s: 0.0
+  valid_in_states:
+  - CONNECTED_READY_INPUT_OFF
+  - CONNECTED_READY_INPUT_ON
+  resulting_state: SAME
+  arguments:
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns:
+  - name: value
+    kind: NUMERIC
+    unit: A
+  preconditions:
+  - A selected electronic-load session is connected and synchronized.
+  postconditions:
+  - The selected session remains connected unless a communication failure occurs.
+  coupling: []
+  side_effects: []
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INSTRUMENT_REJECTED
+  - NO_ACTIVE_SESSION
+  - PROTOCOL_ERROR
+  planning_priority: PRIMARY
+- keyword: Set Power Protection
+  signature: Set Power Protection(watts, alias=None)
+  purpose: Set over-power protection in watts.
+  risk_level: LOW
+  blocking: BLOCKING
+  idempotency: IDEMPOTENT
+  retry: NEVER_RETRY
+  typical_execution_time_s: 0.3
+  stabilization_time_s: 0.05
+  valid_in_states:
+  - CONNECTED_READY_INPUT_OFF
+  resulting_state: CONNECTED_READY_INPUT_OFF
+  arguments:
+  - name: watts
+    kind: NUMERIC
+    required: true
+    default: null
+    unit: W
+    range:
+    - 0
+    - 1500
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns:
+  - name: result
+    kind: STRING
+    format: ROBOT_DICTIONARY
+  preconditions:
+  - Input is OFF when the configured safety policy requires off-before-reconfiguration.
+  postconditions:
+  - The requested configuration is written and read back when write verification is enabled.
+  coupling: []
+  side_effects:
+  - Changes volatile instrument configuration.
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INDETERMINATE_OUTCOME
+  - INSTRUMENT_REJECTED
+  - INVALID_ARGUMENT
+  - NO_ACTIVE_SESSION
+  - PROTOCOL_ERROR
+  - RANGE_REJECTED
+  - UNSAFE_OPERATION
+  planning_priority: PRIMARY
+- keyword: Get Power Protection
+  signature: Get Power Protection(alias=None)
+  purpose: Get Power Protection.
+  risk_level: NONE
+  blocking: BLOCKING
+  idempotency: IDEMPOTENT
+  retry: SAFE_TO_RETRY
+  typical_execution_time_s: 0.1
+  stabilization_time_s: 0.0
+  valid_in_states:
+  - CONNECTED_READY_INPUT_OFF
+  - CONNECTED_READY_INPUT_ON
+  resulting_state: SAME
+  arguments:
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns:
+  - name: value
+    kind: NUMERIC
+    unit: W
+  preconditions:
+  - A selected electronic-load session is connected and synchronized.
+  postconditions:
+  - The selected session remains connected unless a communication failure occurs.
+  coupling: []
+  side_effects: []
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INSTRUMENT_REJECTED
+  - NO_ACTIVE_SESSION
+  - PROTOCOL_ERROR
+  planning_priority: PRIMARY
+- keyword: Set Remote Sense
+  signature: Set Remote Sense(enabled, alias=None)
+  purpose: Enable or disable remote sense. Input must be off when policy requires it.
+  risk_level: LOW
+  blocking: BLOCKING
+  idempotency: IDEMPOTENT
+  retry: NEVER_RETRY
+  typical_execution_time_s: 0.3
+  stabilization_time_s: 0.05
+  valid_in_states:
+  - CONNECTED_READY_INPUT_OFF
+  resulting_state: CONNECTED_READY_INPUT_OFF
+  arguments:
+  - name: enabled
+    kind: BOOLEAN
+    required: true
+    default: null
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns: []
+  preconditions:
+  - Input is OFF when the configured safety policy requires off-before-reconfiguration.
+  postconditions:
+  - The requested configuration is written and read back when write verification is enabled.
+  coupling: []
+  side_effects:
+  - Changes volatile instrument configuration.
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INDETERMINATE_OUTCOME
+  - INSTRUMENT_REJECTED
+  - INVALID_ARGUMENT
+  - NO_ACTIVE_SESSION
+  - PROTOCOL_ERROR
+  - RANGE_REJECTED
+  - UNSAFE_OPERATION
+  planning_priority: PRIMARY
+- keyword: Get Remote Sense
+  signature: Get Remote Sense(alias=None)
+  purpose: Get Remote Sense.
+  risk_level: NONE
+  blocking: BLOCKING
+  idempotency: IDEMPOTENT
+  retry: SAFE_TO_RETRY
+  typical_execution_time_s: 0.1
+  stabilization_time_s: 0.0
+  valid_in_states:
+  - CONNECTED_READY_INPUT_OFF
+  - CONNECTED_READY_INPUT_ON
+  resulting_state: SAME
+  arguments:
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns:
+  - name: value
+    kind: BOOLEAN
+  preconditions:
+  - A selected electronic-load session is connected and synchronized.
+  postconditions:
+  - The selected session remains connected unless a communication failure occurs.
+  coupling: []
+  side_effects: []
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INSTRUMENT_REJECTED
+  - NO_ACTIVE_SESSION
+  - PROTOCOL_ERROR
+  planning_priority: PRIMARY
+- keyword: Set Current Range
+  signature: Set Current Range(amperes, alias=None)
+  purpose: Set Current Range.
+  risk_level: LOW
+  blocking: BLOCKING
+  idempotency: IDEMPOTENT
+  retry: NEVER_RETRY
+  typical_execution_time_s: 0.3
+  stabilization_time_s: 0.05
+  valid_in_states:
+  - CONNECTED_READY_INPUT_OFF
+  resulting_state: CONNECTED_READY_INPUT_OFF
+  arguments:
+  - name: amperes
+    kind: NUMERIC
+    required: true
+    default: null
+    unit: A
+    range:
+    - 0
+    - 240
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns:
+  - name: result
+    kind: STRING
+    format: ROBOT_DICTIONARY
+  preconditions:
+  - Input is OFF when the configured safety policy requires off-before-reconfiguration.
+  postconditions:
+  - The requested configuration is written and read back when write verification is enabled.
+  coupling: []
+  side_effects:
+  - Changes volatile instrument configuration.
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INDETERMINATE_OUTCOME
+  - INSTRUMENT_REJECTED
+  - INVALID_ARGUMENT
+  - NO_ACTIVE_SESSION
+  - PROTOCOL_ERROR
+  - RANGE_REJECTED
+  - UNSAFE_OPERATION
+  planning_priority: PRIMARY
+- keyword: Get Current Range
+  signature: Get Current Range(alias=None)
+  purpose: Get Current Range.
+  risk_level: NONE
+  blocking: BLOCKING
+  idempotency: IDEMPOTENT
+  retry: SAFE_TO_RETRY
+  typical_execution_time_s: 0.1
+  stabilization_time_s: 0.0
+  valid_in_states:
+  - CONNECTED_READY_INPUT_OFF
+  - CONNECTED_READY_INPUT_ON
+  resulting_state: SAME
+  arguments:
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns:
+  - name: value
+    kind: NUMERIC
+    unit: A
+  preconditions:
+  - A selected electronic-load session is connected and synchronized.
+  postconditions:
+  - The selected session remains connected unless a communication failure occurs.
+  coupling: []
+  side_effects: []
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INSTRUMENT_REJECTED
+  - NO_ACTIVE_SESSION
+  - PROTOCOL_ERROR
+  planning_priority: PRIMARY
+- keyword: Set Voltage Range
+  signature: Set Voltage Range(volts, alias=None)
+  purpose: Set Voltage Range.
+  risk_level: LOW
+  blocking: BLOCKING
+  idempotency: IDEMPOTENT
+  retry: NEVER_RETRY
+  typical_execution_time_s: 0.3
+  stabilization_time_s: 0.05
+  valid_in_states:
+  - CONNECTED_READY_INPUT_OFF
+  resulting_state: CONNECTED_READY_INPUT_OFF
+  arguments:
+  - name: volts
+    kind: NUMERIC
+    required: true
+    default: null
+    unit: V
+    range:
+    - 0
+    - 500
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns:
+  - name: result
+    kind: STRING
+    format: ROBOT_DICTIONARY
+  preconditions:
+  - Input is OFF when the configured safety policy requires off-before-reconfiguration.
+  postconditions:
+  - The requested configuration is written and read back when write verification is enabled.
+  coupling: []
+  side_effects:
+  - Changes volatile instrument configuration.
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INDETERMINATE_OUTCOME
+  - INSTRUMENT_REJECTED
+  - INVALID_ARGUMENT
+  - NO_ACTIVE_SESSION
+  - PROTOCOL_ERROR
+  - RANGE_REJECTED
+  - UNSAFE_OPERATION
+  planning_priority: PRIMARY
+- keyword: Get Voltage Range
+  signature: Get Voltage Range(alias=None)
+  purpose: Get Voltage Range.
+  risk_level: NONE
+  blocking: BLOCKING
+  idempotency: IDEMPOTENT
+  retry: SAFE_TO_RETRY
+  typical_execution_time_s: 0.1
+  stabilization_time_s: 0.0
+  valid_in_states:
+  - CONNECTED_READY_INPUT_OFF
+  - CONNECTED_READY_INPUT_ON
+  resulting_state: SAME
+  arguments:
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns:
+  - name: value
+    kind: NUMERIC
+    unit: V
+  preconditions:
+  - A selected electronic-load session is connected and synchronized.
+  postconditions:
+  - The selected session remains connected unless a communication failure occurs.
+  coupling: []
+  side_effects: []
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INSTRUMENT_REJECTED
+  - NO_ACTIVE_SESSION
+  - PROTOCOL_ERROR
+  planning_priority: PRIMARY
+- keyword: Set Voltage Autorange
+  signature: Set Voltage Autorange(enabled, alias=None)
+  purpose: Set Voltage Autorange.
+  risk_level: LOW
+  blocking: BLOCKING
+  idempotency: IDEMPOTENT
+  retry: NEVER_RETRY
+  typical_execution_time_s: 0.3
+  stabilization_time_s: 0.05
+  valid_in_states:
+  - CONNECTED_READY_INPUT_OFF
+  resulting_state: CONNECTED_READY_INPUT_OFF
+  arguments:
+  - name: enabled
+    kind: BOOLEAN
+    required: true
+    default: null
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns: []
+  preconditions:
+  - Input is OFF when the configured safety policy requires off-before-reconfiguration.
+  postconditions:
+  - The requested configuration is written and read back when write verification is enabled.
+  coupling: []
+  side_effects:
+  - Changes volatile instrument configuration.
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INDETERMINATE_OUTCOME
+  - INSTRUMENT_REJECTED
+  - INVALID_ARGUMENT
+  - NO_ACTIVE_SESSION
+  - PROTOCOL_ERROR
+  - RANGE_REJECTED
+  - UNSAFE_OPERATION
+  planning_priority: PRIMARY
+- keyword: Get Voltage Autorange
+  signature: Get Voltage Autorange(alias=None)
+  purpose: Get Voltage Autorange.
+  risk_level: NONE
+  blocking: BLOCKING
+  idempotency: IDEMPOTENT
+  retry: SAFE_TO_RETRY
+  typical_execution_time_s: 0.1
+  stabilization_time_s: 0.0
+  valid_in_states:
+  - CONNECTED_READY_INPUT_OFF
+  - CONNECTED_READY_INPUT_ON
+  resulting_state: SAME
+  arguments:
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns:
+  - name: value
+    kind: BOOLEAN
+  preconditions:
+  - A selected electronic-load session is connected and synchronized.
+  postconditions:
+  - The selected session remains connected unless a communication failure occurs.
+  coupling: []
+  side_effects: []
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INSTRUMENT_REJECTED
+  - NO_ACTIVE_SESSION
+  - PROTOCOL_ERROR
+  planning_priority: PRIMARY
+- keyword: Set Current Slew Rate
+  signature: Set Current Slew Rate(rise_a_per_us, fall_a_per_us=None, alias=None)
+  purpose: Set rise and fall current slew rates. Omit fall to set both equally.
+  risk_level: LOW
+  blocking: BLOCKING
+  idempotency: IDEMPOTENT
+  retry: NEVER_RETRY
+  typical_execution_time_s: 0.3
+  stabilization_time_s: 0.05
+  valid_in_states:
+  - CONNECTED_READY_INPUT_OFF
+  resulting_state: CONNECTED_READY_INPUT_OFF
+  arguments:
+  - name: rise_a_per_us
+    kind: NUMERIC
+    required: true
+    default: null
+    unit: A/US
+  - name: fall_a_per_us
+    kind: NUMERIC
+    required: false
+    default: null
+    unit: A/US
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns:
+  - name: result
+    kind: STRING
+    format: ROBOT_DICTIONARY
+  preconditions:
+  - Input is OFF when the configured safety policy requires off-before-reconfiguration.
+  postconditions:
+  - The requested configuration is written and read back when write verification is enabled.
+  coupling: []
+  side_effects:
+  - Changes volatile instrument configuration.
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INDETERMINATE_OUTCOME
+  - INSTRUMENT_REJECTED
+  - INVALID_ARGUMENT
+  - NO_ACTIVE_SESSION
+  - PROTOCOL_ERROR
+  - RANGE_REJECTED
+  - UNSAFE_OPERATION
+  planning_priority: PRIMARY
+- keyword: Get Current Slew Rate
+  signature: Get Current Slew Rate(alias=None)
+  purpose: Get Current Slew Rate.
+  risk_level: NONE
+  blocking: BLOCKING
+  idempotency: IDEMPOTENT
+  retry: SAFE_TO_RETRY
+  typical_execution_time_s: 0.1
+  stabilization_time_s: 0.0
+  valid_in_states:
+  - CONNECTED_READY_INPUT_OFF
+  - CONNECTED_READY_INPUT_ON
+  resulting_state: SAME
+  arguments:
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns:
+  - name: result
+    kind: STRING
+    format: ROBOT_DICTIONARY
+  preconditions:
+  - A selected electronic-load session is connected and synchronized.
+  postconditions:
+  - The selected session remains connected unless a communication failure occurs.
+  coupling: []
+  side_effects: []
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INSTRUMENT_REJECTED
+  - NO_ACTIVE_SESSION
+  - PROTOCOL_ERROR
+  planning_priority: PRIMARY
+- keyword: Set Load Voltage Thresholds
+  signature: Set Load Voltage Thresholds(on_voltage, off_voltage, alias=None)
+  purpose: Set load-on and load-off voltage thresholds.
+  risk_level: LOW
+  blocking: BLOCKING
+  idempotency: IDEMPOTENT
+  retry: NEVER_RETRY
+  typical_execution_time_s: 0.3
+  stabilization_time_s: 0.05
+  valid_in_states:
+  - CONNECTED_READY_INPUT_OFF
+  resulting_state: CONNECTED_READY_INPUT_OFF
+  arguments:
+  - name: on_voltage
+    kind: NUMERIC
+    required: true
+    default: null
+    unit: V
+    range:
+    - 0
+    - 500
+  - name: off_voltage
+    kind: NUMERIC
+    required: true
+    default: null
+    unit: V
+    range:
+    - 0
+    - 500
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns:
+  - name: result
+    kind: STRING
+    format: ROBOT_DICTIONARY
+  preconditions:
+  - Input is OFF when the configured safety policy requires off-before-reconfiguration.
+  postconditions:
+  - The requested configuration is written and read back when write verification is enabled.
+  coupling: []
+  side_effects:
+  - Changes volatile instrument configuration.
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INDETERMINATE_OUTCOME
+  - INSTRUMENT_REJECTED
+  - INVALID_ARGUMENT
+  - NO_ACTIVE_SESSION
+  - PROTOCOL_ERROR
+  - RANGE_REJECTED
+  - UNSAFE_OPERATION
+  planning_priority: PRIMARY
+- keyword: Clear Electronic Load Protection
+  signature: Clear Electronic Load Protection(alias=None)
+  purpose: Clear latched protection using a short-lived purpose-specific safety token.
+  risk_level: MEDIUM
+  blocking: BLOCKING
+  idempotency: CONDITIONALLY_IDEMPOTENT
+  retry: NEVER_RETRY
+  typical_execution_time_s: 0.1
+  stabilization_time_s: 0.0
+  valid_in_states:
+  - CONNECTED_READY_INPUT_OFF
+  resulting_state: CONNECTED_READY_INPUT_OFF
+  arguments:
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns: []
+  preconditions:
+  - A selected electronic-load session is connected and synchronized.
+  postconditions:
+  - The selected session remains connected unless a communication failure occurs.
+  coupling:
+  - 'REQUIRES: Diagnose and remove the protection cause before clearing.'
+  side_effects:
+  - Clears latched protection after the physical fault has been removed.
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INSTRUMENT_REJECTED
+  - NO_ACTIVE_SESSION
+  - PROTOCOL_ERROR
+  planning_priority: PRIMARY
+- keyword: Set Short Circuit Mode
+  signature: Set Short Circuit Mode(enabled, confirmation='', alias=None)
+  purpose: Enable or disable short-circuit mode.
+  risk_level: HIGH
+  blocking: BLOCKING
+  idempotency: CONDITIONALLY_IDEMPOTENT
+  retry: NEVER_RETRY
+  typical_execution_time_s: 0.3
+  stabilization_time_s: 0.2
+  valid_in_states:
+  - CONNECTED_READY_INPUT_OFF
+  - CONNECTED_READY_INPUT_ON
+  resulting_state: SAME
+  arguments:
+  - name: enabled
+    kind: BOOLEAN
+    required: true
+    default: null
+  - name: confirmation
+    kind: STRING
+    required: false
+    default: ''
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns: []
+  preconditions:
+  - Connection policy allow_short is true before enabling.
+  - The confirmation argument equals I UNDERSTAND before enabling.
+  - The source current limit and wiring are explicitly approved for a short-circuit test.
+  postconditions:
+  - Short-circuit mode matches the requested state when verification is enabled.
+  coupling:
+  - 'REQUIRES: `Connect To Electronic Load` used allow_short=${TRUE}.'
+  - 'REQUIRES: confirmation=I UNDERSTAND when enabled=${TRUE}.'
+  side_effects:
+  - When enabled, presents a near-short load to the connected source.
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INDETERMINATE_OUTCOME
+  - INSTRUMENT_REJECTED
+  - INVALID_ARGUMENT
+  - NO_ACTIVE_SESSION
+  - PROTOCOL_ERROR
+  - RANGE_REJECTED
+  - UNSAFE_OPERATION
+  planning_priority: PRIMARY
+- keyword: Measure Voltage
+  signature: Measure Voltage(alias=None)
+  purpose: Return measured voltage in volts.
+  risk_level: NONE
+  blocking: BLOCKING
+  idempotency: IDEMPOTENT
+  retry: SAFE_TO_RETRY
+  typical_execution_time_s: 0.1
+  stabilization_time_s: 0.0
+  valid_in_states:
+  - CONNECTED_READY_INPUT_OFF
+  - CONNECTED_READY_INPUT_ON
+  resulting_state: SAME
+  arguments:
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns:
+  - name: value
+    kind: NUMERIC
+    unit: V
+  preconditions:
+  - A selected electronic-load session is connected and synchronized.
+  postconditions:
+  - The selected session remains connected unless a communication failure occurs.
+  coupling: []
+  side_effects: []
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INSTRUMENT_REJECTED
+  - INVALID_READING
+  - NO_ACTIVE_SESSION
+  - PROTOCOL_ERROR
+  planning_priority: PRIMARY
+- keyword: Measure Current
+  signature: Measure Current(alias=None)
+  purpose: Return measured current in amperes.
+  risk_level: NONE
+  blocking: BLOCKING
+  idempotency: IDEMPOTENT
+  retry: SAFE_TO_RETRY
+  typical_execution_time_s: 0.1
+  stabilization_time_s: 0.0
+  valid_in_states:
+  - CONNECTED_READY_INPUT_OFF
+  - CONNECTED_READY_INPUT_ON
+  resulting_state: SAME
+  arguments:
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns:
+  - name: value
+    kind: NUMERIC
+    unit: A
+  preconditions:
+  - A selected electronic-load session is connected and synchronized.
+  postconditions:
+  - The selected session remains connected unless a communication failure occurs.
+  coupling: []
+  side_effects: []
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INSTRUMENT_REJECTED
+  - INVALID_READING
+  - NO_ACTIVE_SESSION
+  - PROTOCOL_ERROR
+  planning_priority: PRIMARY
+- keyword: Measure Power
+  signature: Measure Power(alias=None)
+  purpose: Return measured power in watts.
+  risk_level: NONE
+  blocking: BLOCKING
+  idempotency: IDEMPOTENT
+  retry: SAFE_TO_RETRY
+  typical_execution_time_s: 0.1
+  stabilization_time_s: 0.0
+  valid_in_states:
+  - CONNECTED_READY_INPUT_OFF
+  - CONNECTED_READY_INPUT_ON
+  resulting_state: SAME
+  arguments:
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns:
+  - name: value
+    kind: NUMERIC
+    unit: W
+  preconditions:
+  - A selected electronic-load session is connected and synchronized.
+  postconditions:
+  - The selected session remains connected unless a communication failure occurs.
+  coupling: []
+  side_effects: []
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INSTRUMENT_REJECTED
+  - INVALID_READING
+  - NO_ACTIVE_SESSION
+  - PROTOCOL_ERROR
+  planning_priority: PRIMARY
+- keyword: Measure Resistance
+  signature: Measure Resistance(alias=None)
+  purpose: Return measured resistance in ohms.
+  risk_level: NONE
+  blocking: BLOCKING
+  idempotency: IDEMPOTENT
+  retry: SAFE_TO_RETRY
+  typical_execution_time_s: 0.1
+  stabilization_time_s: 0.0
+  valid_in_states:
+  - CONNECTED_READY_INPUT_OFF
+  - CONNECTED_READY_INPUT_ON
+  resulting_state: SAME
+  arguments:
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns:
+  - name: value
+    kind: NUMERIC
+    unit: OHM
+  preconditions:
+  - A selected electronic-load session is connected and synchronized.
+  postconditions:
+  - The selected session remains connected unless a communication failure occurs.
+  coupling: []
+  side_effects: []
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INSTRUMENT_REJECTED
+  - INVALID_READING
+  - NO_ACTIVE_SESSION
+  - PROTOCOL_ERROR
+  planning_priority: PRIMARY
+- keyword: Get Measurement Snapshot
+  signature: Get Measurement Snapshot(alias=None)
+  purpose: Return voltage, current, power, optional resistance, and status metadata.
+  risk_level: NONE
+  blocking: BLOCKING
+  idempotency: IDEMPOTENT
+  retry: SAFE_TO_RETRY
+  typical_execution_time_s: 0.1
+  stabilization_time_s: 0.0
+  valid_in_states:
+  - CONNECTED_READY_INPUT_OFF
+  - CONNECTED_READY_INPUT_ON
+  resulting_state: SAME
+  arguments:
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns:
+  - name: result
+    kind: STRING
+    format: ROBOT_DICTIONARY
+  preconditions:
+  - A selected electronic-load session is connected and synchronized.
+  postconditions:
+  - The selected session remains connected unless a communication failure occurs.
+  coupling: []
+  side_effects: []
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INSTRUMENT_REJECTED
+  - INVALID_READING
+  - NO_ACTIVE_SESSION
+  - PROTOCOL_ERROR
+  planning_priority: PRIMARY
+- keyword: Measurement Should Be Within Range
+  signature: Measurement Should Be Within Range(actual, minimum, maximum, name='Measurement')
+  purpose: Assert that a supplied numeric value is inclusively inside a range.
+  risk_level: NONE
+  blocking: BLOCKING
+  idempotency: IDEMPOTENT
+  retry: SAFE_TO_RETRY
+  typical_execution_time_s: 0.1
+  stabilization_time_s: 0.0
+  valid_in_states:
+  - DISCONNECTED
+  - CONNECTING
+  - CONNECTED_UNSYNCHRONIZED
+  - CONNECTED_READY_INPUT_OFF
+  - CONNECTED_READY_INPUT_ON
+  - DEGRADED
+  - RECONNECTING
+  - CLOSING
+  - FAILED
+  resulting_state: SAME
+  arguments:
+  - name: actual
+    kind: NUMERIC
+    required: true
+    default: null
+    unit: UNKNOWN
+  - name: minimum
+    kind: NUMERIC
+    required: true
+    default: null
+    unit: UNKNOWN
+  - name: maximum
+    kind: NUMERIC
+    required: true
+    default: null
+    unit: UNKNOWN
+  - name: name
+    kind: STRING
+    required: false
+    default: Measurement
+  returns: []
+  preconditions: []
+  postconditions:
+  - The selected session remains connected unless a communication failure occurs.
+  coupling: []
+  side_effects: []
+  exclusive_resources: []
+  raises:
+  - ASSERTION_FAILED
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INVALID_ARGUMENT
+  - NO_ACTIVE_SESSION
+  - PROTOCOL_ERROR
+  planning_priority: PRIMARY
+- keyword: Voltage Should Be Within Range
+  signature: Voltage Should Be Within Range(minimum, maximum, alias=None)
+  purpose: Measure voltage, assert an inclusive range, and return the reading.
+  risk_level: NONE
+  blocking: BLOCKING
+  idempotency: IDEMPOTENT
+  retry: SAFE_TO_RETRY
+  typical_execution_time_s: 0.1
+  stabilization_time_s: 0.0
+  valid_in_states:
+  - CONNECTED_READY_INPUT_OFF
+  - CONNECTED_READY_INPUT_ON
+  resulting_state: SAME
+  arguments:
+  - name: minimum
+    kind: NUMERIC
+    required: true
+    default: null
+    unit: UNKNOWN
+  - name: maximum
+    kind: NUMERIC
+    required: true
+    default: null
+    unit: UNKNOWN
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns:
+  - name: value
+    kind: NUMERIC
+    unit: V
+  preconditions:
+  - A selected electronic-load session is connected and synchronized.
+  postconditions:
+  - The selected session remains connected unless a communication failure occurs.
+  coupling: []
+  side_effects: []
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - ASSERTION_FAILED
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INSTRUMENT_REJECTED
+  - INVALID_ARGUMENT
+  - NO_ACTIVE_SESSION
+  - PROTOCOL_ERROR
+  planning_priority: PRIMARY
+- keyword: Current Should Be Within Range
+  signature: Current Should Be Within Range(minimum, maximum, alias=None)
+  purpose: Measure current, assert an inclusive range, and return the reading.
+  risk_level: NONE
+  blocking: BLOCKING
+  idempotency: IDEMPOTENT
+  retry: SAFE_TO_RETRY
+  typical_execution_time_s: 0.1
+  stabilization_time_s: 0.0
+  valid_in_states:
+  - CONNECTED_READY_INPUT_OFF
+  - CONNECTED_READY_INPUT_ON
+  resulting_state: SAME
+  arguments:
+  - name: minimum
+    kind: NUMERIC
+    required: true
+    default: null
+    unit: UNKNOWN
+  - name: maximum
+    kind: NUMERIC
+    required: true
+    default: null
+    unit: UNKNOWN
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns:
+  - name: value
+    kind: NUMERIC
+    unit: A
+  preconditions:
+  - A selected electronic-load session is connected and synchronized.
+  postconditions:
+  - The selected session remains connected unless a communication failure occurs.
+  coupling: []
+  side_effects: []
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - ASSERTION_FAILED
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INSTRUMENT_REJECTED
+  - INVALID_ARGUMENT
+  - NO_ACTIVE_SESSION
+  - PROTOCOL_ERROR
+  planning_priority: PRIMARY
+- keyword: Power Should Be Within Range
+  signature: Power Should Be Within Range(minimum, maximum, alias=None)
+  purpose: Measure power, assert an inclusive range, and return the reading.
+  risk_level: NONE
+  blocking: BLOCKING
+  idempotency: IDEMPOTENT
+  retry: SAFE_TO_RETRY
+  typical_execution_time_s: 0.1
+  stabilization_time_s: 0.0
+  valid_in_states:
+  - CONNECTED_READY_INPUT_OFF
+  - CONNECTED_READY_INPUT_ON
+  resulting_state: SAME
+  arguments:
+  - name: minimum
+    kind: NUMERIC
+    required: true
+    default: null
+    unit: UNKNOWN
+  - name: maximum
+    kind: NUMERIC
+    required: true
+    default: null
+    unit: UNKNOWN
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns:
+  - name: value
+    kind: NUMERIC
+    unit: W
+  preconditions:
+  - A selected electronic-load session is connected and synchronized.
+  postconditions:
+  - The selected session remains connected unless a communication failure occurs.
+  coupling: []
+  side_effects: []
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - ASSERTION_FAILED
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INSTRUMENT_REJECTED
+  - INVALID_ARGUMENT
+  - NO_ACTIVE_SESSION
+  - PROTOCOL_ERROR
+  planning_priority: PRIMARY
+- keyword: Wait Until Measurement Is Within Range
+  signature: Wait Until Measurement Is Within Range(measurement, minimum, maximum, timeout=10.0, interval=0.25, alias=None)
+  purpose: Poll voltage, current, power, or resistance until it enters a range.
+  risk_level: NONE
+  blocking: BLOCKING
+  idempotency: IDEMPOTENT
+  retry: SAFE_TO_RETRY
+  typical_execution_time_s: 10.0
+  stabilization_time_s: 0.0
+  valid_in_states:
+  - CONNECTED_READY_INPUT_OFF
+  - CONNECTED_READY_INPUT_ON
+  resulting_state: SAME
+  arguments:
+  - name: measurement
+    kind: ENUM
+    required: true
+    default: null
+    values:
+    - voltage
+    - current
+    - power
+    - resistance
+  - name: minimum
+    kind: NUMERIC
+    required: true
+    default: null
+    unit: UNKNOWN
+  - name: maximum
+    kind: NUMERIC
+    required: true
+    default: null
+    unit: UNKNOWN
+  - name: timeout
+    kind: DURATION
+    required: false
+    default: 10.0
+    unit: S
+    range:
+    - 0.001
+    - 86400
+  - name: interval
+    kind: DURATION
+    required: false
+    default: 0.25
+    unit: S
+    range:
+    - 0
+    - 86400
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns:
+  - name: value
+    kind: NUMERIC
+    unit: UNKNOWN
+  preconditions:
+  - A selected electronic-load session is connected and synchronized.
+  postconditions:
+  - The selected session remains connected unless a communication failure occurs.
+  coupling: []
+  side_effects: []
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - ASSERTION_FAILED
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INSTRUMENT_REJECTED
+  - INVALID_ARGUMENT
+  - INVALID_READING
+  - NO_ACTIVE_SESSION
+  - PROTOCOL_ERROR
+  - STABILIZATION_TIMEOUT
+  planning_priority: PRIMARY
+- keyword: Log Measurements To CSV
+  signature: Log Measurements To CSV(path, samples=10, interval=1.0, include_resistance=False, alias=None)
+  purpose: Record a finite number of timestamped measurement snapshots to CSV.
+  risk_level: NONE
+  blocking: BLOCKING
+  idempotency: NON_IDEMPOTENT
+  retry: SAFE_TO_RETRY
+  typical_execution_time_s: 10.0
+  stabilization_time_s: 0.0
+  valid_in_states:
+  - CONNECTED_READY_INPUT_OFF
+  - CONNECTED_READY_INPUT_ON
+  resulting_state: SAME
+  arguments:
+  - name: path
+    kind: STRING
+    required: true
+    default: null
+  - name: samples
+    kind: NUMERIC
+    required: false
+    default: 10
+    unit: '1'
+    range:
+    - 1
+    - 1000000
+  - name: interval
+    kind: DURATION
+    required: false
+    default: 1.0
+    unit: S
+    range:
+    - 0
+    - 86400
+  - name: include_resistance
+    kind: BOOLEAN
+    required: false
+    default: false
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns:
+  - name: value
+    kind: STRING
+  preconditions:
+  - A selected electronic-load session is connected and synchronized.
+  postconditions:
+  - The selected session remains connected unless a communication failure occurs.
+  coupling: []
+  side_effects:
+  - Creates parent directories and overwrites the requested CSV file.
+  - Performs repeated instrument measurements.
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  - HOST_FILESYSTEM_PATH
+  raises:
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - FILE_IO_ERROR
+  - INSTRUMENT_REJECTED
+  - INVALID_ARGUMENT
+  - INVALID_READING
+  - NO_ACTIVE_SESSION
+  - PROTOCOL_ERROR
+  planning_priority: PRIMARY
+- keyword: Configure Transient Load
+  signature: Configure Transient Load(high_level, high_dwell, low_level, low_dwell, slew_a_per_us, mode='continuous', alias=None)
+  purpose: Configure dynamic load levels, dwell times, slew, and dynamic mode.
+  risk_level: LOW
+  blocking: BLOCKING
+  idempotency: IDEMPOTENT
+  retry: NEVER_RETRY
+  typical_execution_time_s: 0.3
+  stabilization_time_s: 0.05
+  valid_in_states:
+  - CONNECTED_READY_INPUT_OFF
+  resulting_state: CONNECTED_READY_INPUT_OFF
+  arguments:
+  - name: high_level
+    kind: NUMERIC
+    required: true
+    default: null
+    unit: A
+    range:
+    - 0
+    - 240
+  - name: high_dwell
+    kind: DURATION
+    required: true
+    default: null
+    unit: S
+    range:
+    - 0
+    - 86400
+  - name: low_level
+    kind: NUMERIC
+    required: true
+    default: null
+    unit: A
+    range:
+    - 0
+    - 240
+  - name: low_dwell
+    kind: DURATION
+    required: true
+    default: null
+    unit: S
+    range:
+    - 0
+    - 86400
+  - name: slew_a_per_us
+    kind: NUMERIC
+    required: true
+    default: null
+    unit: A/US
+  - name: mode
+    kind: ENUM
+    required: false
+    default: continuous
+    values:
+    - continuous
+    - pulse
+    - toggle
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns: []
+  preconditions:
+  - Input is OFF when the configured safety policy requires off-before-reconfiguration.
+  postconditions:
+  - The requested configuration is written and read back when write verification is enabled.
+  coupling: []
+  side_effects:
+  - Changes volatile instrument configuration.
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INDETERMINATE_OUTCOME
+  - INSTRUMENT_REJECTED
+  - INVALID_ARGUMENT
+  - NO_ACTIVE_SESSION
+  - PROTOCOL_ERROR
+  - RANGE_REJECTED
+  - UNSAFE_OPERATION
+  planning_priority: PRIMARY
+- keyword: Get Transient Load Configuration
+  signature: Get Transient Load Configuration(alias=None)
+  purpose: Get Transient Load Configuration.
+  risk_level: NONE
+  blocking: BLOCKING
+  idempotency: IDEMPOTENT
+  retry: SAFE_TO_RETRY
+  typical_execution_time_s: 0.1
+  stabilization_time_s: 0.0
+  valid_in_states:
+  - CONNECTED_READY_INPUT_OFF
+  - CONNECTED_READY_INPUT_ON
+  resulting_state: SAME
+  arguments:
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns:
+  - name: result
+    kind: STRING
+    format: ROBOT_DICTIONARY
+  preconditions:
+  - A selected electronic-load session is connected and synchronized.
+  postconditions:
+  - The selected session remains connected unless a communication failure occurs.
+  coupling: []
+  side_effects: []
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INSTRUMENT_REJECTED
+  - NO_ACTIVE_SESSION
+  - PROTOCOL_ERROR
+  planning_priority: PRIMARY
+- keyword: Trigger Electronic Load
+  signature: Trigger Electronic Load(alias=None)
+  purpose: Send the SCPI trigger command.
+  risk_level: MEDIUM
+  blocking: BLOCKING
+  idempotency: NON_IDEMPOTENT
+  retry: NEVER_RETRY
+  typical_execution_time_s: 0.1
+  stabilization_time_s: 0.0
+  valid_in_states:
+  - CONNECTED_READY_INPUT_OFF
+  - CONNECTED_READY_INPUT_ON
+  resulting_state: SAME
+  arguments:
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns: []
+  preconditions:
+  - A selected electronic-load session is connected and synchronized.
+  postconditions:
+  - The selected session remains connected unless a communication failure occurs.
+  coupling: []
+  side_effects:
+  - Starts an armed transient or trigger-dependent operation.
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INDETERMINATE_OUTCOME
+  - INSTRUMENT_REJECTED
+  - NO_ACTIVE_SESSION
+  - PROTOCOL_ERROR
+  planning_priority: PRIMARY
+- keyword: Enable Peak Capture
+  signature: Enable Peak Capture(enabled=True, alias=None)
+  purpose: Enable Peak Capture.
+  risk_level: LOW
+  blocking: BLOCKING
+  idempotency: IDEMPOTENT
+  retry: NEVER_RETRY
+  typical_execution_time_s: 0.1
+  stabilization_time_s: 0.0
+  valid_in_states:
+  - CONNECTED_READY_INPUT_OFF
+  - CONNECTED_READY_INPUT_ON
+  resulting_state: SAME
+  arguments:
+  - name: enabled
+    kind: BOOLEAN
+    required: false
+    default: true
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns: []
+  preconditions:
+  - A selected electronic-load session is connected and synchronized.
+  postconditions:
+  - The selected session remains connected unless a communication failure occurs.
+  coupling: []
+  side_effects: []
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INDETERMINATE_OUTCOME
+  - INSTRUMENT_REJECTED
+  - NO_ACTIVE_SESSION
+  - PROTOCOL_ERROR
+  planning_priority: PRIMARY
+- keyword: Clear Peak Capture
+  signature: Clear Peak Capture(alias=None)
+  purpose: Clear Peak Capture.
+  risk_level: LOW
+  blocking: BLOCKING
+  idempotency: IDEMPOTENT
+  retry: NEVER_RETRY
+  typical_execution_time_s: 0.1
+  stabilization_time_s: 0.0
+  valid_in_states:
+  - CONNECTED_READY_INPUT_OFF
+  - CONNECTED_READY_INPUT_ON
+  resulting_state: SAME
+  arguments:
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns: []
+  preconditions:
+  - A selected electronic-load session is connected and synchronized.
+  postconditions:
+  - The selected session remains connected unless a communication failure occurs.
+  coupling: []
+  side_effects: []
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INDETERMINATE_OUTCOME
+  - INSTRUMENT_REJECTED
+  - NO_ACTIVE_SESSION
+  - PROTOCOL_ERROR
+  planning_priority: PRIMARY
+- keyword: Read Peak Measurements
+  signature: Read Peak Measurements(alias=None)
+  purpose: Return maximum/minimum captured voltage and current.
+  risk_level: NONE
+  blocking: BLOCKING
+  idempotency: IDEMPOTENT
+  retry: SAFE_TO_RETRY
+  typical_execution_time_s: 0.1
+  stabilization_time_s: 0.0
+  valid_in_states:
+  - CONNECTED_READY_INPUT_OFF
+  - CONNECTED_READY_INPUT_ON
+  resulting_state: SAME
+  arguments:
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns:
+  - name: result
+    kind: STRING
+    format: ROBOT_DICTIONARY
+  preconditions:
+  - A selected electronic-load session is connected and synchronized.
+  postconditions:
+  - The selected session remains connected unless a communication failure occurs.
+  coupling: []
+  side_effects: []
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INSTRUMENT_REJECTED
+  - INVALID_READING
+  - NO_ACTIVE_SESSION
+  - PROTOCOL_ERROR
+  planning_priority: PRIMARY
+- keyword: Save Electronic Load State
+  signature: Save Electronic Load State(slot, alias=None)
+  purpose: Save Electronic Load State.
+  risk_level: LOW
+  blocking: BLOCKING
+  idempotency: CONDITIONALLY_IDEMPOTENT
+  retry: NEVER_RETRY
+  typical_execution_time_s: 0.1
+  stabilization_time_s: 0.0
+  valid_in_states:
+  - CONNECTED_READY_INPUT_OFF
+  - CONNECTED_READY_INPUT_ON
+  resulting_state: SAME
+  arguments:
+  - name: slot
+    kind: NUMERIC
+    required: true
+    default: null
+    unit: '1'
+    range:
+    - 0
+    - 99
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns: []
+  preconditions:
+  - A selected electronic-load session is connected and synchronized.
+  postconditions:
+  - The selected session remains connected unless a communication failure occurs.
+  coupling: []
+  side_effects:
+  - Writes instrument nonvolatile state memory.
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INDETERMINATE_OUTCOME
+  - INSTRUMENT_REJECTED
+  - NO_ACTIVE_SESSION
+  - PROTOCOL_ERROR
+  - RANGE_REJECTED
+  planning_priority: PRIMARY
+- keyword: Recall Electronic Load State
+  signature: Recall Electronic Load State(slot, alias=None)
+  purpose: Recall Electronic Load State.
+  risk_level: HIGH
+  blocking: BLOCKING
+  idempotency: CONDITIONALLY_IDEMPOTENT
+  retry: NEVER_RETRY
+  typical_execution_time_s: 0.1
+  stabilization_time_s: 0.2
+  valid_in_states:
+  - CONNECTED_READY_INPUT_OFF
+  resulting_state: CONNECTED_READY_INPUT_OFF
+  arguments:
+  - name: slot
+    kind: NUMERIC
+    required: true
+    default: null
+    unit: '1'
+    range:
+    - 0
+    - 9
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns: []
+  preconditions:
+  - A selected electronic-load session is connected and synchronized.
+  postconditions:
+  - The selected session remains connected unless a communication failure occurs.
+  coupling:
+  - 'REQUIRES: Input OFF and saved-slot contents reviewed for the connected DUT.'
+  side_effects:
+  - Replaces active instrument configuration from a saved slot.
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INDETERMINATE_OUTCOME
+  - INSTRUMENT_REJECTED
+  - NO_ACTIVE_SESSION
+  - PROTOCOL_ERROR
+  - RANGE_REJECTED
+  - UNSAFE_OPERATION
+  planning_priority: PRIMARY
+- keyword: Reset Electronic Load
+  signature: Reset Electronic Load(alias=None)
+  purpose: Reset the instrument and resynchronize driver state.
+  risk_level: HIGH
+  blocking: BLOCKING
+  idempotency: CONDITIONALLY_IDEMPOTENT
+  retry: NEVER_RETRY
+  typical_execution_time_s: 2.0
+  stabilization_time_s: 0.5
+  valid_in_states:
+  - CONNECTED_READY_INPUT_OFF
+  - CONNECTED_READY_INPUT_ON
+  resulting_state: CONNECTED_READY_INPUT_OFF
+  arguments:
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns: []
+  preconditions:
+  - A selected electronic-load session is connected and synchronized.
+  postconditions:
+  - The selected session remains connected unless a communication failure occurs.
+  coupling: []
+  side_effects:
+  - Resets instrument configuration and then resynchronizes driver state.
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INDETERMINATE_OUTCOME
+  - INSTRUMENT_REJECTED
+  - NO_ACTIVE_SESSION
+  - PROTOCOL_ERROR
+  planning_priority: PRIMARY
+- keyword: Set Electronic Load Remote
+  signature: Set Electronic Load Remote(local_lockout=False, alias=None)
+  purpose: Set Electronic Load Remote.
+  risk_level: LOW
+  blocking: BLOCKING
+  idempotency: IDEMPOTENT
+  retry: NEVER_RETRY
+  typical_execution_time_s: 0.3
+  stabilization_time_s: 0.05
+  valid_in_states:
+  - CONNECTED_READY_INPUT_OFF
+  - CONNECTED_READY_INPUT_ON
+  resulting_state: SAME
+  arguments:
+  - name: local_lockout
+    kind: BOOLEAN
+    required: false
+    default: false
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns: []
+  preconditions:
+  - Input is OFF when the configured safety policy requires off-before-reconfiguration.
+  postconditions:
+  - The requested configuration is written and read back when write verification is enabled.
+  coupling: []
+  side_effects:
+  - Changes front-panel control ownership.
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INDETERMINATE_OUTCOME
+  - INSTRUMENT_REJECTED
+  - INVALID_ARGUMENT
+  - NO_ACTIVE_SESSION
+  - PROTOCOL_ERROR
+  - RANGE_REJECTED
+  - UNSAFE_OPERATION
+  planning_priority: PRIMARY
+- keyword: Set Electronic Load Local
+  signature: Set Electronic Load Local(alias=None)
+  purpose: Return front-panel control and resynchronize the driver state.
+  risk_level: MEDIUM
+  blocking: BLOCKING
+  idempotency: IDEMPOTENT
+  retry: NEVER_RETRY
+  typical_execution_time_s: 0.3
+  stabilization_time_s: 0.05
+  valid_in_states:
+  - CONNECTED_READY_INPUT_OFF
+  - CONNECTED_READY_INPUT_ON
+  resulting_state: SAME
+  arguments:
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns: []
+  preconditions:
+  - Input is OFF when the configured safety policy requires off-before-reconfiguration.
+  postconditions:
+  - The requested configuration is written and read back when write verification is enabled.
+  coupling: []
+  side_effects:
+  - Returns control to the front panel; an operator may then change configuration.
+  - Resynchronizes state after the command.
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INDETERMINATE_OUTCOME
+  - INSTRUMENT_REJECTED
+  - INVALID_ARGUMENT
+  - NO_ACTIVE_SESSION
+  - PROTOCOL_ERROR
+  - RANGE_REJECTED
+  - UNSAFE_OPERATION
+  planning_priority: PRIMARY
+- keyword: Query Raw SCPI
+  signature: Query Raw SCPI(command, timeout=None, alias=None)
+  purpose: Send an expert-level raw SCPI query and return its response.
+  risk_level: HIGH
+  blocking: BLOCKING
+  idempotency: CONDITIONALLY_IDEMPOTENT
+  retry: NEVER_RETRY
+  typical_execution_time_s: 0.1
+  stabilization_time_s: 0.0
+  valid_in_states:
+  - CONNECTED_READY_INPUT_OFF
+  - CONNECTED_READY_INPUT_ON
+  resulting_state: SAME
+  arguments:
+  - name: command
+    kind: STRING
+    required: true
+    default: null
+  - name: timeout
+    kind: DURATION
+    required: false
+    default: null
+    unit: S
+    range:
+    - 0.001
+    - 86400
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns:
+  - name: value
+    kind: STRING
+  preconditions:
+  - The command is reviewed and known to be a read-only SCPI query for the connected model.
+  postconditions:
+  - The selected session remains connected unless a communication failure occurs.
+  coupling:
+  - 'FORBIDS: Do not assume a command ending in question mark is non-destructive without model documentation.'
+  side_effects:
+  - May bypass typed capability semantics if the query is destructive.
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INSTRUMENT_REJECTED
+  - INVALID_ARGUMENT
+  - NO_ACTIVE_SESSION
+  - PROTOCOL_ERROR
+  - RAW_SCPI_REJECTED
+  planning_priority: DEBUG_ONLY
+- keyword: Write Raw SCPI
+  signature: Write Raw SCPI(command, timeout=None, alias=None)
+  purpose: Send an expert-level raw SCPI command. Driver safety restrictions still apply.
+  risk_level: HIGH
+  blocking: BLOCKING
+  idempotency: NON_IDEMPOTENT
+  retry: NEVER_RETRY
+  typical_execution_time_s: 0.1
+  stabilization_time_s: 0.0
+  valid_in_states:
+  - CONNECTED_READY_INPUT_OFF
+  - CONNECTED_READY_INPUT_ON
+  resulting_state: DEGRADED
+  arguments:
+  - name: command
+    kind: STRING
+    required: true
+    default: null
+  - name: timeout
+    kind: DURATION
+    required: false
+    default: null
+    unit: S
+    range:
+    - 0.001
+    - 86400
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns: []
+  preconditions:
+  - The exact command and expected state transition are reviewed for the connected model.
+  postconditions:
+  - Driver state is potentially stale until `Synchronize Electronic Load State` succeeds.
+  coupling:
+  - 'REQUIRES: Follow with `Synchronize Electronic Load State` before typed state-dependent keywords.'
+  side_effects:
+  - May alter any instrument function reachable by SCPI.
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INDETERMINATE_OUTCOME
+  - INSTRUMENT_REJECTED
+  - INVALID_ARGUMENT
+  - NO_ACTIVE_SESSION
+  - PROTOCOL_ERROR
+  - RAW_SCPI_REJECTED
+  - UNSAFE_OPERATION
+  planning_priority: DEBUG_ONLY
+- keyword: Export Diagnostic Snapshot
+  signature: Export Diagnostic Snapshot(path, alias=None)
+  purpose: Write a diagnostic snapshot as formatted UTF-8 JSON and return its path.
+  risk_level: NONE
+  blocking: BLOCKING
+  idempotency: NON_IDEMPOTENT
+  retry: SAFE_TO_RETRY
+  typical_execution_time_s: 0.1
+  stabilization_time_s: 0.0
+  valid_in_states:
+  - CONNECTED_READY_INPUT_OFF
+  - CONNECTED_READY_INPUT_ON
+  resulting_state: SAME
+  arguments:
+  - name: path
+    kind: STRING
+    required: true
+    default: null
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns:
+  - name: value
+    kind: STRING
+  preconditions:
+  - A selected electronic-load session is connected and synchronized.
+  postconditions:
+  - The selected session remains connected unless a communication failure occurs.
+  coupling: []
+  side_effects:
+  - Creates parent directories and overwrites the requested JSON file.
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  - HOST_FILESYSTEM_PATH
+  raises:
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - FILE_IO_ERROR
+  - INSTRUMENT_REJECTED
+  - NO_ACTIVE_SESSION
+  - PROTOCOL_ERROR
+  planning_priority: PRIMARY
+errors:
+- name: NO_ACTIVE_SESSION
+  class: STATE_VIOLATION
+  meaning: No selected alias exists or the requested alias is unknown.
+  detection: BK8500BRobotError states that no active electronic load exists or lists known aliases.
+  post_error_state: STATE_UNCHANGED
+  retry: NEVER_RETRY
+  recovery: Connect a load or select an alias returned by `List Electronic Load Sessions`.
+- name: DUPLICATE_ALIAS
+  class: CONFIGURATION
+  meaning: A new connection attempted to reuse an existing alias.
+  detection: BK8500BRobotError reports that the alias already exists.
+  post_error_state: STATE_UNCHANGED
+  retry: NEVER_RETRY
+  recovery: Use a unique alias or call `Disconnect Electronic Load` before reconnecting.
+- name: INVALID_ARGUMENT
+  class: CONFIGURATION
+  meaning: A keyword argument cannot be converted or violates a local constraint.
+  detection: ValueError or BK8500BRobotError identifies the invalid argument.
+  post_error_state: STATE_UNCHANGED
+  retry: NEVER_RETRY
+  recovery: Correct the argument using the capability signature and ranges, then call the keyword again.
+- name: RANGE_REJECTED
+  class: CONFIGURATION
+  meaning: A numeric value exceeds the connected model rating or a command-specific range.
+  detection: InstrumentRangeError is translated to BK8500BRobotError with requested value context.
+  post_error_state: STATE_UNCHANGED
+  retry: NEVER_RETRY
+  recovery: Read `Get Electronic Load Capabilities`, select an in-range value, and repeat configuration while input is OFF.
+- name: COMM_TIMEOUT
+  class: COMMUNICATION
+  meaning: The instrument did not complete a read or write before the configured timeout.
+  detection: ReadTimeoutError, WriteTimeoutError, or LockTimeoutError is translated to BK8500BRobotError.
+  post_error_state: STATE_UNDEFINED
+  retry: RETRY_AFTER_RESET
+  recovery: Call `Synchronize Electronic Load State`; if it fails, call `Reconnect Electronic Load`, then verify input state
+    before continuing.
+- name: CONNECTION_LOST
+  class: COMMUNICATION
+  meaning: The serial or VISA-compatible transport was lost.
+  detection: ConnectionLostError or TransportError is translated to BK8500BRobotError.
+  post_error_state: STATE_UNDEFINED
+  retry: RETRY_AFTER_RESET
+  recovery: Make the source safe independently, reconnect, identify the instrument, synchronize state, and verify input OFF.
+- name: PROTOCOL_ERROR
+  class: COMMUNICATION
+  meaning: The response is malformed, oversized, out of frame, or fails checksum validation.
+  detection: SCPIProtocolError, LegacyProtocolError, MalformedResponseError, ChecksumError, or FrameSyncError is translated
+    to BK8500BRobotError.
+  post_error_state: STATE_UNDEFINED
+  retry: RETRY_AFTER_RESET
+  recovery: Stop dependent actions, synchronize state, and reconnect if synchronization fails.
+- name: UNSUPPORTED_MODEL
+  class: CONFIGURATION
+  meaning: The identified instrument model or requested feature is unsupported.
+  detection: UnsupportedModelError or UnsupportedFeatureError is translated to BK8500BRobotError.
+  post_error_state: STATE_UNCHANGED
+  retry: NEVER_RETRY
+  recovery: Use a supported 8500B-series model/feature or update the driver after hardware qualification.
+- name: INSTRUMENT_REJECTED
+  class: HARDWARE_FAULT
+  meaning: The instrument rejected a syntactically valid command or reported a SCPI error.
+  detection: DeviceRejectedCommandError, SCPICommandError, or DeviceError is translated to BK8500BRobotError.
+  post_error_state: STATE_UNCHANGED
+  retry: NEVER_RETRY
+  recovery: Drain the error queue, inspect status and capabilities, correct the command sequence, and retry only after state
+    verification.
+- name: PROTECTION_TRIPPED
+  class: SAFETY_TRIP
+  meaning: Over-voltage, over-current, over-power, over-temperature, reverse voltage, or another protection is active.
+  detection: ProtectionTrippedError or nonzero protection flags are reported.
+  post_error_state: SAFE_STATE
+  retry: NEVER_RETRY
+  recovery: Disable the source and load input, remove the fault cause, inspect diagnostics, then call `Clear Electronic Load
+    Protection` while input is OFF.
+- name: UNSAFE_OPERATION
+  class: STATE_VIOLATION
+  meaning: The safety policy blocks the requested hazardous sequence.
+  detection: UnsafeOperationError is translated to BK8500BRobotError.
+  post_error_state: STATE_UNCHANGED
+  retry: NEVER_RETRY
+  recovery: Satisfy the documented safety preconditions; do not bypass the policy with raw SCPI.
+- name: INDETERMINATE_OUTCOME
+  class: COMMUNICATION
+  meaning: A state-changing command may have reached the instrument but readback verification failed.
+  detection: IndeterminateCommandOutcome is translated with requested operation context.
+  post_error_state: STATE_UNDEFINED
+  retry: NEVER_RETRY
+  recovery: Do not repeat the write blindly. Make the bench safe, call `Synchronize Electronic Load State`, and reconnect
+    if state cannot be proven.
+- name: ASSERTION_FAILED
+  class: CONFIGURATION
+  meaning: A measured or queried value does not satisfy the requested oracle.
+  detection: AssertionError includes actual value or expected state.
+  post_error_state: STATE_UNCHANGED
+  retry: SAFE_TO_RETRY
+  recovery: Record the failure evidence, verify setup and stabilization, and rerun only when the test procedure allows.
+- name: SELF_TEST_FAILED
+  class: HARDWARE_FAULT
+  meaning: The electronic load built-in self-test returned a nonzero code.
+  detection: AssertionError reports the returned self-test code.
+  post_error_state: REQUIRES_REINIT
+  retry: NEVER_RETRY
+  recovery: Disconnect the DUT, power-cycle or service the instrument according to its manual, then repeat identity and health
+    checks.
+- name: STABILIZATION_TIMEOUT
+  class: TRANSIENT
+  meaning: The selected measurement did not enter the requested inclusive range before timeout.
+  detection: AssertionError reports timeout, measurement type, actual value, and target range.
+  post_error_state: STATE_UNCHANGED
+  retry: SAFE_TO_RETRY
+  recovery: Increase stabilization time only when justified, correct the circuit or limits, and repeat the wait.
+- name: INVALID_READING
+  class: HARDWARE_FAULT
+  meaning: The measurement is malformed, non-finite, or unavailable for the current mode.
+  detection: MalformedResponseError or conversion failure is translated to BK8500BRobotError.
+  post_error_state: STATE_UNCHANGED
+  retry: SAFE_TO_RETRY
+  recovery: Check mode, wiring, range, and status; retry the read once, then collect diagnostics.
+- name: FILE_IO_ERROR
+  class: CONFIGURATION
+  meaning: The requested evidence file cannot be created or written.
+  detection: OSError or permission failure names the path.
+  post_error_state: STATE_UNCHANGED
+  retry: NEVER_RETRY
+  recovery: Choose a writable path with sufficient storage and repeat the export or logging keyword.
+- name: RAW_SCPI_REJECTED
+  class: STATE_VIOLATION
+  meaning: Raw SCPI violates driver command policy or uses an invalid query/write form.
+  detection: BK8500BError reports the blocked raw command.
+  post_error_state: STATE_UNCHANGED
+  retry: NEVER_RETRY
+  recovery: Use a typed keyword or obtain reviewed model-specific authorization for the raw command.
+safety:
+  dangerous_operations:
+  - keyword: Enable Electronic Load Input
+    condition: Any connected energized source can deliver unsafe current or power.
+    risk_level: HIGH
+  - keyword: Configure And Enable Load
+    condition: Requested mode or setpoint is incompatible with DUT, wiring, or source rating.
+    risk_level: HIGH
+  - keyword: Set Short Circuit Mode
+    condition: enabled is true.
+    risk_level: HIGH
+  - keyword: Recall Electronic Load State
+    condition: Saved slot contents are not proven safe for the current DUT.
+    risk_level: HIGH
+  - keyword: Reset Electronic Load
+    condition: Reset effects on input and protection state are not independently verified.
+    risk_level: HIGH
+  - keyword: Write Raw SCPI
+    condition: Command changes state or bypasses typed safety semantics.
+    risk_level: HIGH
+  forbidden_sequences:
+  - never:
+    - Enable Electronic Load Input
+    - Set Current Setpoint
+    reason: Reconfiguration must occur with input OFF under the default safety policy.
+  - never:
+    - Enable Electronic Load Input
+    - Set Voltage Setpoint
+    reason: Reconfiguration must occur with input OFF under the default safety policy.
+  - never:
+    - Enable Electronic Load Input
+    - Set Power Setpoint
+    reason: Reconfiguration must occur with input OFF under the default safety policy.
+  - never:
+    - Enable Electronic Load Input
+    - Set Resistance Setpoint
+    reason: Reconfiguration must occur with input OFF under the default safety policy.
+  - never:
+    - Enable Electronic Load Input
+    - Set Electronic Load Mode
+    reason: Mode changes while the load is active are prohibited by the default safety policy.
+  - never:
+    - Set Electronic Load Local
+    - Enable Electronic Load Input
+    reason: Front-panel changes can invalidate software assumptions; resynchronize and reverify configuration first.
+  - never:
+    - Write Raw SCPI
+    - Enable Electronic Load Input
+    reason: Raw writes can stale driver state; synchronize and verify safe configuration first.
+  - never:
+    - Set Short Circuit Mode
+    - Disconnect Electronic Load
+    reason: Disable short mode and source energy before disconnecting control.
+  required_delays:
+  - after: Enable Electronic Load Input
+    before: ANY_MEASUREMENT
+    min_delay_s: 0.2
+  - after: Configure And Enable Load
+    before: ANY_MEASUREMENT
+    min_delay_s: 0.2
+  - after: Reset Electronic Load
+    before: ANY_STATE_DEPENDENT_OPERATION
+    min_delay_s: 0.5
+  - after: Recall Electronic Load State
+    before: ANY_STATE_DEPENDENT_OPERATION
+    min_delay_s: 0.2
+  hardware_limits:
+  - model: 8500B
+    quantity: input_voltage
+    unit: V
+    max: 150
+  - model: 8500B
+    quantity: input_current
+    unit: A
+    max: 30
+  - model: 8500B
+    quantity: input_power
+    unit: W
+    max: 300
+  - model: 8502B
+    quantity: input_voltage
+    unit: V
+    max: 500
+  - model: 8502B
+    quantity: input_current
+    unit: A
+    max: 15
+  - model: 8502B
+    quantity: input_power
+    unit: W
+    max: 300
+  - model: 8510B
+    quantity: input_voltage
+    unit: V
+    max: 120
+  - model: 8510B
+    quantity: input_current
+    unit: A
+    max: 120
+  - model: 8510B
+    quantity: input_power
+    unit: W
+    max: 600
+  - model: 8514B
+    quantity: input_voltage
+    unit: V
+    max: 120
+  - model: 8514B
+    quantity: input_current
+    unit: A
+    max: 240
+  - model: 8514B
+    quantity: input_power
+    unit: W
+    max: 1500
+  - model: 8542B
+    quantity: input_voltage
+    unit: V
+    max: 150
+  - model: 8542B
+    quantity: input_current
+    unit: A
+    max: 30
+  - model: 8542B
+    quantity: input_power
+    unit: W
+    max: 150
+  safe_shutdown_sequence:
+  - Disable Electronic Load Input
+  - Set Short Circuit Mode    enabled=${FALSE}
+  - Disconnect All Electronic Loads
+  emergency_shutdown: Remove or disable source energy using an independent hardware means, then disable load input, disable
+    short mode, capture diagnostics, and disconnect sessions.
+verification_objectives:
+- id: VO-LOAD-001
+  goal: Verify connection identity and model support before energization.
+  procedure:
+  - Connect To Electronic Load    port=${LOAD_PORT}    alias=load
+  - Identify Electronic Load    alias=load
+  - Get Electronic Load Capabilities    alias=load
+  - Electronic Load Input Should Be Off    alias=load
+  oracle:
+    type: STATE_QUERY
+    measured_by: Electronic Load Input Should Be Off
+    expected: PASS
+  requires_drivers: []
+  risk_level: NONE
+  requirements_verified:
+  - LOAD-CONNECTION
+  - LOAD-IDENTITY
+  - LOAD-SAFE-START
+- id: VO-LOAD-002
+  goal: Verify constant-current loading against an external current reference.
+  procedure:
+  - ProgrammablePowerSupplyLibrary.Configure Safe Output
+  - Set Electronic Load Mode    mode=CC
+  - Set Current Protection    amperes=${CURRENT_LIMIT}
+  - Set Current Setpoint    amperes=${CURRENT_SETPOINT}
+  - Enable Electronic Load Input
+  - WAIT stabilization
+  - DmmLibrary.Measure DC Current
+  - Disable Electronic Load Input
+  oracle:
+    type: EXTERNAL_REFERENCE
+    reference: DmmLibrary current tolerance oracle
+    unit: A
+    measured_by: DmmLibrary.Measure DC Current
+  requires_drivers:
+  - ProgrammablePowerSupplyLibrary
+  - DmmLibrary
+  risk_level: HIGH
+  requirements_verified:
+  - LOAD-CC-ACCURACY
+  - LOAD-SAFE-SHUTDOWN
+- id: VO-LOAD-003
+  goal: Verify load telemetry remains inside operator-approved voltage, current, and power ranges.
+  procedure:
+  - Get Measurement Snapshot
+  - Voltage Should Be Within Range    minimum=${MIN_V}    maximum=${MAX_V}
+  - Current Should Be Within Range    minimum=${MIN_A}    maximum=${MAX_A}
+  - Power Should Be Within Range    minimum=${MIN_W}    maximum=${MAX_W}
+  oracle:
+    type: RANGE
+    min: OPERATOR_DEFINED
+    max: OPERATOR_DEFINED
+    unit: MODE_DEPENDENT
+    measured_by: Get Measurement Snapshot
+  requires_drivers: []
+  risk_level: NONE
+  requirements_verified:
+  - LOAD-TELEMETRY
+- id: VO-LOAD-004
+  goal: Verify protection blocks unsafe input enable.
+  procedure:
+  - Set Current Protection    amperes=${SAFE_LIMIT}
+  - Create Controlled Protection Condition
+  - Enable Electronic Load Input
+  - Get Electronic Load Status
+  - Disable Electronic Load Input
+  oracle:
+    type: STATE_QUERY
+    measured_by: Get Electronic Load Status
+    expected: NONZERO_PROTECTION_FLAGS_AND_INPUT_OFF
+  requires_drivers:
+  - ProgrammablePowerSupplyLibrary
+  risk_level: HIGH
+  requirements_verified:
+  - LOAD-PROTECTION
+  - LOAD-ROLLBACK
+- id: VO-LOAD-005
+  goal: Verify finite measurement logging produces the requested number of complete CSV samples.
+  procedure:
+  - Log Measurements To CSV    path=${CSV_PATH}    samples=${SAMPLES}    interval=${INTERVAL}
+  - Validate CSV Rows Externally
+  oracle:
+    type: EXACT_MATCH
+    expected: SAMPLES_COMPLETE_ROWS
+    measured_by: HOST_FILESYSTEM_VALIDATOR
+  requires_drivers: []
+  risk_level: NONE
+  requirements_verified:
+  - LOAD-EVIDENCE-CSV
+test_templates:
+- name: Safe Constant Current Load Test
+  required_drivers:
+  - BK8500BLibrary
+  - ProgrammablePowerSupplyLibrary
+  - DmmLibrary
+  estimated_duration_s: 30
+  generated_workflow:
+  - Connect and identify all instruments
+  - Verify load input OFF
+  - Configure source current and voltage limits
+  - Configure CC mode, current protection, and setpoint
+  - Enable source, then enable load
+  - Wait stabilization
+  - Measure with DMM and load telemetry
+  - Disable load, disable source, disconnect in reverse order
+- name: Electronic Load Communication Smoke Test
+  required_drivers:
+  - BK8500BLibrary
+  estimated_duration_s: 10
+  generated_workflow:
+  - Connect To Electronic Load
+  - Identify Electronic Load
+  - Run Electronic Load Health Check
+  - Get Electronic Load Status
+  - Electronic Load Input Should Be Off
+  - Disconnect Electronic Load
+- name: Long Duration Telemetry Capture
+  required_drivers:
+  - BK8500BLibrary
+  - ProgrammablePowerSupplyLibrary
+  estimated_duration_s: UNKNOWN
+  generated_workflow:
+  - Configure approved safe load
+  - Enable source and load
+  - Log Measurements To CSV with finite sample count
+  - Monitor protections
+  - Disable load and source
+  - Export Diagnostic Snapshot
+setup_teardown:
+  suite_setup:
+  - Connect To Electronic Load    port=${LOAD_PORT}    alias=${LOAD_ALIAS}
+  - Identify Electronic Load    alias=${LOAD_ALIAS}
+  - Get Electronic Load Capabilities    alias=${LOAD_ALIAS}
+  - Synchronize Electronic Load State    alias=${LOAD_ALIAS}
+  - Electronic Load Input Should Be Off    alias=${LOAD_ALIAS}
+  suite_teardown:
+  - Run Keyword And Ignore Error    Disable Electronic Load Input    alias=${LOAD_ALIAS}
+  - Run Keyword And Ignore Error    Set Short Circuit Mode    enabled=${FALSE}    alias=${LOAD_ALIAS}
+  - Run Keyword And Ignore Error    Export Diagnostic Snapshot    path=${OUTPUT_DIR}${/}load_diagnostics.json    alias=${LOAD_ALIAS}
+  - Run Keyword And Ignore Error    Disconnect All Electronic Loads
+  teardown_safe_from_any_state: true
+planning_hints:
+- Use `Get Electronic Load Capabilities` after connection and enforce exact-model voltage, current, and power limits.
+- Treat the load as an energy sink that depends on a separately controlled source; energize the source before enabling load
+  only when the wiring path is complete and safe.
+- Configure mode, ranges, protections, setpoints, thresholds, and remote sense while input is OFF.
+- Use an external calibrated DMM for production accuracy or calibration decisions; load telemetry is primarily operational
+  evidence.
+- Do not schedule two sessions against the same port or two controllers against the same physical load.
+- After raw SCPI, front-panel local control, reset, reconnect, or recall, synchronize state before any hazardous action.
+- Always disable load input before disabling the source when source behavior under open circuit is safe; otherwise follow
+  the bench-specific emergency sequence.
+limitations:
+- Real B&K 8500B-series hardware and firmware combinations are not yet HIL-qualified for this package release.
+- The public Robot library exposes serial/VISA-compatible port configuration but no Ethernet transport.
+- Exact resistance range, slew range, timing limits, and measurement accuracy are model and firmware dependent and require
+  the instrument manual or hardware evidence.
+- The driver is SUITE scoped and not thread safe; parallel keywords on the same session are unsupported.
+- Raw SCPI can bypass typed semantic intent and must be isolated to reviewed debug or model-extension workflows.
+- The RFDS-018 system contract shipped with this driver is a conservative template, not a description of an actual wired bench.
+unknown_handling:
+  literal: UNKNOWN
+  open_question_format: BK8500BLibrary.<field_path> is UNKNOWN — required for <affected planning step>.
+  conservative_defaults:
+    risk_level: HIGH
+    idempotency: NON_IDEMPOTENT
+    retry: NEVER_RETRY
+    blocking: BLOCKING
+    max_parallel_sessions: 1
+  agent_rule: Never infer an optimistic value for a field carrying UNKNOWN.
+conformance:
+  schema: ai/rfds017.schema.json
+  keyword_surface_source: BK8500BLibrary/library.py explicit @keyword decorators
+  lock_file: ai/ai_contract.lock
+  validator: scripts/verify_ai_contract.py
+  required_checks:
+  - SCHEMA_VALID
+  - EVERY_PUBLIC_KEYWORD_EXACTLY_ONCE
+  - EXACT_SIGNATURE_MATCH
+  - ERROR_REFERENCES_RESOLVE
+  - STATE_REFERENCES_RESOLVE
+  - ORACLES_PRESENT
+  - LOCK_MATCHES_PUBLIC_INTERFACE
+  contract_status: RFDS_017_V3_CONFORMANT_WITH_PROJECT_LOCAL_SCHEMA
+open_questions:
+- Exact supported firmware revision ranges are UNKNOWN pending HIL qualification.
+- Exact minimum and maximum programmable resistance values per model are UNKNOWN pending manual reconciliation and HIL evidence.
+- Exact permissible current-slew ranges per model are UNKNOWN pending manual reconciliation and HIL evidence.
+- Bench wiring, fixtures, source limits, emergency-stop hardware, and DUT ratings are UNKNOWN in the driver-only package and
+  must be completed in bench/system_ai_contract.yaml.

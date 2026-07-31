@@ -1,0 +1,30 @@
+schema: RFDS-018
+schema_version: "1.0"
+contract_status: TEMPLATE_REQUIRES_BENCH_OWNER_COMPLETION
+available_drivers:
+  - {driver_id: rf_phidget_relay, version: "26.2", contract: ai/ai_contract.yaml}
+physical_topology: UNKNOWN
+shared_resources:
+  - {id: USB_PHIDGET_DEVICE_A, exclusive: true, identity: UNKNOWN}
+  - {id: USB_PHIDGET_DEVICE_B, exclusive: true, identity: UNKNOWN}
+signal_graph: UNKNOWN
+preferred_measurement_sources: UNKNOWN
+requirement_coverage:
+  - {requirement: "select one of eight switch paths", driver: rf_phidget_relay, objective: SW-001}
+test_templates:
+  - name: safe_single_path_selection
+    steps: ["Connect Relays", "Get Relay Mapping", "Open All Relays", "Close Relay(channel)", "independently measure path", "Emergency Open All Relays", "Disconnect Relays"]
+bench_constraints:
+  operator_actions: UNKNOWN
+  safety_zones: UNKNOWN
+  maximum_simultaneous_closed_relays: 1
+  environmental_limits: UNKNOWN
+scheduling_rules:
+  resource_conflicts: ["All relay-changing keywords require exclusive RELAY_BANK ownership."]
+  driver_ordering: ["measurement source configured before Close Relay", "Emergency Open All Relays before teardown"]
+  stabilization_rules: UNKNOWN
+  parallel_execution_limit: 1
+global_safety:
+  forbidden_sequences: UNKNOWN
+  emergency_shutdown: ["Emergency Open All Relays", "Disconnect Relays", "remove bench energy according to bench procedure"]
+unknown_handling: "UNKNOWN safety-critical fields block automated relay closure until resolved and approved."

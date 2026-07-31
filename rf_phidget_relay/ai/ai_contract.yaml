@@ -1,0 +1,237 @@
+schema: RFDS-017
+schema_version: "3.0"
+contract_version: "26.02"
+identity:
+  driver_id: rf_phidget_relay
+  library_import: rf_phidget_relay.PhidgetRelayLibrary
+  library_version: "26.2"
+  instrument: "Two PhidgetInterfaceKit 0/0/4 devices forming one 8-channel switch bank"
+mental_model:
+  summary: "Eight independent logical dry-contact paths controlled through DigitalOutput channels."
+  logical_mapping:
+    "1-4": {device_role: A, physical_channels: "0-3"}
+    "5-8": {device_role: B, physical_channels: "0-3"}
+  state_semantics: {OPEN: "path not selected", CLOSED: "path selected"}
+state_machine:
+  initial: DISCONNECTED
+  states: [DISCONNECTED, CONNECTED_SAFE, CONNECTED_ACTIVE, DEGRADED]
+  transitions:
+    - {from: DISCONNECTED, keyword: Connect Relays, to: CONNECTED_SAFE, condition: open_all_on_connect=true}
+    - {from: DISCONNECTED, keyword: Connect Relays, to: CONNECTED_ACTIVE, condition: open_all_on_connect=false}
+    - {from: CONNECTED_SAFE, keyword: Close Relay, to: CONNECTED_ACTIVE}
+    - {from: CONNECTED_ACTIVE, keyword: Open All Relays, to: CONNECTED_SAFE}
+    - {from: "CONNECTED_*", keyword: Disconnect Relays, to: DISCONNECTED}
+resources:
+  consumed:
+    - {type: USB_PHIDGET, quantity: 2, identity: device_serial_number, exclusive: true}
+  provided:
+    - {type: SWITCH_PATH, names: [RELAY_CH1, RELAY_CH2, RELAY_CH3, RELAY_CH4, RELAY_CH5, RELAY_CH6, RELAY_CH7, RELAY_CH8]}
+dependencies:
+  python: ">=3.9"
+  robotframework: ">=6.1"
+  phidget22: ">=1.17"
+  host_native_driver: "Phidget22 runtime appropriate for operating system"
+defaults: &defaults
+  errors: [ValueError, RuntimeError, PhidgetException]
+  retry_policy: {automatic: false, reason: "A retry may repeat a physical switching action."}
+  exclusive_resources: [USB_PHIDGET_DEVICE_A, USB_PHIDGET_DEVICE_B, RELAY_BANK]
+capabilities:
+  - name: Connect Relays
+    signature: "Connect Relays(device_a_serial, device_b_serial, timeout_ms=5000, open_all_on_connect=true)"
+    purpose: "Attach two devices by immutable serial number and initialize eight outputs."
+    inputs: {device_a_serial: positive_integer, device_b_serial: positive_integer_distinct, timeout_ms: positive_integer, open_all_on_connect: boolean}
+    outputs: null
+    preconditions: ["state=DISCONNECTED", "both devices connected to host"]
+    postconditions: ["all eight handles attached", "state=CONNECTED_SAFE when open_all_on_connect=true"]
+    side_effects: ["opens USB handles", "may change relay outputs"]
+    risk: medium
+    timing: {worst_case_seconds: 40, basis: "8 sequential attachments times timeout_ms"}
+    stabilization_delay_seconds: 0
+    <<: *defaults
+  - name: Disconnect Relays
+    signature: "Disconnect Relays(open_all_before_disconnect=true)"
+    purpose: "Optionally request safe state and release all handles."
+    inputs: {open_all_before_disconnect: boolean}
+    outputs: null
+    preconditions: []
+    postconditions: ["state=DISCONNECTED", "all known handles have received close attempt"]
+    side_effects: ["may open relay contacts", "releases USB handles"]
+    risk: medium
+    timing: {typical_seconds: 1}
+    stabilization_delay_seconds: 0
+    <<: *defaults
+  - &single_set
+    name: Set Relay State
+    signature: "Set Relay State(channel, closed)"
+    purpose: "Set one logical channel."
+    inputs: {channel: "integer 1..8", closed: boolean_or_state_token}
+    outputs: null
+    preconditions: ["state is CONNECTED_SAFE or CONNECTED_ACTIVE", "external circuit permits requested connection"]
+    postconditions: ["selected output command state equals request"]
+    side_effects: ["changes one physical switch path"]
+    risk: high
+    timing: {typical_seconds: 0.05}
+    stabilization_delay_seconds: 0
+    <<: *defaults
+  - {<<: *single_set, name: Open Relay, signature: "Open Relay(channel)", purpose: "Open one logical channel.", inputs: {channel: "integer 1..8"}, risk: low}
+  - {<<: *single_set, name: Close Relay, signature: "Close Relay(channel)", purpose: "Close one logical channel.", inputs: {channel: "integer 1..8"}, risk: high}
+  - name: Get Relay State
+    signature: "Get Relay State(channel) -> OPEN|CLOSED"
+    purpose: "Read commanded DigitalOutput state; this is not electrical contact feedback."
+    inputs: {channel: "integer 1..8"}
+    outputs: {state: "OPEN|CLOSED"}
+    preconditions: ["connected"]
+    postconditions: []
+    side_effects: []
+    risk: low
+    timing: {typical_seconds: 0.01}
+    stabilization_delay_seconds: 0
+    <<: *defaults
+  - &assertion
+    name: Relay Should Be Open
+    signature: "Relay Should Be Open(channel)"
+    purpose: "Assert commanded output state is OPEN."
+    inputs: {channel: "integer 1..8"}
+    outputs: null
+    preconditions: ["connected"]
+    postconditions: ["fails test if command state differs"]
+    side_effects: []
+    risk: low
+    timing: {typical_seconds: 0.01}
+    stabilization_delay_seconds: 0
+    <<: *defaults
+  - {<<: *assertion, name: Relay Should Be Closed, signature: "Relay Should Be Closed(channel)", purpose: "Assert commanded output state is CLOSED."}
+  - &all_set
+    name: Open All Relays
+    signature: "Open All Relays()"
+    purpose: "Request OPEN for all eight channels, continuing after individual failures."
+    inputs: {}
+    outputs: null
+    preconditions: ["connected"]
+    postconditions: ["every channel received an open attempt"]
+    side_effects: ["changes up to eight switch paths sequentially"]
+    risk: low
+    timing: {typical_seconds: 0.2}
+    stabilization_delay_seconds: 0
+    <<: *defaults
+  - {<<: *all_set, name: Emergency Open All Relays, signature: "Emergency Open All Relays()", purpose: "Best-effort software safe-state action."}
+  - {<<: *all_set, name: Close All Relays, signature: "Close All Relays()", purpose: "Close all paths only when explicitly permitted by bench topology.", postconditions: ["every channel received a close attempt"], risk: critical}
+  - name: Set Relay Pattern
+    signature: "Set Relay Pattern(pattern)"
+    purpose: "Apply CH1..CH8 states from exactly eight binary digits."
+    inputs: {pattern: "string /^[01]{8}$/; leftmost bit is CH1"}
+    outputs: null
+    preconditions: ["connected", "complete pattern is electrically safe"]
+    postconditions: ["outputs commanded sequentially CH1 through CH8"]
+    side_effects: ["changes multiple switch paths; intermediate states are observable"]
+    risk: high
+    timing: {typical_seconds: 0.2}
+    stabilization_delay_seconds: 0
+    <<: *defaults
+  - name: Set Multiple Relays
+    signature: "Set Multiple Relays(states)"
+    purpose: "Apply a validated channel-to-state dictionary."
+    inputs: {states: "mapping of unique channels 1..8 to boolean/state token"}
+    outputs: null
+    preconditions: ["connected", "requested combination is electrically safe"]
+    postconditions: ["requested channels commanded in mapping iteration order"]
+    side_effects: ["changes multiple paths; not atomic"]
+    risk: high
+    timing: {typical_seconds: 0.2}
+    stabilization_delay_seconds: 0
+    <<: *defaults
+  - name: Get All Relay States
+    signature: "Get All Relay States() -> mapping"
+    purpose: "Return command-state readback for CH1..CH8."
+    inputs: {}
+    outputs: {states: "mapping integer channel to OPEN|CLOSED"}
+    preconditions: ["connected"]
+    postconditions: []
+    side_effects: []
+    risk: low
+    timing: {typical_seconds: 0.1}
+    stabilization_delay_seconds: 0
+    <<: *defaults
+  - name: Pulse Relay
+    signature: "Pulse Relay(channel, duration_seconds=0.5)"
+    purpose: "Close, wait, and attempt OPEN in a finally block."
+    inputs: {channel: "integer 1..8", duration_seconds: "number >=0"}
+    outputs: null
+    preconditions: ["connected", "pulse is electrically safe"]
+    postconditions: ["OPEN attempt made after pulse"]
+    side_effects: ["temporarily closes one path", "blocks current execution thread"]
+    risk: high
+    timing: {formula_seconds: "duration_seconds plus USB overhead"}
+    stabilization_delay_seconds: 0
+    <<: *defaults
+  - name: Get Relay Mapping
+    signature: "Get Relay Mapping() -> mapping"
+    purpose: "Expose logical-to-serial/output assignment."
+    inputs: {}
+    outputs: {mapping: "channel to serial and physical output string"}
+    preconditions: ["connected"]
+    postconditions: []
+    side_effects: []
+    risk: low
+    timing: {typical_seconds: 0.01}
+    stabilization_delay_seconds: 0
+    <<: *defaults
+  - name: Get Connection Status
+    signature: "Get Connection Status() -> CONNECTED|DISCONNECTED"
+    purpose: "Report whether all eight handles are registered."
+    inputs: {}
+    outputs: {status: "CONNECTED|DISCONNECTED"}
+    preconditions: []
+    postconditions: []
+    side_effects: []
+    risk: low
+    timing: {typical_seconds: 0.001}
+    stabilization_delay_seconds: 0
+    <<: *defaults
+  - name: Get Driver Information
+    signature: "Get Driver Information() -> mapping"
+    purpose: "Collect driver version, configuration, serials, and connection state as evidence."
+    inputs: {}
+    outputs: {information: mapping}
+    preconditions: []
+    postconditions: []
+    side_effects: []
+    risk: low
+    timing: {typical_seconds: 0.001}
+    stabilization_delay_seconds: 0
+    <<: *defaults
+error_catalogue:
+  INVALID_ARGUMENT: {detection: "ValueError or TypeError", recovery: "Correct input; do not retry unchanged."}
+  NOT_CONNECTED: {detection: "RuntimeError containing 'not connected'", recovery: "Resolve devices and call Connect Relays."}
+  ATTACH_FAILED: {detection: PhidgetException, recovery: "Check serial, USB, native runtime, ownership; reconnect from DISCONNECTED."}
+  PARTIAL_SWITCH_FAILURE: {detection: "aggregated RuntimeError", recovery: "Stop sequence, request Emergency Open All Relays, electrically verify safe state."}
+safety_rules:
+  safe_commanded_state: "all channels OPEN"
+  forbidden:
+    - "Never call Close All Relays unless RFDS-018 topology explicitly proves the combination safe."
+    - "Never assume command-state readback proves mechanical contacts or electrical isolation."
+    - "Never connect two sources through relay paths without independent interlock analysis."
+  emergency_workflow: ["Emergency Open All Relays", "Disconnect Relays", "remove external energy if safe state is not independently verified"]
+verification_objectives:
+  - {id: MAP-001, objective: "Verify fixed channel mapping", method: "Get Relay Mapping", pass_oracle: "CH1..4 use A/0..3 and CH5..8 use B/0..3"}
+  - {id: SAFE-001, objective: "Verify startup command state", method: "Connect then Get All Relay States", pass_oracle: "all OPEN when open_all_on_connect=true"}
+  - {id: SW-001, objective: "Verify one physical path", method: "Close Relay plus independent continuity measurement", pass_oracle: "selected path closed; all others open"}
+setup_teardown:
+  setup: "Connect Relays with two validated serial numbers; assert mapping; Open All Relays."
+  teardown: "Emergency Open All Relays; Disconnect Relays. Teardown must run even after test failure."
+limitations:
+  - "DigitalOutput getState is commanded-state readback, not auxiliary-contact feedback."
+  - "Multi-channel writes are sequential and non-transactional."
+  - "Host loss or USB loss cannot guarantee the physical contact state."
+  - "Electrical ratings, relay polarity, wiring, settling time, and mutual exclusions are bench-specific UNKNOWN values."
+planning_hints:
+  - "Prefer one closed relay at a time for DMM multiplexing."
+  - "Capture Get Driver Information and Get Relay Mapping in test evidence."
+  - "Use RFDS-018 topology to determine settling delays and legal combinations."
+unknown_handling:
+  token: UNKNOWN
+  rule: "An UNKNOWN safety-, topology-, rating-, polarity-, or timing-critical value blocks energizing/closing actions. Never guess."
+conformance:
+  capability_per_public_robot_keyword: true
+  source_required_for_planning: false
+  contract_integrity_file: ai/ai_contract.lock

@@ -1,0 +1,2 @@
+[console_scripts]
+eresistor = eresistor_driver.cli:main

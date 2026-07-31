@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bk8500-load"
+version = "26.16.0"
+description = "Robot Framework driver for B&K Precision 8500 series DC electronic loads"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+keywords = ["robotframework", "instrument", "dc load", "bk precision", "8500", "test automation"]
+classifiers = [
+  "Framework :: Robot Framework :: Library",
+  "Intended Audience :: Manufacturing",
+  "Programming Language :: Python :: 3",
+  "Topic :: Scientific/Engineering",
+]
+dependencies = ["pyserial>=3.4", "robotframework>=6.0"]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0", "pyyaml>=6.0"]
+
+[tool.setuptools]
+py-modules = ["BK8500Library"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["bk8500_load*"]
+exclude = ["tests*", "atest*", "examples*", "tools*"]
+
+[tool.setuptools.data-files]
+"share/rf_bk8500_load/ai" = [
+  "ai/README.md",
+  "ai/ai_contract.yaml",
+  "ai/ai_contract.lock",
+  "ai/system_ai_contract.example.yaml",
+  "ai/RFDS-017_AI_Driver_Contract_v3.0.md",
+  "ai/RFDS-018_AI_Test_Bench_Contract_v1.0.md",
+  "ai/RFDS-019_Robot_Framework_Driver_Call_and_Protocol_Conformance_Test_Specification_v1.1.md",
+  "ai/RFDS_Driver_Implementation_Lifecycle_v1.1.md",
+]

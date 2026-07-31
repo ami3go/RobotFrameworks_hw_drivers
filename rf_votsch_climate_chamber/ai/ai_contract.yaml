@@ -1,0 +1,2709 @@
+{
+  "schema": {
+    "id": "RFDS-017",
+    "version": "3.0",
+    "format": "JSON-compatible YAML",
+    "contract_type": "AI_DRIVER_CONTRACT"
+  },
+  "identity": {
+    "driver_name": "RF Votsch Climate Chamber",
+    "robot_library": "VotschClimateChamberLibrary",
+    "python_distribution": "robotframework-votsch-climate-chamber",
+    "python_package": "votsch_climate_chamber",
+    "release_version": "v26.02",
+    "pep440_version": "26.2",
+    "manufacturer": "Vötsch / Weiss Technik",
+    "instrument_class": "CLIMATE_CHAMBER",
+    "primary_role": "ENVIRONMENTAL_TEMPERATURE_CONTROL",
+    "supported_models": [
+      "SimServ-compatible Vötsch/Weiss chambers using the documented TCP protocol"
+    ],
+    "supported_firmware": [
+      "UNKNOWN"
+    ],
+    "transport": "TCP",
+    "default_port": 2049
+  },
+  "mental_model": {
+    "physical_object": "One environmental chamber whose internal controller exposes setpoint, measured temperature, running state, gradients, and auxiliary digital outputs over TCP.",
+    "configuration_persistence": "Chamber setpoint, gradients, running state, and auxiliary outputs are instrument state and may survive driver disconnect; local software safety limits exist only in the library instance.",
+    "blocking_behavior": "Queries and control writes are synchronous. Stabilization and dwell keywords block until success or finite timeout.",
+    "resource_ownership": "One SUITE-scoped library instance owns at most one TCP session and serializes driver operations.",
+    "concurrency": "Do not issue concurrent control keywords through the same instance. Bench planners must treat environmental control as an exclusive shared resource.",
+    "measurement_semantics": "Get Climate Chamber Temperature reports the chamber internal control sensor, not an independent calibrated DUT reference."
+  },
+  "state_machine": {
+    "initial_state": "DISCONNECTED",
+    "states": {
+      "DISCONNECTED": "No retained driver session.",
+      "CONNECTED": "A verified TCP session exists. Chamber running state is a separate physical attribute.",
+      "BUSY": "A blocking stabilization, dwell, start, or stop operation is executing.",
+      "ERROR": "Communication or physical state is uncertain and must be re-verified."
+    },
+    "transitions": [
+      {
+        "from": "DISCONNECTED",
+        "keyword": "Connect Climate Chamber",
+        "to": "CONNECTED"
+      },
+      {
+        "from": "CONNECTED",
+        "keyword": "Disconnect Climate Chamber",
+        "to": "DISCONNECTED"
+      },
+      {
+        "from": "CONNECTED",
+        "keyword": "Stop And Disconnect Climate Chamber",
+        "to": "DISCONNECTED"
+      },
+      {
+        "from": "ERROR",
+        "keyword": "Reconnect Climate Chamber",
+        "to": "CONNECTED"
+      },
+      {
+        "from": "CONNECTED",
+        "keyword": "Set Temperature And Wait",
+        "to": "BUSY",
+        "on_return": "CONNECTED"
+      },
+      {
+        "from": "CONNECTED",
+        "keyword": "Wait Until Climate Chamber Is Stable",
+        "to": "BUSY",
+        "on_return": "CONNECTED"
+      },
+      {
+        "from": "CONNECTED",
+        "keyword": "Wait For Climate Chamber Dwell",
+        "to": "BUSY",
+        "on_return": "CONNECTED"
+      }
+    ]
+  },
+  "resources": {
+    "consumed": [
+      {
+        "name": "LAN_ENDPOINT",
+        "type": "NETWORK",
+        "exclusive": false,
+        "description": "Reachable chamber IP/hostname and TCP port."
+      },
+      {
+        "name": "CLIMATE_CHAMBER_TCP_SESSION",
+        "type": "SESSION",
+        "exclusive": true,
+        "description": "One TCP protocol session owned by one library instance."
+      },
+      {
+        "name": "CLIMATE_CHAMBER_ENVIRONMENT_CONTROL",
+        "type": "PHYSICAL_ENVIRONMENT",
+        "exclusive": true,
+        "description": "Chamber volume, temperature controller, gradients, dryer, and compressed-air outputs."
+      }
+    ],
+    "provided": [
+      {
+        "name": "CONTROLLED_TEMPERATURE_ENVIRONMENT",
+        "type": "ENVIRONMENTAL_SIGNAL",
+        "unit": "degC"
+      },
+      {
+        "name": "CHAMBER_INTERNAL_TEMPERATURE_READING",
+        "type": "MEASUREMENT",
+        "unit": "degC",
+        "quality": "CONTROL_MONITORING_ONLY"
+      }
+    ]
+  },
+  "dependencies": {
+    "required_software": [
+      "Python >=3.10",
+      "Robot Framework >=7.4,<8"
+    ],
+    "required_hardware": [
+      "Compatible climate chamber",
+      "LAN path to chamber TCP service"
+    ],
+    "optional_drivers": [
+      "Independent calibrated temperature logger for accuracy verification",
+      "DUT telemetry driver for functional checks under temperature",
+      "Power supply and DMM drivers for environmental electrical tests"
+    ],
+    "drivers_commonly_before": [
+      "Relay/fixture setup driver",
+      "DUT power-control driver"
+    ],
+    "drivers_commonly_after": [
+      "DUT communication driver",
+      "DMM or DAQ measurement driver"
+    ]
+  },
+  "connection_points": {
+    "inputs": [
+      {
+        "name": "TCP_CONTROL",
+        "signal": "ETHERNET_TCP",
+        "connector": "RJ45_OR_BENCH_NETWORK",
+        "address": "${CHAMBER_IP}:2049"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "CHAMBER_VOLUME",
+        "signal": "AMBIENT_TEMPERATURE",
+        "connector": "ENVIRONMENTAL_VOLUME",
+        "unit": "degC"
+      },
+      {
+        "name": "DRYER_CONTROL",
+        "signal": "DIGITAL_CONTROL",
+        "connector": "INTERNAL_OUTPUT_8",
+        "mapping_status": "MODEL_DEPENDENT_VERIFY"
+      },
+      {
+        "name": "COMPRESSED_AIR_CONTROL",
+        "signal": "DIGITAL_CONTROL",
+        "connector": "INTERNAL_OUTPUT_7",
+        "mapping_status": "MODEL_DEPENDENT_VERIFY"
+      }
+    ]
+  },
+  "capabilities": [
+    {
+      "keyword": "Climate Chamber Setpoint Should Be",
+      "signature": "Climate Chamber Setpoint Should Be(expected, tolerance=0.05)",
+      "purpose": "Assert setpoint is within absolute tolerance of expected.",
+      "risk_level": "LOW",
+      "blocking": "BLOCKING",
+      "idempotency": "IDEMPOTENT",
+      "retry": "RETRY_AFTER_RECONNECT",
+      "typical_execution_time_s": 0.5,
+      "stabilization_time_s": 0.0,
+      "valid_in_states": [
+        "CONNECTED"
+      ],
+      "resulting_state": "SAME",
+      "arguments": [
+        {
+          "name": "expected",
+          "python_type": "float",
+          "required": true,
+          "kind": "NUMERIC",
+          "unit": "degC"
+        },
+        {
+          "name": "tolerance",
+          "python_type": "float",
+          "required": false,
+          "default_expression": "0.05",
+          "kind": "NUMERIC",
+          "unit": "degC",
+          "range": [
+            0,
+            "FINITE_MAX"
+          ]
+        }
+      ],
+      "returns": [],
+      "preconditions": [
+        "A verified session exists."
+      ],
+      "postconditions": [
+        "Keyword passes only when its stated oracle is true."
+      ],
+      "coupling": [],
+      "side_effects": [
+        "Performs a read-only query."
+      ],
+      "exclusive_resources": [
+        "CLIMATE_CHAMBER_TCP_SESSION"
+      ],
+      "raises": [
+        "NOT_CONNECTED",
+        "COMMUNICATION_TIMEOUT",
+        "PROTOCOL_ERROR",
+        "COMMAND_REJECTED",
+        "ASSERTION_FAILED",
+        "VALIDATION_ERROR"
+      ],
+      "planning_priority": "PRIMARY",
+      "planning": {
+        "operator_required": false,
+        "reboot_required": false,
+        "estimated_cost": "LOW"
+      }
+    },
+    {
+      "keyword": "Climate Chamber Should Be Connected",
+      "signature": "Climate Chamber Should Be Connected()",
+      "purpose": "Assert that a live chamber status query succeeds.",
+      "risk_level": "LOW",
+      "blocking": "BLOCKING",
+      "idempotency": "IDEMPOTENT",
+      "retry": "RETRY_AFTER_RECONNECT",
+      "typical_execution_time_s": 1.0,
+      "stabilization_time_s": 0.0,
+      "valid_in_states": [
+        "CONNECTED",
+        "ERROR"
+      ],
+      "resulting_state": "CONNECTED",
+      "arguments": [],
+      "returns": [],
+      "preconditions": [
+        "A retained session exists."
+      ],
+      "postconditions": [
+        "A real communication check has passed."
+      ],
+      "coupling": [],
+      "side_effects": [
+        "Sends a harmless status query."
+      ],
+      "exclusive_resources": [
+        "CLIMATE_CHAMBER_TCP_SESSION"
+      ],
+      "raises": [
+        "NOT_CONNECTED",
+        "COMMUNICATION_TIMEOUT",
+        "PROTOCOL_ERROR",
+        "ASSERTION_FAILED"
+      ],
+      "planning_priority": "PRIMARY",
+      "planning": {
+        "operator_required": false,
+        "reboot_required": false,
+        "estimated_cost": "LOW"
+      }
+    },
+    {
+      "keyword": "Climate Chamber Should Be Running",
+      "signature": "Climate Chamber Should Be Running()",
+      "purpose": "Assert running-state readback is true.",
+      "risk_level": "LOW",
+      "blocking": "BLOCKING",
+      "idempotency": "IDEMPOTENT",
+      "retry": "RETRY_AFTER_RECONNECT",
+      "typical_execution_time_s": 0.5,
+      "stabilization_time_s": 0.0,
+      "valid_in_states": [
+        "CONNECTED"
+      ],
+      "resulting_state": "SAME",
+      "arguments": [],
+      "returns": [],
+      "preconditions": [
+        "A verified session exists."
+      ],
+      "postconditions": [
+        "Keyword passes only when its stated oracle is true."
+      ],
+      "coupling": [],
+      "side_effects": [
+        "Performs a read-only query."
+      ],
+      "exclusive_resources": [
+        "CLIMATE_CHAMBER_TCP_SESSION"
+      ],
+      "raises": [
+        "NOT_CONNECTED",
+        "COMMUNICATION_TIMEOUT",
+        "PROTOCOL_ERROR",
+        "COMMAND_REJECTED",
+        "ASSERTION_FAILED",
+        "VALIDATION_ERROR"
+      ],
+      "planning_priority": "PRIMARY",
+      "planning": {
+        "operator_required": false,
+        "reboot_required": false,
+        "estimated_cost": "LOW"
+      }
+    },
+    {
+      "keyword": "Climate Chamber Should Be Stopped",
+      "signature": "Climate Chamber Should Be Stopped()",
+      "purpose": "Assert running-state readback is false.",
+      "risk_level": "LOW",
+      "blocking": "BLOCKING",
+      "idempotency": "IDEMPOTENT",
+      "retry": "RETRY_AFTER_RECONNECT",
+      "typical_execution_time_s": 0.5,
+      "stabilization_time_s": 0.0,
+      "valid_in_states": [
+        "CONNECTED"
+      ],
+      "resulting_state": "SAME",
+      "arguments": [],
+      "returns": [],
+      "preconditions": [
+        "A verified session exists."
+      ],
+      "postconditions": [
+        "Keyword passes only when its stated oracle is true."
+      ],
+      "coupling": [],
+      "side_effects": [
+        "Performs a read-only query."
+      ],
+      "exclusive_resources": [
+        "CLIMATE_CHAMBER_TCP_SESSION"
+      ],
+      "raises": [
+        "NOT_CONNECTED",
+        "COMMUNICATION_TIMEOUT",
+        "PROTOCOL_ERROR",
+        "COMMAND_REJECTED",
+        "ASSERTION_FAILED",
+        "VALIDATION_ERROR"
+      ],
+      "planning_priority": "PRIMARY",
+      "planning": {
+        "operator_required": false,
+        "reboot_required": false,
+        "estimated_cost": "LOW"
+      }
+    },
+    {
+      "keyword": "Climate Chamber Temperature Should Be",
+      "signature": "Climate Chamber Temperature Should Be(expected, tolerance=0.1)",
+      "purpose": "Assert measured temperature is within absolute tolerance of expected.",
+      "risk_level": "LOW",
+      "blocking": "BLOCKING",
+      "idempotency": "IDEMPOTENT",
+      "retry": "RETRY_AFTER_RECONNECT",
+      "typical_execution_time_s": 0.5,
+      "stabilization_time_s": 0.0,
+      "valid_in_states": [
+        "CONNECTED"
+      ],
+      "resulting_state": "SAME",
+      "arguments": [
+        {
+          "name": "expected",
+          "python_type": "float",
+          "required": true,
+          "kind": "NUMERIC",
+          "unit": "degC"
+        },
+        {
+          "name": "tolerance",
+          "python_type": "float",
+          "required": false,
+          "default_expression": "0.1",
+          "kind": "NUMERIC",
+          "unit": "degC",
+          "range": [
+            0,
+            "FINITE_MAX"
+          ]
+        }
+      ],
+      "returns": [],
+      "preconditions": [
+        "A verified session exists."
+      ],
+      "postconditions": [
+        "Keyword passes only when its stated oracle is true."
+      ],
+      "coupling": [],
+      "side_effects": [
+        "Performs a read-only query."
+      ],
+      "exclusive_resources": [
+        "CLIMATE_CHAMBER_TCP_SESSION"
+      ],
+      "raises": [
+        "NOT_CONNECTED",
+        "COMMUNICATION_TIMEOUT",
+        "PROTOCOL_ERROR",
+        "COMMAND_REJECTED",
+        "ASSERTION_FAILED",
+        "VALIDATION_ERROR"
+      ],
+      "planning_priority": "PRIMARY",
+      "planning": {
+        "operator_required": false,
+        "reboot_required": false,
+        "estimated_cost": "LOW"
+      }
+    },
+    {
+      "keyword": "Climate Chamber Temperature Should Be Within",
+      "signature": "Climate Chamber Temperature Should Be Within(minimum, maximum)",
+      "purpose": "Assert measured temperature lies inside an inclusive range.",
+      "risk_level": "LOW",
+      "blocking": "BLOCKING",
+      "idempotency": "IDEMPOTENT",
+      "retry": "RETRY_AFTER_RECONNECT",
+      "typical_execution_time_s": 0.5,
+      "stabilization_time_s": 0.0,
+      "valid_in_states": [
+        "CONNECTED"
+      ],
+      "resulting_state": "SAME",
+      "arguments": [
+        {
+          "name": "minimum",
+          "python_type": "float",
+          "required": true,
+          "kind": "NUMERIC",
+          "unit": "degC"
+        },
+        {
+          "name": "maximum",
+          "python_type": "float",
+          "required": true,
+          "kind": "NUMERIC",
+          "unit": "degC"
+        }
+      ],
+      "returns": [],
+      "preconditions": [
+        "A verified session exists."
+      ],
+      "postconditions": [
+        "Keyword passes only when its stated oracle is true."
+      ],
+      "coupling": [],
+      "side_effects": [
+        "Performs a read-only query."
+      ],
+      "exclusive_resources": [
+        "CLIMATE_CHAMBER_TCP_SESSION"
+      ],
+      "raises": [
+        "NOT_CONNECTED",
+        "COMMUNICATION_TIMEOUT",
+        "PROTOCOL_ERROR",
+        "COMMAND_REJECTED",
+        "ASSERTION_FAILED",
+        "VALIDATION_ERROR"
+      ],
+      "planning_priority": "PRIMARY",
+      "planning": {
+        "operator_required": false,
+        "reboot_required": false,
+        "estimated_cost": "LOW"
+      }
+    },
+    {
+      "keyword": "Connect Climate Chamber",
+      "signature": "Connect Climate Chamber(ip, temperature_min, temperature_max, port=2049, timeout=None, response_timeout=None, retries=2, retry_delay='500 milliseconds', verify_writes=None, tcp_keepalive=True, replace_existing=False)",
+      "purpose": "Create, verify, and retain one TCP session to the configured chamber.",
+      "risk_level": "MEDIUM",
+      "blocking": "BLOCKING",
+      "idempotency": "CONDITIONALLY_IDEMPOTENT",
+      "retry": "RETRY_AFTER_CONFIGURATION_CHECK",
+      "typical_execution_time_s": 3.0,
+      "stabilization_time_s": 0.0,
+      "valid_in_states": [
+        "DISCONNECTED"
+      ],
+      "resulting_state": "CONNECTED",
+      "arguments": [
+        {
+          "name": "ip",
+          "python_type": "str",
+          "required": true,
+          "kind": "STRING",
+          "semantic": "IPv4, IPv6-resolvable hostname, or DNS name"
+        },
+        {
+          "name": "temperature_min",
+          "python_type": "float",
+          "required": true,
+          "kind": "NUMERIC",
+          "unit": "degC"
+        },
+        {
+          "name": "temperature_max",
+          "python_type": "float",
+          "required": true,
+          "kind": "NUMERIC",
+          "unit": "degC"
+        },
+        {
+          "name": "port",
+          "python_type": "int",
+          "required": false,
+          "default_expression": "2049",
+          "kind": "INTEGER",
+          "range": [
+            1,
+            65535
+          ]
+        },
+        {
+          "name": "timeout",
+          "python_type": "str | float | None",
+          "required": false,
+          "default_expression": "None",
+          "kind": "DURATION",
+          "unit": "s"
+        },
+        {
+          "name": "response_timeout",
+          "python_type": "str | float | None",
+          "required": false,
+          "default_expression": "None",
+          "kind": "DURATION",
+          "unit": "s"
+        },
+        {
+          "name": "retries",
+          "python_type": "int",
+          "required": false,
+          "default_expression": "2",
+          "kind": "INTEGER",
+          "range": [
+            0,
+            "UNKNOWN_MAX"
+          ]
+        },
+        {
+          "name": "retry_delay",
+          "python_type": "str | float",
+          "required": false,
+          "default_expression": "'500 milliseconds'",
+          "kind": "DURATION",
+          "unit": "s"
+        },
+        {
+          "name": "verify_writes",
+          "python_type": "bool | str | None",
+          "required": false,
+          "default_expression": "None",
+          "kind": "BOOLEAN"
+        },
+        {
+          "name": "tcp_keepalive",
+          "python_type": "bool | str",
+          "required": false,
+          "default_expression": "True",
+          "kind": "BOOLEAN"
+        },
+        {
+          "name": "replace_existing",
+          "python_type": "bool | str",
+          "required": false,
+          "default_expression": "False",
+          "kind": "BOOLEAN"
+        }
+      ],
+      "returns": [
+        {
+          "name": "identification",
+          "kind": "STRING"
+        }
+      ],
+      "preconditions": [
+        "IP address or hostname is known.",
+        "Local safety limits are approved for the chamber and DUT.",
+        "No active session exists unless replace_existing is true."
+      ],
+      "postconditions": [
+        "A verified TCP session is retained.",
+        "Identification was read successfully."
+      ],
+      "coupling": [
+        "MUTEX: Only one active TCP session is supported by one library instance."
+      ],
+      "side_effects": [
+        "Opens a TCP connection.",
+        "May disconnect and replace an existing session when replace_existing is true."
+      ],
+      "exclusive_resources": [
+        "LAN_ENDPOINT",
+        "CLIMATE_CHAMBER_TCP_SESSION"
+      ],
+      "raises": [
+        "ALREADY_CONNECTED",
+        "CONNECTION_FAILED",
+        "COMMUNICATION_TIMEOUT",
+        "PROTOCOL_ERROR",
+        "VALIDATION_ERROR"
+      ],
+      "planning_priority": "PRIMARY",
+      "planning": {
+        "operator_required": false,
+        "reboot_required": false,
+        "estimated_cost": "LOW"
+      }
+    },
+    {
+      "keyword": "Disconnect Climate Chamber",
+      "signature": "Disconnect Climate Chamber(stop=None, strict=False)",
+      "purpose": "Optionally stop the chamber and close the retained TCP session.",
+      "risk_level": "MEDIUM",
+      "blocking": "BLOCKING",
+      "idempotency": "IDEMPOTENT",
+      "retry": "SAFE_TO_RETRY",
+      "typical_execution_time_s": 2.0,
+      "stabilization_time_s": 0.0,
+      "valid_in_states": [
+        "DISCONNECTED",
+        "CONNECTED",
+        "ERROR"
+      ],
+      "resulting_state": "DISCONNECTED",
+      "arguments": [
+        {
+          "name": "stop",
+          "python_type": "bool | str | None",
+          "required": false,
+          "default_expression": "None",
+          "kind": "BOOLEAN"
+        },
+        {
+          "name": "strict",
+          "python_type": "bool | str",
+          "required": false,
+          "default_expression": "False",
+          "kind": "BOOLEAN"
+        }
+      ],
+      "returns": [],
+      "preconditions": [],
+      "postconditions": [
+        "No retained session remains."
+      ],
+      "coupling": [],
+      "side_effects": [
+        "May stop environmental control when stop is true.",
+        "Closes the TCP socket."
+      ],
+      "exclusive_resources": [
+        "CLIMATE_CHAMBER_TCP_SESSION",
+        "CLIMATE_CHAMBER_ENVIRONMENT_CONTROL"
+      ],
+      "raises": [
+        "TEARDOWN_PARTIAL_FAILURE",
+        "COMMUNICATION_TIMEOUT"
+      ],
+      "planning_priority": "PRIMARY",
+      "planning": {
+        "operator_required": false,
+        "reboot_required": false,
+        "estimated_cost": "LOW"
+      }
+    },
+    {
+      "keyword": "Get Climate Chamber Compressed Air",
+      "signature": "Get Climate Chamber Compressed Air()",
+      "purpose": "Read the compressed-air digital output state.",
+      "risk_level": "LOW",
+      "blocking": "BLOCKING",
+      "idempotency": "IDEMPOTENT",
+      "retry": "RETRY_AFTER_RECONNECT",
+      "typical_execution_time_s": 0.5,
+      "stabilization_time_s": 0.0,
+      "valid_in_states": [
+        "CONNECTED"
+      ],
+      "resulting_state": "SAME",
+      "arguments": [],
+      "returns": [
+        {
+          "name": "enabled",
+          "kind": "BOOLEAN"
+        }
+      ],
+      "preconditions": [
+        "A verified session exists."
+      ],
+      "postconditions": [
+        "No intended chamber state change."
+      ],
+      "coupling": [],
+      "side_effects": [
+        "Sends one or more read-only protocol queries."
+      ],
+      "exclusive_resources": [
+        "CLIMATE_CHAMBER_TCP_SESSION"
+      ],
+      "raises": [
+        "NOT_CONNECTED",
+        "COMMUNICATION_TIMEOUT",
+        "PROTOCOL_ERROR",
+        "COMMAND_REJECTED"
+      ],
+      "planning_priority": "SECONDARY",
+      "planning": {
+        "operator_required": false,
+        "reboot_required": false,
+        "estimated_cost": "LOW"
+      }
+    },
+    {
+      "keyword": "Get Climate Chamber Connection Statistics",
+      "signature": "Get Climate Chamber Connection Statistics()",
+      "purpose": "Return communication, failure, reconnect, and last-response diagnostics.",
+      "risk_level": "LOW",
+      "blocking": "NON_BLOCKING",
+      "idempotency": "IDEMPOTENT",
+      "retry": "SAFE_TO_RETRY",
+      "typical_execution_time_s": 0.01,
+      "stabilization_time_s": 0.0,
+      "valid_in_states": [
+        "CONNECTED",
+        "ERROR"
+      ],
+      "resulting_state": "SAME",
+      "arguments": [],
+      "returns": [
+        {
+          "name": "statistics",
+          "kind": "DICTIONARY"
+        }
+      ],
+      "preconditions": [
+        "A retained session exists."
+      ],
+      "postconditions": [
+        "No chamber state changes."
+      ],
+      "coupling": [],
+      "side_effects": [],
+      "exclusive_resources": [],
+      "raises": [
+        "NOT_CONNECTED"
+      ],
+      "planning_priority": "DEBUG_ONLY",
+      "planning": {
+        "operator_required": false,
+        "reboot_required": false,
+        "estimated_cost": "LOW"
+      }
+    },
+    {
+      "keyword": "Get Climate Chamber Cooling Gradient",
+      "signature": "Get Climate Chamber Cooling Gradient()",
+      "purpose": "Read the configured cooling gradient.",
+      "risk_level": "LOW",
+      "blocking": "BLOCKING",
+      "idempotency": "IDEMPOTENT",
+      "retry": "RETRY_AFTER_RECONNECT",
+      "typical_execution_time_s": 0.5,
+      "stabilization_time_s": 0.0,
+      "valid_in_states": [
+        "CONNECTED"
+      ],
+      "resulting_state": "SAME",
+      "arguments": [],
+      "returns": [
+        {
+          "name": "gradient",
+          "kind": "NUMERIC",
+          "unit": "degC/min"
+        }
+      ],
+      "preconditions": [
+        "A verified session exists."
+      ],
+      "postconditions": [
+        "No intended chamber state change."
+      ],
+      "coupling": [],
+      "side_effects": [
+        "Sends one or more read-only protocol queries."
+      ],
+      "exclusive_resources": [
+        "CLIMATE_CHAMBER_TCP_SESSION"
+      ],
+      "raises": [
+        "NOT_CONNECTED",
+        "COMMUNICATION_TIMEOUT",
+        "PROTOCOL_ERROR",
+        "COMMAND_REJECTED"
+      ],
+      "planning_priority": "SECONDARY",
+      "planning": {
+        "operator_required": false,
+        "reboot_required": false,
+        "estimated_cost": "LOW"
+      }
+    },
+    {
+      "keyword": "Get Climate Chamber Dryer",
+      "signature": "Get Climate Chamber Dryer()",
+      "purpose": "Read the dryer digital output state.",
+      "risk_level": "LOW",
+      "blocking": "BLOCKING",
+      "idempotency": "IDEMPOTENT",
+      "retry": "RETRY_AFTER_RECONNECT",
+      "typical_execution_time_s": 0.5,
+      "stabilization_time_s": 0.0,
+      "valid_in_states": [
+        "CONNECTED"
+      ],
+      "resulting_state": "SAME",
+      "arguments": [],
+      "returns": [
+        {
+          "name": "enabled",
+          "kind": "BOOLEAN"
+        }
+      ],
+      "preconditions": [
+        "A verified session exists."
+      ],
+      "postconditions": [
+        "No intended chamber state change."
+      ],
+      "coupling": [],
+      "side_effects": [
+        "Sends one or more read-only protocol queries."
+      ],
+      "exclusive_resources": [
+        "CLIMATE_CHAMBER_TCP_SESSION"
+      ],
+      "raises": [
+        "NOT_CONNECTED",
+        "COMMUNICATION_TIMEOUT",
+        "PROTOCOL_ERROR",
+        "COMMAND_REJECTED"
+      ],
+      "planning_priority": "SECONDARY",
+      "planning": {
+        "operator_required": false,
+        "reboot_required": false,
+        "estimated_cost": "LOW"
+      }
+    },
+    {
+      "keyword": "Get Climate Chamber Health",
+      "signature": "Get Climate Chamber Health()",
+      "purpose": "Read identity, running state, temperatures, status, and communication statistics.",
+      "risk_level": "LOW",
+      "blocking": "BLOCKING",
+      "idempotency": "IDEMPOTENT",
+      "retry": "RETRY_AFTER_RECONNECT",
+      "typical_execution_time_s": 3.0,
+      "stabilization_time_s": 0.0,
+      "valid_in_states": [
+        "CONNECTED"
+      ],
+      "resulting_state": "SAME",
+      "arguments": [],
+      "returns": [
+        {
+          "name": "health",
+          "kind": "DICTIONARY"
+        }
+      ],
+      "preconditions": [
+        "A verified session exists."
+      ],
+      "postconditions": [
+        "No intended chamber state change."
+      ],
+      "coupling": [],
+      "side_effects": [
+        "Sends one or more read-only protocol queries."
+      ],
+      "exclusive_resources": [
+        "CLIMATE_CHAMBER_TCP_SESSION"
+      ],
+      "raises": [
+        "NOT_CONNECTED",
+        "COMMUNICATION_TIMEOUT",
+        "PROTOCOL_ERROR",
+        "COMMAND_REJECTED"
+      ],
+      "planning_priority": "SECONDARY",
+      "planning": {
+        "operator_required": false,
+        "reboot_required": false,
+        "estimated_cost": "LOW"
+      }
+    },
+    {
+      "keyword": "Get Climate Chamber Heating Gradient",
+      "signature": "Get Climate Chamber Heating Gradient()",
+      "purpose": "Read the configured heating gradient.",
+      "risk_level": "LOW",
+      "blocking": "BLOCKING",
+      "idempotency": "IDEMPOTENT",
+      "retry": "RETRY_AFTER_RECONNECT",
+      "typical_execution_time_s": 0.5,
+      "stabilization_time_s": 0.0,
+      "valid_in_states": [
+        "CONNECTED"
+      ],
+      "resulting_state": "SAME",
+      "arguments": [],
+      "returns": [
+        {
+          "name": "gradient",
+          "kind": "NUMERIC",
+          "unit": "degC/min"
+        }
+      ],
+      "preconditions": [
+        "A verified session exists."
+      ],
+      "postconditions": [
+        "No intended chamber state change."
+      ],
+      "coupling": [],
+      "side_effects": [
+        "Sends one or more read-only protocol queries."
+      ],
+      "exclusive_resources": [
+        "CLIMATE_CHAMBER_TCP_SESSION"
+      ],
+      "raises": [
+        "NOT_CONNECTED",
+        "COMMUNICATION_TIMEOUT",
+        "PROTOCOL_ERROR",
+        "COMMAND_REJECTED"
+      ],
+      "planning_priority": "SECONDARY",
+      "planning": {
+        "operator_required": false,
+        "reboot_required": false,
+        "estimated_cost": "LOW"
+      }
+    },
+    {
+      "keyword": "Get Climate Chamber Identification",
+      "signature": "Get Climate Chamber Identification()",
+      "purpose": "Read model, serial number, and manufacturing year.",
+      "risk_level": "LOW",
+      "blocking": "BLOCKING",
+      "idempotency": "IDEMPOTENT",
+      "retry": "RETRY_AFTER_RECONNECT",
+      "typical_execution_time_s": 0.5,
+      "stabilization_time_s": 0.0,
+      "valid_in_states": [
+        "CONNECTED"
+      ],
+      "resulting_state": "SAME",
+      "arguments": [],
+      "returns": [
+        {
+          "name": "identification",
+          "kind": "STRING"
+        }
+      ],
+      "preconditions": [
+        "A verified session exists."
+      ],
+      "postconditions": [
+        "No intended chamber state change."
+      ],
+      "coupling": [],
+      "side_effects": [
+        "Sends one or more read-only protocol queries."
+      ],
+      "exclusive_resources": [
+        "CLIMATE_CHAMBER_TCP_SESSION"
+      ],
+      "raises": [
+        "NOT_CONNECTED",
+        "COMMUNICATION_TIMEOUT",
+        "PROTOCOL_ERROR",
+        "COMMAND_REJECTED"
+      ],
+      "planning_priority": "PRIMARY",
+      "planning": {
+        "operator_required": false,
+        "reboot_required": false,
+        "estimated_cost": "LOW"
+      }
+    },
+    {
+      "keyword": "Get Climate Chamber Library Version",
+      "signature": "Get Climate Chamber Library Version()",
+      "purpose": "Return the installed driver release label.",
+      "risk_level": "LOW",
+      "blocking": "NON_BLOCKING",
+      "idempotency": "IDEMPOTENT",
+      "retry": "SAFE_TO_RETRY",
+      "typical_execution_time_s": 0.001,
+      "stabilization_time_s": 0.0,
+      "valid_in_states": [
+        "DISCONNECTED",
+        "CONNECTED",
+        "BUSY",
+        "ERROR"
+      ],
+      "resulting_state": "SAME",
+      "arguments": [],
+      "returns": [
+        {
+          "name": "release_version",
+          "kind": "STRING",
+          "example": "v26.02"
+        }
+      ],
+      "preconditions": [],
+      "postconditions": [
+        "Returns the immutable package release label."
+      ],
+      "coupling": [],
+      "side_effects": [],
+      "exclusive_resources": [],
+      "raises": [],
+      "planning_priority": "PRIMARY",
+      "planning": {
+        "operator_required": false,
+        "reboot_required": false,
+        "estimated_cost": "LOW"
+      }
+    },
+    {
+      "keyword": "Get Climate Chamber Manufacturing Year",
+      "signature": "Get Climate Chamber Manufacturing Year()",
+      "purpose": "Read the chamber manufacturing year.",
+      "risk_level": "LOW",
+      "blocking": "BLOCKING",
+      "idempotency": "IDEMPOTENT",
+      "retry": "RETRY_AFTER_RECONNECT",
+      "typical_execution_time_s": 0.5,
+      "stabilization_time_s": 0.0,
+      "valid_in_states": [
+        "CONNECTED"
+      ],
+      "resulting_state": "SAME",
+      "arguments": [],
+      "returns": [
+        {
+          "name": "year",
+          "kind": "STRING"
+        }
+      ],
+      "preconditions": [
+        "A verified session exists."
+      ],
+      "postconditions": [
+        "No intended chamber state change."
+      ],
+      "coupling": [],
+      "side_effects": [
+        "Sends one or more read-only protocol queries."
+      ],
+      "exclusive_resources": [
+        "CLIMATE_CHAMBER_TCP_SESSION"
+      ],
+      "raises": [
+        "NOT_CONNECTED",
+        "COMMUNICATION_TIMEOUT",
+        "PROTOCOL_ERROR",
+        "COMMAND_REJECTED"
+      ],
+      "planning_priority": "SECONDARY",
+      "planning": {
+        "operator_required": false,
+        "reboot_required": false,
+        "estimated_cost": "LOW"
+      }
+    },
+    {
+      "keyword": "Get Climate Chamber Model",
+      "signature": "Get Climate Chamber Model()",
+      "purpose": "Read the chamber model or test-system type.",
+      "risk_level": "LOW",
+      "blocking": "BLOCKING",
+      "idempotency": "IDEMPOTENT",
+      "retry": "RETRY_AFTER_RECONNECT",
+      "typical_execution_time_s": 0.5,
+      "stabilization_time_s": 0.0,
+      "valid_in_states": [
+        "CONNECTED"
+      ],
+      "resulting_state": "SAME",
+      "arguments": [],
+      "returns": [
+        {
+          "name": "model",
+          "kind": "STRING"
+        }
+      ],
+      "preconditions": [
+        "A verified session exists."
+      ],
+      "postconditions": [
+        "No intended chamber state change."
+      ],
+      "coupling": [],
+      "side_effects": [
+        "Sends one or more read-only protocol queries."
+      ],
+      "exclusive_resources": [
+        "CLIMATE_CHAMBER_TCP_SESSION"
+      ],
+      "raises": [
+        "NOT_CONNECTED",
+        "COMMUNICATION_TIMEOUT",
+        "PROTOCOL_ERROR",
+        "COMMAND_REJECTED"
+      ],
+      "planning_priority": "SECONDARY",
+      "planning": {
+        "operator_required": false,
+        "reboot_required": false,
+        "estimated_cost": "LOW"
+      }
+    },
+    {
+      "keyword": "Get Climate Chamber Serial Number",
+      "signature": "Get Climate Chamber Serial Number()",
+      "purpose": "Read the chamber serial number.",
+      "risk_level": "LOW",
+      "blocking": "BLOCKING",
+      "idempotency": "IDEMPOTENT",
+      "retry": "RETRY_AFTER_RECONNECT",
+      "typical_execution_time_s": 0.5,
+      "stabilization_time_s": 0.0,
+      "valid_in_states": [
+        "CONNECTED"
+      ],
+      "resulting_state": "SAME",
+      "arguments": [],
+      "returns": [
+        {
+          "name": "serial_number",
+          "kind": "STRING"
+        }
+      ],
+      "preconditions": [
+        "A verified session exists."
+      ],
+      "postconditions": [
+        "No intended chamber state change."
+      ],
+      "coupling": [],
+      "side_effects": [
+        "Sends one or more read-only protocol queries."
+      ],
+      "exclusive_resources": [
+        "CLIMATE_CHAMBER_TCP_SESSION"
+      ],
+      "raises": [
+        "NOT_CONNECTED",
+        "COMMUNICATION_TIMEOUT",
+        "PROTOCOL_ERROR",
+        "COMMAND_REJECTED"
+      ],
+      "planning_priority": "SECONDARY",
+      "planning": {
+        "operator_required": false,
+        "reboot_required": false,
+        "estimated_cost": "LOW"
+      }
+    },
+    {
+      "keyword": "Get Climate Chamber Setpoint",
+      "signature": "Get Climate Chamber Setpoint()",
+      "purpose": "Read the active temperature setpoint.",
+      "risk_level": "LOW",
+      "blocking": "BLOCKING",
+      "idempotency": "IDEMPOTENT",
+      "retry": "RETRY_AFTER_RECONNECT",
+      "typical_execution_time_s": 0.5,
+      "stabilization_time_s": 0.0,
+      "valid_in_states": [
+        "CONNECTED"
+      ],
+      "resulting_state": "SAME",
+      "arguments": [],
+      "returns": [
+        {
+          "name": "setpoint",
+          "kind": "NUMERIC",
+          "unit": "degC"
+        }
+      ],
+      "preconditions": [
+        "A verified session exists."
+      ],
+      "postconditions": [
+        "No intended chamber state change."
+      ],
+      "coupling": [],
+      "side_effects": [
+        "Sends one or more read-only protocol queries."
+      ],
+      "exclusive_resources": [
+        "CLIMATE_CHAMBER_TCP_SESSION"
+      ],
+      "raises": [
+        "NOT_CONNECTED",
+        "COMMUNICATION_TIMEOUT",
+        "PROTOCOL_ERROR",
+        "COMMAND_REJECTED"
+      ],
+      "planning_priority": "SECONDARY",
+      "planning": {
+        "operator_required": false,
+        "reboot_required": false,
+        "estimated_cost": "LOW"
+      }
+    },
+    {
+      "keyword": "Get Climate Chamber Status",
+      "signature": "Get Climate Chamber Status()",
+      "purpose": "Read the chamber status field.",
+      "risk_level": "LOW",
+      "blocking": "BLOCKING",
+      "idempotency": "IDEMPOTENT",
+      "retry": "RETRY_AFTER_RECONNECT",
+      "typical_execution_time_s": 0.5,
+      "stabilization_time_s": 0.0,
+      "valid_in_states": [
+        "CONNECTED"
+      ],
+      "resulting_state": "SAME",
+      "arguments": [],
+      "returns": [
+        {
+          "name": "status",
+          "kind": "STRING"
+        }
+      ],
+      "preconditions": [
+        "A verified session exists."
+      ],
+      "postconditions": [
+        "No intended chamber state change."
+      ],
+      "coupling": [],
+      "side_effects": [
+        "Sends one or more read-only protocol queries."
+      ],
+      "exclusive_resources": [
+        "CLIMATE_CHAMBER_TCP_SESSION"
+      ],
+      "raises": [
+        "NOT_CONNECTED",
+        "COMMUNICATION_TIMEOUT",
+        "PROTOCOL_ERROR",
+        "COMMAND_REJECTED"
+      ],
+      "planning_priority": "PRIMARY",
+      "planning": {
+        "operator_required": false,
+        "reboot_required": false,
+        "estimated_cost": "LOW"
+      }
+    },
+    {
+      "keyword": "Get Climate Chamber Temperature",
+      "signature": "Get Climate Chamber Temperature()",
+      "purpose": "Read the chamber internal measured temperature.",
+      "risk_level": "LOW",
+      "blocking": "BLOCKING",
+      "idempotency": "IDEMPOTENT",
+      "retry": "RETRY_AFTER_RECONNECT",
+      "typical_execution_time_s": 0.5,
+      "stabilization_time_s": 0.0,
+      "valid_in_states": [
+        "CONNECTED"
+      ],
+      "resulting_state": "SAME",
+      "arguments": [],
+      "returns": [
+        {
+          "name": "temperature",
+          "kind": "NUMERIC",
+          "unit": "degC"
+        }
+      ],
+      "preconditions": [
+        "A verified session exists."
+      ],
+      "postconditions": [
+        "No intended chamber state change."
+      ],
+      "coupling": [],
+      "side_effects": [
+        "Sends one or more read-only protocol queries."
+      ],
+      "exclusive_resources": [
+        "CLIMATE_CHAMBER_TCP_SESSION"
+      ],
+      "raises": [
+        "NOT_CONNECTED",
+        "COMMUNICATION_TIMEOUT",
+        "PROTOCOL_ERROR",
+        "COMMAND_REJECTED"
+      ],
+      "planning_priority": "PRIMARY",
+      "planning": {
+        "operator_required": false,
+        "reboot_required": false,
+        "estimated_cost": "LOW"
+      }
+    },
+    {
+      "keyword": "Get Climate Chamber Temperature Limits",
+      "signature": "Get Climate Chamber Temperature Limits()",
+      "purpose": "Return the local software setpoint safety limits.",
+      "risk_level": "LOW",
+      "blocking": "BLOCKING",
+      "idempotency": "IDEMPOTENT",
+      "retry": "RETRY_AFTER_RECONNECT",
+      "typical_execution_time_s": 0.5,
+      "stabilization_time_s": 0.0,
+      "valid_in_states": [
+        "CONNECTED"
+      ],
+      "resulting_state": "SAME",
+      "arguments": [],
+      "returns": [
+        {
+          "name": "limits",
+          "kind": "DICTIONARY",
+          "unit": "degC"
+        }
+      ],
+      "preconditions": [
+        "A verified session exists."
+      ],
+      "postconditions": [
+        "No intended chamber state change."
+      ],
+      "coupling": [],
+      "side_effects": [
+        "Sends one or more read-only protocol queries."
+      ],
+      "exclusive_resources": [
+        "CLIMATE_CHAMBER_TCP_SESSION"
+      ],
+      "raises": [
+        "NOT_CONNECTED",
+        "COMMUNICATION_TIMEOUT",
+        "PROTOCOL_ERROR",
+        "COMMAND_REJECTED"
+      ],
+      "planning_priority": "PRIMARY",
+      "planning": {
+        "operator_required": false,
+        "reboot_required": false,
+        "estimated_cost": "LOW"
+      }
+    },
+    {
+      "keyword": "Reconnect Climate Chamber",
+      "signature": "Reconnect Climate Chamber()",
+      "purpose": "Reopen and verify the current chamber session without changing setpoint or running state.",
+      "risk_level": "MEDIUM",
+      "blocking": "BLOCKING",
+      "idempotency": "IDEMPOTENT",
+      "retry": "RETRY_AFTER_CONFIGURATION_CHECK",
+      "typical_execution_time_s": 3.0,
+      "stabilization_time_s": 0.0,
+      "valid_in_states": [
+        "CONNECTED",
+        "ERROR"
+      ],
+      "resulting_state": "CONNECTED",
+      "arguments": [],
+      "returns": [
+        {
+          "name": "verified",
+          "kind": "BOOLEAN"
+        }
+      ],
+      "preconditions": [
+        "A previous session configuration exists."
+      ],
+      "postconditions": [
+        "Communication verification succeeds."
+      ],
+      "coupling": [],
+      "side_effects": [
+        "Closes and reopens the TCP socket."
+      ],
+      "exclusive_resources": [
+        "CLIMATE_CHAMBER_TCP_SESSION"
+      ],
+      "raises": [
+        "NOT_CONNECTED",
+        "CONNECTION_FAILED",
+        "COMMUNICATION_TIMEOUT",
+        "PROTOCOL_ERROR"
+      ],
+      "planning_priority": "PRIMARY",
+      "planning": {
+        "operator_required": false,
+        "reboot_required": false,
+        "estimated_cost": "LOW"
+      }
+    },
+    {
+      "keyword": "Set Climate Chamber Compressed Air",
+      "signature": "Set Climate Chamber Compressed Air(enabled)",
+      "purpose": "Set and verify the chamber compressed-air digital output.",
+      "risk_level": "HIGH",
+      "blocking": "BLOCKING",
+      "idempotency": "IDEMPOTENT",
+      "retry": "SAFE_TO_RETRY_AFTER_STATE_CHECK",
+      "typical_execution_time_s": 2.0,
+      "stabilization_time_s": 1.0,
+      "valid_in_states": [
+        "CONNECTED"
+      ],
+      "resulting_state": "SAME",
+      "arguments": [
+        {
+          "name": "enabled",
+          "python_type": "bool | str",
+          "required": true,
+          "kind": "BOOLEAN"
+        }
+      ],
+      "returns": [
+        {
+          "name": "confirmed_state",
+          "kind": "BOOLEAN"
+        }
+      ],
+      "preconditions": [
+        "Output mapping has been confirmed for the target chamber model.",
+        "External pneumatic or dryer system is safe to actuate."
+      ],
+      "postconditions": [
+        "Digital output readback matches request when verification is enabled."
+      ],
+      "coupling": [
+        "REQUIRES: Auxiliary output mapping and connected utility safety are confirmed by the operator."
+      ],
+      "side_effects": [
+        "Actuates chamber auxiliary hardware."
+      ],
+      "exclusive_resources": [
+        "CLIMATE_CHAMBER_TCP_SESSION",
+        "CLIMATE_CHAMBER_ENVIRONMENT_CONTROL"
+      ],
+      "raises": [
+        "NOT_CONNECTED",
+        "COMMUNICATION_TIMEOUT",
+        "PROTOCOL_ERROR",
+        "COMMAND_REJECTED",
+        "VALIDATION_ERROR"
+      ],
+      "planning_priority": "SECONDARY",
+      "planning": {
+        "operator_required": true,
+        "reboot_required": false,
+        "estimated_cost": "LOW"
+      }
+    },
+    {
+      "keyword": "Set Climate Chamber Cooling Gradient",
+      "signature": "Set Climate Chamber Cooling Gradient(celsius_per_minute)",
+      "purpose": "Set and read back the cooling gradient.",
+      "risk_level": "MEDIUM",
+      "blocking": "BLOCKING",
+      "idempotency": "IDEMPOTENT",
+      "retry": "SAFE_TO_RETRY_AFTER_STATE_CHECK",
+      "typical_execution_time_s": 1.0,
+      "stabilization_time_s": 0.0,
+      "valid_in_states": [
+        "CONNECTED"
+      ],
+      "resulting_state": "SAME",
+      "arguments": [
+        {
+          "name": "celsius_per_minute",
+          "python_type": "float",
+          "required": true,
+          "kind": "NUMERIC",
+          "unit": "degC/min",
+          "range": [
+            0.01,
+            3.5
+          ]
+        }
+      ],
+      "returns": [
+        {
+          "name": "confirmed_gradient",
+          "kind": "NUMERIC",
+          "unit": "degC/min"
+        }
+      ],
+      "preconditions": [
+        "Requested gradient is within supported range 0.01 to 3.5 degC/min."
+      ],
+      "postconditions": [
+        "Readback is within configured verification tolerance when enabled."
+      ],
+      "coupling": [],
+      "side_effects": [
+        "Changes future chamber temperature ramp behavior."
+      ],
+      "exclusive_resources": [
+        "CLIMATE_CHAMBER_TCP_SESSION",
+        "CLIMATE_CHAMBER_ENVIRONMENT_CONTROL"
+      ],
+      "raises": [
+        "NOT_CONNECTED",
+        "COMMUNICATION_TIMEOUT",
+        "PROTOCOL_ERROR",
+        "COMMAND_REJECTED",
+        "VALIDATION_ERROR"
+      ],
+      "planning_priority": "SECONDARY",
+      "planning": {
+        "operator_required": false,
+        "reboot_required": false,
+        "estimated_cost": "LOW"
+      }
+    },
+    {
+      "keyword": "Set Climate Chamber Dryer",
+      "signature": "Set Climate Chamber Dryer(enabled)",
+      "purpose": "Set and verify the chamber dryer digital output.",
+      "risk_level": "HIGH",
+      "blocking": "BLOCKING",
+      "idempotency": "IDEMPOTENT",
+      "retry": "SAFE_TO_RETRY_AFTER_STATE_CHECK",
+      "typical_execution_time_s": 2.0,
+      "stabilization_time_s": 1.0,
+      "valid_in_states": [
+        "CONNECTED"
+      ],
+      "resulting_state": "SAME",
+      "arguments": [
+        {
+          "name": "enabled",
+          "python_type": "bool | str",
+          "required": true,
+          "kind": "BOOLEAN"
+        }
+      ],
+      "returns": [
+        {
+          "name": "confirmed_state",
+          "kind": "BOOLEAN"
+        }
+      ],
+      "preconditions": [
+        "Output mapping has been confirmed for the target chamber model.",
+        "External pneumatic or dryer system is safe to actuate."
+      ],
+      "postconditions": [
+        "Digital output readback matches request when verification is enabled."
+      ],
+      "coupling": [
+        "REQUIRES: Auxiliary output mapping and connected utility safety are confirmed by the operator."
+      ],
+      "side_effects": [
+        "Actuates chamber auxiliary hardware."
+      ],
+      "exclusive_resources": [
+        "CLIMATE_CHAMBER_TCP_SESSION",
+        "CLIMATE_CHAMBER_ENVIRONMENT_CONTROL"
+      ],
+      "raises": [
+        "NOT_CONNECTED",
+        "COMMUNICATION_TIMEOUT",
+        "PROTOCOL_ERROR",
+        "COMMAND_REJECTED",
+        "VALIDATION_ERROR"
+      ],
+      "planning_priority": "SECONDARY",
+      "planning": {
+        "operator_required": true,
+        "reboot_required": false,
+        "estimated_cost": "LOW"
+      }
+    },
+    {
+      "keyword": "Set Climate Chamber Heating Gradient",
+      "signature": "Set Climate Chamber Heating Gradient(celsius_per_minute)",
+      "purpose": "Set and read back the heating gradient.",
+      "risk_level": "MEDIUM",
+      "blocking": "BLOCKING",
+      "idempotency": "IDEMPOTENT",
+      "retry": "SAFE_TO_RETRY_AFTER_STATE_CHECK",
+      "typical_execution_time_s": 1.0,
+      "stabilization_time_s": 0.0,
+      "valid_in_states": [
+        "CONNECTED"
+      ],
+      "resulting_state": "SAME",
+      "arguments": [
+        {
+          "name": "celsius_per_minute",
+          "python_type": "float",
+          "required": true,
+          "kind": "NUMERIC",
+          "unit": "degC/min",
+          "range": [
+            0.01,
+            5.0
+          ]
+        }
+      ],
+      "returns": [
+        {
+          "name": "confirmed_gradient",
+          "kind": "NUMERIC",
+          "unit": "degC/min"
+        }
+      ],
+      "preconditions": [
+        "Requested gradient is within supported range 0.01 to 5.0 degC/min."
+      ],
+      "postconditions": [
+        "Readback is within configured verification tolerance when enabled."
+      ],
+      "coupling": [],
+      "side_effects": [
+        "Changes future chamber temperature ramp behavior."
+      ],
+      "exclusive_resources": [
+        "CLIMATE_CHAMBER_TCP_SESSION",
+        "CLIMATE_CHAMBER_ENVIRONMENT_CONTROL"
+      ],
+      "raises": [
+        "NOT_CONNECTED",
+        "COMMUNICATION_TIMEOUT",
+        "PROTOCOL_ERROR",
+        "COMMAND_REJECTED",
+        "VALIDATION_ERROR"
+      ],
+      "planning_priority": "SECONDARY",
+      "planning": {
+        "operator_required": false,
+        "reboot_required": false,
+        "estimated_cost": "LOW"
+      }
+    },
+    {
+      "keyword": "Set Climate Chamber Temperature",
+      "signature": "Set Climate Chamber Temperature(celsius)",
+      "purpose": "Set and read back a temperature setpoint within local software safety limits.",
+      "risk_level": "HIGH",
+      "blocking": "BLOCKING",
+      "idempotency": "IDEMPOTENT",
+      "retry": "SAFE_TO_RETRY_AFTER_STATE_CHECK",
+      "typical_execution_time_s": 1.0,
+      "stabilization_time_s": 0.0,
+      "valid_in_states": [
+        "CONNECTED"
+      ],
+      "resulting_state": "SAME",
+      "arguments": [
+        {
+          "name": "celsius",
+          "python_type": "float",
+          "required": true,
+          "kind": "NUMERIC",
+          "unit": "degC",
+          "range": "LOCAL_LIMITS"
+        }
+      ],
+      "returns": [
+        {
+          "name": "confirmed_setpoint",
+          "kind": "NUMERIC",
+          "unit": "degC"
+        }
+      ],
+      "preconditions": [
+        "A verified session exists.",
+        "Requested value is within configured local limits.",
+        "DUT and fixture are rated for the requested temperature."
+      ],
+      "postconditions": [
+        "Readback is within configured verification tolerance when write verification is enabled."
+      ],
+      "coupling": [
+        "REQUIRES: Chamber, fixture, and DUT temperature ratings are verified before environmental control changes."
+      ],
+      "side_effects": [
+        "Changes the chamber setpoint immediately.",
+        "If the chamber is running, the environment may begin changing immediately."
+      ],
+      "exclusive_resources": [
+        "CLIMATE_CHAMBER_TCP_SESSION",
+        "CLIMATE_CHAMBER_ENVIRONMENT_CONTROL"
+      ],
+      "raises": [
+        "NOT_CONNECTED",
+        "COMMUNICATION_TIMEOUT",
+        "PROTOCOL_ERROR",
+        "COMMAND_REJECTED",
+        "SAFETY_LIMIT_VIOLATION",
+        "VALIDATION_ERROR"
+      ],
+      "planning_priority": "PRIMARY",
+      "planning": {
+        "operator_required": true,
+        "reboot_required": false,
+        "estimated_cost": "LOW"
+      }
+    },
+    {
+      "keyword": "Set Climate Chamber Temperature Limits",
+      "signature": "Set Climate Chamber Temperature Limits(minimum, maximum)",
+      "purpose": "Change local software setpoint limits without altering the chamber setpoint.",
+      "risk_level": "MEDIUM",
+      "blocking": "NON_BLOCKING",
+      "idempotency": "IDEMPOTENT",
+      "retry": "SAFE_TO_RETRY",
+      "typical_execution_time_s": 0.01,
+      "stabilization_time_s": 0.0,
+      "valid_in_states": [
+        "CONNECTED"
+      ],
+      "resulting_state": "SAME",
+      "arguments": [
+        {
+          "name": "minimum",
+          "python_type": "float",
+          "required": true,
+          "kind": "NUMERIC",
+          "unit": "degC"
+        },
+        {
+          "name": "maximum",
+          "python_type": "float",
+          "required": true,
+          "kind": "NUMERIC",
+          "unit": "degC"
+        }
+      ],
+      "returns": [
+        {
+          "name": "limits",
+          "kind": "DICTIONARY",
+          "unit": "degC"
+        }
+      ],
+      "preconditions": [
+        "Minimum is lower than maximum.",
+        "Limits are approved for the chamber, fixture, and DUT."
+      ],
+      "postconditions": [
+        "Future out-of-range setpoints are rejected locally."
+      ],
+      "coupling": [],
+      "side_effects": [
+        "Changes only local driver safety configuration."
+      ],
+      "exclusive_resources": [],
+      "raises": [
+        "NOT_CONNECTED",
+        "SAFETY_LIMIT_VIOLATION",
+        "VALIDATION_ERROR"
+      ],
+      "planning_priority": "PRIMARY",
+      "planning": {
+        "operator_required": false,
+        "reboot_required": false,
+        "estimated_cost": "LOW"
+      }
+    },
+    {
+      "keyword": "Set Temperature And Wait",
+      "signature": "Set Temperature And Wait(target, dwell='0 seconds', tolerance=0.8, poll_interval='10 seconds', timeout='4 hours', stable_samples=1, start_chamber=True)",
+      "purpose": "Set target, optionally start, wait for stable samples, optionally dwell, and return final temperature.",
+      "risk_level": "HIGH",
+      "blocking": "BLOCKING",
+      "idempotency": "CONDITIONALLY_IDEMPOTENT",
+      "retry": "OPERATOR_DECISION",
+      "typical_execution_time_s": 14400.0,
+      "stabilization_time_s": 0.0,
+      "valid_in_states": [
+        "CONNECTED"
+      ],
+      "resulting_state": "SAME",
+      "arguments": [
+        {
+          "name": "target",
+          "python_type": "float",
+          "required": true,
+          "kind": "NUMERIC",
+          "unit": "degC",
+          "range": "LOCAL_LIMITS"
+        },
+        {
+          "name": "dwell",
+          "python_type": "str | float",
+          "required": false,
+          "default_expression": "'0 seconds'",
+          "kind": "DURATION",
+          "unit": "s",
+          "range": [
+            0,
+            "FINITE_MAX"
+          ]
+        },
+        {
+          "name": "tolerance",
+          "python_type": "float",
+          "required": false,
+          "default_expression": "0.8",
+          "kind": "NUMERIC",
+          "unit": "degC",
+          "range": [
+            0,
+            "FINITE_MAX"
+          ]
+        },
+        {
+          "name": "poll_interval",
+          "python_type": "str | float",
+          "required": false,
+          "default_expression": "'10 seconds'",
+          "kind": "DURATION",
+          "unit": "s",
+          "range": [
+            ">0",
+            "FINITE_MAX"
+          ]
+        },
+        {
+          "name": "timeout",
+          "python_type": "str | float",
+          "required": false,
+          "default_expression": "'4 hours'",
+          "kind": "DURATION",
+          "unit": "s",
+          "range": [
+            ">0",
+            "FINITE_MAX"
+          ]
+        },
+        {
+          "name": "stable_samples",
+          "python_type": "int",
+          "required": false,
+          "default_expression": "1",
+          "kind": "INTEGER",
+          "range": [
+            1,
+            "FINITE_MAX"
+          ]
+        },
+        {
+          "name": "start_chamber",
+          "python_type": "bool | str",
+          "required": false,
+          "default_expression": "True",
+          "kind": "BOOLEAN"
+        }
+      ],
+      "returns": [
+        {
+          "name": "final_temperature",
+          "kind": "NUMERIC",
+          "unit": "degC"
+        }
+      ],
+      "preconditions": [
+        "Target is within local limits.",
+        "Finite timeout is configured.",
+        "DUT and fixture can tolerate the complete environmental transition and dwell."
+      ],
+      "postconditions": [
+        "Requested number of consecutive samples met tolerance before optional dwell completes."
+      ],
+      "coupling": [
+        "REQUIRES: Chamber, fixture, and DUT temperature ratings are verified before environmental control changes."
+      ],
+      "side_effects": [
+        "Changes setpoint.",
+        "May start chamber control.",
+        "Blocks for stabilization and dwell."
+      ],
+      "exclusive_resources": [
+        "CLIMATE_CHAMBER_TCP_SESSION",
+        "CLIMATE_CHAMBER_ENVIRONMENT_CONTROL"
+      ],
+      "raises": [
+        "NOT_CONNECTED",
+        "COMMUNICATION_TIMEOUT",
+        "PROTOCOL_ERROR",
+        "COMMAND_REJECTED",
+        "SAFETY_LIMIT_VIOLATION",
+        "VALIDATION_ERROR",
+        "STABILIZATION_TIMEOUT"
+      ],
+      "planning_priority": "PRIMARY",
+      "planning": {
+        "operator_required": true,
+        "reboot_required": false,
+        "estimated_cost": "LOW"
+      }
+    },
+    {
+      "keyword": "Start Climate Chamber",
+      "signature": "Start Climate Chamber()",
+      "purpose": "Start manual chamber environmental control.",
+      "risk_level": "HIGH",
+      "blocking": "BLOCKING",
+      "idempotency": "IDEMPOTENT",
+      "retry": "SAFE_TO_RETRY_AFTER_STATE_CHECK",
+      "typical_execution_time_s": 10.0,
+      "stabilization_time_s": 1.0,
+      "valid_in_states": [
+        "CONNECTED"
+      ],
+      "resulting_state": "SAME",
+      "arguments": [],
+      "returns": [],
+      "preconditions": [
+        "A verified session exists.",
+        "Setpoint and local limits are approved.",
+        "DUT and fixture are ready for environmental change."
+      ],
+      "postconditions": [
+        "Running-state readback is true when write verification is enabled."
+      ],
+      "coupling": [
+        "REQUIRES: Chamber, fixture, and DUT temperature ratings are verified before environmental control changes."
+      ],
+      "side_effects": [
+        "Starts heating or cooling toward the configured setpoint."
+      ],
+      "exclusive_resources": [
+        "CLIMATE_CHAMBER_TCP_SESSION",
+        "CLIMATE_CHAMBER_ENVIRONMENT_CONTROL"
+      ],
+      "raises": [
+        "NOT_CONNECTED",
+        "COMMUNICATION_TIMEOUT",
+        "PROTOCOL_ERROR",
+        "COMMAND_REJECTED",
+        "STATE_CHANGE_TIMEOUT"
+      ],
+      "planning_priority": "PRIMARY",
+      "planning": {
+        "operator_required": true,
+        "reboot_required": false,
+        "estimated_cost": "LOW"
+      }
+    },
+    {
+      "keyword": "Stop And Disconnect Climate Chamber",
+      "signature": "Stop And Disconnect Climate Chamber()",
+      "purpose": "Execute the ordered safe teardown sequence: stop, then disconnect.",
+      "risk_level": "MEDIUM",
+      "blocking": "BLOCKING",
+      "idempotency": "IDEMPOTENT",
+      "retry": "SAFE_TO_RETRY",
+      "typical_execution_time_s": 12.0,
+      "stabilization_time_s": 0.0,
+      "valid_in_states": [
+        "DISCONNECTED",
+        "CONNECTED",
+        "ERROR"
+      ],
+      "resulting_state": "DISCONNECTED",
+      "arguments": [],
+      "returns": [],
+      "preconditions": [],
+      "postconditions": [
+        "Disconnect is attempted even when stop fails.",
+        "No retained adapter session remains."
+      ],
+      "coupling": [],
+      "side_effects": [
+        "Stops chamber control when reachable.",
+        "Closes the TCP session."
+      ],
+      "exclusive_resources": [
+        "CLIMATE_CHAMBER_TCP_SESSION",
+        "CLIMATE_CHAMBER_ENVIRONMENT_CONTROL"
+      ],
+      "raises": [
+        "TEARDOWN_PARTIAL_FAILURE"
+      ],
+      "planning_priority": "PRIMARY",
+      "planning": {
+        "operator_required": false,
+        "reboot_required": false,
+        "estimated_cost": "LOW"
+      }
+    },
+    {
+      "keyword": "Stop Climate Chamber",
+      "signature": "Stop Climate Chamber()",
+      "purpose": "Stop manual chamber environmental control.",
+      "risk_level": "MEDIUM",
+      "blocking": "BLOCKING",
+      "idempotency": "IDEMPOTENT",
+      "retry": "SAFE_TO_RETRY_AFTER_STATE_CHECK",
+      "typical_execution_time_s": 10.0,
+      "stabilization_time_s": 0.0,
+      "valid_in_states": [
+        "CONNECTED",
+        "ERROR"
+      ],
+      "resulting_state": "SAME",
+      "arguments": [],
+      "returns": [],
+      "preconditions": [
+        "A retained session exists."
+      ],
+      "postconditions": [
+        "Running-state readback is false when write verification is enabled."
+      ],
+      "coupling": [],
+      "side_effects": [
+        "Stops active heating/cooling control; chamber temperature may remain hazardous."
+      ],
+      "exclusive_resources": [
+        "CLIMATE_CHAMBER_TCP_SESSION",
+        "CLIMATE_CHAMBER_ENVIRONMENT_CONTROL"
+      ],
+      "raises": [
+        "NOT_CONNECTED",
+        "COMMUNICATION_TIMEOUT",
+        "PROTOCOL_ERROR",
+        "COMMAND_REJECTED",
+        "STATE_CHANGE_TIMEOUT"
+      ],
+      "planning_priority": "PRIMARY",
+      "planning": {
+        "operator_required": false,
+        "reboot_required": false,
+        "estimated_cost": "LOW"
+      }
+    },
+    {
+      "keyword": "Wait For Climate Chamber Dwell",
+      "signature": "Wait For Climate Chamber Dwell(duration, poll_interval='1 minute')",
+      "purpose": "Hold execution for a finite dwell period while periodically reading temperature.",
+      "risk_level": "MEDIUM",
+      "blocking": "BLOCKING",
+      "idempotency": "NON_IDEMPOTENT",
+      "retry": "OPERATOR_DECISION",
+      "typical_execution_time_s": 3600.0,
+      "stabilization_time_s": 0.0,
+      "valid_in_states": [
+        "CONNECTED"
+      ],
+      "resulting_state": "SAME",
+      "arguments": [
+        {
+          "name": "duration",
+          "python_type": "str | float",
+          "required": true,
+          "kind": "DURATION",
+          "unit": "s",
+          "range": [
+            0,
+            "FINITE_MAX"
+          ]
+        },
+        {
+          "name": "poll_interval",
+          "python_type": "str | float",
+          "required": false,
+          "default_expression": "'1 minute'",
+          "kind": "DURATION",
+          "unit": "s",
+          "range": [
+            ">0",
+            "FINITE_MAX"
+          ]
+        }
+      ],
+      "returns": [
+        {
+          "name": "final_temperature",
+          "kind": "NUMERIC",
+          "unit": "degC"
+        }
+      ],
+      "preconditions": [
+        "Finite non-negative duration is supplied."
+      ],
+      "postconditions": [
+        "Requested dwell duration elapsed."
+      ],
+      "coupling": [],
+      "side_effects": [
+        "Blocks test execution.",
+        "Performs periodic temperature queries."
+      ],
+      "exclusive_resources": [
+        "CLIMATE_CHAMBER_TCP_SESSION",
+        "CLIMATE_CHAMBER_ENVIRONMENT_CONTROL"
+      ],
+      "raises": [
+        "NOT_CONNECTED",
+        "COMMUNICATION_TIMEOUT",
+        "PROTOCOL_ERROR",
+        "COMMAND_REJECTED",
+        "VALIDATION_ERROR"
+      ],
+      "planning_priority": "PRIMARY",
+      "planning": {
+        "operator_required": false,
+        "reboot_required": false,
+        "estimated_cost": "LOW"
+      }
+    },
+    {
+      "keyword": "Wait Until Climate Chamber Is Stable",
+      "signature": "Wait Until Climate Chamber Is Stable(target=None, tolerance=0.8, poll_interval='10 seconds', timeout='4 hours', stable_samples=1, start_chamber=False)",
+      "purpose": "Wait for consecutive in-tolerance temperature samples without changing setpoint.",
+      "risk_level": "MEDIUM",
+      "blocking": "BLOCKING",
+      "idempotency": "CONDITIONALLY_IDEMPOTENT",
+      "retry": "OPERATOR_DECISION",
+      "typical_execution_time_s": 14400.0,
+      "stabilization_time_s": 0.0,
+      "valid_in_states": [
+        "CONNECTED"
+      ],
+      "resulting_state": "SAME",
+      "arguments": [
+        {
+          "name": "target",
+          "python_type": "float | None",
+          "required": false,
+          "default_expression": "None",
+          "kind": "NUMERIC_OR_NULL",
+          "unit": "degC"
+        },
+        {
+          "name": "tolerance",
+          "python_type": "float",
+          "required": false,
+          "default_expression": "0.8",
+          "kind": "NUMERIC",
+          "unit": "degC",
+          "range": [
+            0,
+            "FINITE_MAX"
+          ]
+        },
+        {
+          "name": "poll_interval",
+          "python_type": "str | float",
+          "required": false,
+          "default_expression": "'10 seconds'",
+          "kind": "DURATION",
+          "unit": "s",
+          "range": [
+            ">0",
+            "FINITE_MAX"
+          ]
+        },
+        {
+          "name": "timeout",
+          "python_type": "str | float",
+          "required": false,
+          "default_expression": "'4 hours'",
+          "kind": "DURATION",
+          "unit": "s",
+          "range": [
+            ">0",
+            "FINITE_MAX"
+          ]
+        },
+        {
+          "name": "stable_samples",
+          "python_type": "int",
+          "required": false,
+          "default_expression": "1",
+          "kind": "INTEGER",
+          "range": [
+            1,
+            "FINITE_MAX"
+          ]
+        },
+        {
+          "name": "start_chamber",
+          "python_type": "bool | str",
+          "required": false,
+          "default_expression": "False",
+          "kind": "BOOLEAN"
+        }
+      ],
+      "returns": [
+        {
+          "name": "final_temperature",
+          "kind": "NUMERIC",
+          "unit": "degC"
+        }
+      ],
+      "preconditions": [
+        "Finite timeout is configured.",
+        "Target is supplied or an existing setpoint is valid."
+      ],
+      "postconditions": [
+        "Stable-sample oracle is satisfied."
+      ],
+      "coupling": [],
+      "side_effects": [
+        "May start the chamber when start_chamber is true.",
+        "Blocks until stable or timeout."
+      ],
+      "exclusive_resources": [
+        "CLIMATE_CHAMBER_TCP_SESSION",
+        "CLIMATE_CHAMBER_ENVIRONMENT_CONTROL"
+      ],
+      "raises": [
+        "NOT_CONNECTED",
+        "COMMUNICATION_TIMEOUT",
+        "PROTOCOL_ERROR",
+        "COMMAND_REJECTED",
+        "VALIDATION_ERROR",
+        "STABILIZATION_TIMEOUT"
+      ],
+      "planning_priority": "PRIMARY",
+      "planning": {
+        "operator_required": false,
+        "reboot_required": false,
+        "estimated_cost": "LOW"
+      }
+    }
+  ],
+  "errors": [
+    {
+      "name": "NOT_CONNECTED",
+      "class": "LIFECYCLE",
+      "meaning": "A keyword requiring a retained chamber session was called before connection or after disconnect.",
+      "detection": "ClimateChamberError states that 'Connect Climate Chamber' must be run first.",
+      "post_error_state": "DISCONNECTED",
+      "retry": "NEVER_RETRY",
+      "recovery": "Call `Connect Climate Chamber` with approved connection and safety parameters."
+    },
+    {
+      "name": "ALREADY_CONNECTED",
+      "class": "LIFECYCLE",
+      "meaning": "Connect was requested while a session already exists.",
+      "detection": "ClimateChamberError reports an existing session.",
+      "post_error_state": "CONNECTED",
+      "retry": "NEVER_RETRY",
+      "recovery": "Call `Disconnect Climate Chamber`, or reconnect intentionally using replace_existing=true."
+    },
+    {
+      "name": "CONNECTION_FAILED",
+      "class": "COMMUNICATION",
+      "meaning": "TCP connection creation or reconnection failed.",
+      "detection": "ClimateChamberCommunicationError includes endpoint and operating-system reason.",
+      "post_error_state": "ERROR",
+      "retry": "RETRY_AFTER_CONFIGURATION_CHECK",
+      "recovery": "Check IP, port, routing, firewall, chamber power, and protocol service; then reconnect."
+    },
+    {
+      "name": "COMMUNICATION_TIMEOUT",
+      "class": "COMMUNICATION",
+      "meaning": "The chamber did not return a complete response within the configured timeout.",
+      "detection": "ClimateChamberCommunicationError or ClimateChamberTimeoutError identifies timeout and command context.",
+      "post_error_state": "ERROR",
+      "retry": "RETRY_AFTER_RECONNECT",
+      "recovery": "Call `Reconnect Climate Chamber`, verify status, then retry once if chamber state is known."
+    },
+    {
+      "name": "PROTOCOL_ERROR",
+      "class": "PROTOCOL",
+      "meaning": "The chamber response was empty, malformed, oversized, or semantically invalid.",
+      "detection": "ClimateChamberProtocolError includes command and raw response context.",
+      "post_error_state": "ERROR",
+      "retry": "RETRY_AFTER_RECONNECT",
+      "recovery": "Stop test sequencing, reconnect, query status, and confirm model/protocol compatibility."
+    },
+    {
+      "name": "COMMAND_REJECTED",
+      "class": "INSTRUMENT",
+      "meaning": "The chamber returned a failure status or read-failed response.",
+      "detection": "ClimateChamberCommandError includes command, arguments, status, and raw response.",
+      "post_error_state": "CONNECTED",
+      "retry": "OPERATOR_DECISION",
+      "recovery": "Read chamber status/messages, correct configuration, and retry only after state verification."
+    },
+    {
+      "name": "SAFETY_LIMIT_VIOLATION",
+      "class": "SAFETY",
+      "meaning": "A requested setpoint or limit violates local software safety constraints.",
+      "detection": "ClimateChamberSafetyError identifies requested and configured limits.",
+      "post_error_state": "STATE_UNCHANGED",
+      "retry": "NEVER_RETRY",
+      "recovery": "Use an approved setpoint or deliberately update local limits after fixture/DUT review."
+    },
+    {
+      "name": "VALIDATION_ERROR",
+      "class": "CONFIGURATION",
+      "meaning": "An argument is malformed, non-finite, out of range, or internally inconsistent.",
+      "detection": "TypeError or ValueError names the invalid argument and constraint.",
+      "post_error_state": "STATE_UNCHANGED",
+      "retry": "NEVER_RETRY",
+      "recovery": "Correct the argument and rerun the keyword."
+    },
+    {
+      "name": "STABILIZATION_TIMEOUT",
+      "class": "TIMEOUT",
+      "meaning": "The chamber failed to satisfy the stable-sample oracle before the finite timeout.",
+      "detection": "ClimateChamberTimeoutError reports target, last temperature, elapsed time, and stable count.",
+      "post_error_state": "CONNECTED",
+      "retry": "OPERATOR_DECISION",
+      "recovery": "Inspect chamber capacity, load, door state, airflow, alarms, target, tolerance, and timeout before deciding whether to retry."
+    },
+    {
+      "name": "STATE_CHANGE_TIMEOUT",
+      "class": "TIMEOUT",
+      "meaning": "Start or stop state readback did not reach the requested state in time.",
+      "detection": "ClimateChamberTimeoutError identifies the requested state transition.",
+      "post_error_state": "ERROR",
+      "retry": "RETRY_AFTER_RECONNECT",
+      "recovery": "Reconnect, query running state and chamber status, then invoke the safe shutdown sequence if state remains uncertain."
+    },
+    {
+      "name": "ASSERTION_FAILED",
+      "class": "ASSERTION",
+      "meaning": "A chamber-specific pass/fail oracle evaluated false.",
+      "detection": "AssertionError includes expected, actual, tolerance or range, and units where applicable.",
+      "post_error_state": "STATE_UNCHANGED",
+      "retry": "NEVER_RETRY",
+      "recovery": "Record evidence and follow the test-plan failure branch."
+    },
+    {
+      "name": "TEARDOWN_PARTIAL_FAILURE",
+      "class": "LIFECYCLE",
+      "meaning": "One or more ordered teardown actions failed.",
+      "detection": "ClimateChamberError reports stop and/or disconnect failures.",
+      "post_error_state": "ERROR",
+      "retry": "OPERATOR_DECISION",
+      "recovery": "Treat chamber state as unknown, use local emergency controls if required, and verify safe state before bench access."
+    }
+  ],
+  "safety": {
+    "dangerous_operations": [
+      {
+        "keyword": "Set Climate Chamber Temperature",
+        "condition": "requested temperature exceeds DUT, fixture, cable, battery, or material rating",
+        "risk_level": "HIGH"
+      },
+      {
+        "keyword": "Start Climate Chamber",
+        "condition": "personnel access, condensation controls, or DUT preparation are incomplete",
+        "risk_level": "HIGH"
+      },
+      {
+        "keyword": "Set Climate Chamber Dryer",
+        "condition": "output mapping or connected dryer utility is unverified",
+        "risk_level": "HIGH"
+      },
+      {
+        "keyword": "Set Climate Chamber Compressed Air",
+        "condition": "output mapping, pressure regulation, or pneumatic routing is unverified",
+        "risk_level": "HIGH"
+      }
+    ],
+    "forbidden_sequences": [
+      {
+        "never": [
+          "Set Climate Chamber Temperature Limits",
+          "Set Climate Chamber Temperature"
+        ],
+        "reason": "Do not widen limits and immediately command a new extreme without independent DUT/fixture approval."
+      },
+      {
+        "never": [
+          "Disconnect Climate Chamber",
+          "Assume Chamber Stopped"
+        ],
+        "reason": "Disconnect does not imply environmental control stopped."
+      },
+      {
+        "never": [
+          "Stabilization Timeout",
+          "Open Chamber Door"
+        ],
+        "reason": "After timeout, chamber and DUT temperature state must be verified before operator access."
+      }
+    ],
+    "required_delays": [
+      {
+        "after": "Start Climate Chamber",
+        "before": "DEPENDENT_DUT_MEASUREMENT",
+        "min_delay_s": 1.0,
+        "note": "This is only a protocol/state-settle minimum; use stable-temperature keywords for environmental measurements."
+      },
+      {
+        "after": "Set Climate Chamber Dryer",
+        "before": "DEPENDENT_HUMIDITY_OR_DRYNESS_CHECK",
+        "min_delay_s": "UNKNOWN"
+      },
+      {
+        "after": "Set Climate Chamber Compressed Air",
+        "before": "DEPENDENT_PNEUMATIC_CHECK",
+        "min_delay_s": "UNKNOWN"
+      }
+    ],
+    "hardware_limits": [
+      {
+        "quantity": "temperature_min",
+        "unit": "degC",
+        "min": "UNKNOWN_PER_MODEL"
+      },
+      {
+        "quantity": "temperature_max",
+        "unit": "degC",
+        "max": "UNKNOWN_PER_MODEL"
+      },
+      {
+        "quantity": "heating_gradient",
+        "unit": "degC/min",
+        "max": 5.0
+      },
+      {
+        "quantity": "cooling_gradient",
+        "unit": "degC/min",
+        "max": 3.5
+      }
+    ],
+    "safe_shutdown_sequence": [
+      "Stop Climate Chamber",
+      "Disconnect Climate Chamber"
+    ],
+    "emergency_note": "Software teardown cannot replace the chamber local emergency stop, mains isolation, door interlock, or laboratory emergency procedure."
+  },
+  "verification_objectives": [
+    {
+      "id": "VO-CC-001",
+      "goal": "Verify chamber connection and identity.",
+      "procedure": [
+        "Connect Climate Chamber    ip=${CHAMBER_IP}    temperature_min=${SAFE_MIN}    temperature_max=${SAFE_MAX}",
+        "Get Climate Chamber Identification"
+      ],
+      "oracle": {
+        "type": "NON_EMPTY_STRING",
+        "measured_by": "Get Climate Chamber Identification"
+      },
+      "requires_drivers": [],
+      "risk_level": "LOW",
+      "requirements_verified": [
+        "DRIVER-CONNECTION",
+        "DRIVER-IDENTITY"
+      ]
+    },
+    {
+      "id": "VO-CC-002",
+      "goal": "Verify setpoint write and readback inside approved limits.",
+      "procedure": [
+        "Set Climate Chamber Temperature    celsius=${TARGET}",
+        "Get Climate Chamber Setpoint"
+      ],
+      "oracle": {
+        "type": "TOLERANCE_ABS",
+        "expected": "${TARGET}",
+        "tolerance": 0.05,
+        "unit": "degC",
+        "measured_by": "Get Climate Chamber Setpoint"
+      },
+      "requires_drivers": [],
+      "risk_level": "MEDIUM",
+      "requirements_verified": [
+        "CHAMBER-SETPOINT"
+      ]
+    },
+    {
+      "id": "VO-CC-003",
+      "goal": "Verify the chamber reaches and maintains an approved target.",
+      "procedure": [
+        "Set Temperature And Wait    target=${TARGET}    tolerance=${TOLERANCE}    stable_samples=${STABLE_SAMPLES}    timeout=${TIMEOUT}"
+      ],
+      "oracle": {
+        "type": "TOLERANCE_ABS",
+        "expected": "${TARGET}",
+        "tolerance": "${TOLERANCE}",
+        "unit": "degC",
+        "measured_by": "Set Temperature And Wait"
+      },
+      "requires_drivers": [],
+      "risk_level": "HIGH",
+      "requirements_verified": [
+        "CHAMBER-STABILITY"
+      ]
+    },
+    {
+      "id": "VO-CC-004",
+      "goal": "Verify running-state start and stop control.",
+      "procedure": [
+        "Start Climate Chamber",
+        "Climate Chamber Should Be Running",
+        "Stop Climate Chamber",
+        "Climate Chamber Should Be Stopped"
+      ],
+      "oracle": {
+        "type": "ORDERED_ASSERTIONS",
+        "assertions": [
+          "Climate Chamber Should Be Running",
+          "Climate Chamber Should Be Stopped"
+        ]
+      },
+      "requires_drivers": [],
+      "risk_level": "HIGH",
+      "requirements_verified": [
+        "CHAMBER-RUN-CONTROL"
+      ]
+    },
+    {
+      "id": "VO-CC-005",
+      "goal": "Verify unsafe setpoints are rejected locally.",
+      "procedure": [
+        "Set Climate Chamber Temperature Limits    minimum=${SAFE_MIN}    maximum=${SAFE_MAX}",
+        "Run Keyword And Expect Error    *outside*    Set Climate Chamber Temperature    ${UNSAFE_TARGET}"
+      ],
+      "oracle": {
+        "type": "EXPECTED_ERROR",
+        "error": "SAFETY_LIMIT_VIOLATION"
+      },
+      "requires_drivers": [],
+      "risk_level": "LOW",
+      "requirements_verified": [
+        "DRIVER-SAFETY-LIMIT"
+      ]
+    },
+    {
+      "id": "VO-CC-006",
+      "goal": "Verify DUT behavior at stable chamber temperature using independent DUT measurements.",
+      "procedure": [
+        "Set Temperature And Wait    target=${TARGET}    tolerance=${TOLERANCE}    stable_samples=3",
+        "DUT_DRIVER.Execute Verification",
+        "REFERENCE_TEMPERATURE_DRIVER.Measure Temperature"
+      ],
+      "oracle": {
+        "type": "MULTI_DRIVER_REQUIREMENT_ORACLE",
+        "measured_by": [
+          "DUT_DRIVER.Execute Verification",
+          "REFERENCE_TEMPERATURE_DRIVER.Measure Temperature"
+        ]
+      },
+      "requires_drivers": [
+        "DUT_DRIVER",
+        "REFERENCE_TEMPERATURE_DRIVER"
+      ],
+      "risk_level": "HIGH",
+      "requirements_verified": [
+        "DUT-TEMPERATURE-PERFORMANCE"
+      ]
+    }
+  ],
+  "setup_teardown": {
+    "suite_setup": [
+      "Connect Climate Chamber    ip=${CHAMBER_IP}    temperature_min=${SAFE_MIN}    temperature_max=${SAFE_MAX}",
+      "Climate Chamber Should Be Connected"
+    ],
+    "suite_teardown": [
+      "Stop And Disconnect Climate Chamber"
+    ],
+    "teardown_safe_from_any_state": false,
+    "teardown_caveat": "If communication is lost, software cannot prove the physical chamber stopped; invoke the laboratory emergency procedure and verify locally."
+  },
+  "planning_hints": [
+    "Group tests by temperature to minimize chamber transitions and total test duration.",
+    "Run environmental control serially; do not parallelize workflows sharing the same chamber volume.",
+    "Use the chamber internal sensor for control and stability, but use an independent calibrated sensor when temperature accuracy is the requirement.",
+    "Prefer `Set Temperature And Wait` for complete transitions and `Wait Until Climate Chamber Is Stable` when another driver already set the target.",
+    "Capture identification, status, setpoint, measured temperature, running state, and communication statistics as evidence at setup and failure.",
+    "Keep finite timeouts based on chamber capacity, load, target delta, and gradient."
+  ],
+  "measurement_quality": {
+    "temperature": {
+      "preferred_for": [
+        "CONTROL",
+        "STABILITY_MONITORING"
+      ],
+      "not_preferred_for": [
+        "CALIBRATION",
+        "TRACEABLE_ACCURACY"
+      ],
+      "confidence": "MEDIUM",
+      "accuracy_source": "CHAMBER_INTERNAL_SENSOR_UNKNOWN_CALIBRATION"
+    }
+  },
+  "implementation_status": {
+    "maturity": "RELEASE_CANDIDATE",
+    "validation": [
+      "UNIT_TESTED",
+      "SIMULATOR_VALIDATED"
+    ],
+    "not_yet_validated": [
+      "HIL_VALIDATED",
+      "LONG_DURATION_TESTED",
+      "MODEL_MATRIX_VALIDATED"
+    ]
+  },
+  "test_templates": [
+    {
+      "name": "Stable Temperature DUT Verification",
+      "required_drivers": [
+        "RF Votsch Climate Chamber",
+        "DUT_DRIVER"
+      ],
+      "estimated_duration_s": "TARGET_DEPENDENT",
+      "generated_workflow": [
+        "Connect Climate Chamber",
+        "Set Temperature And Wait",
+        "DUT_DRIVER.Execute Verification",
+        "Stop And Disconnect Climate Chamber"
+      ]
+    },
+    {
+      "name": "Traceable Chamber Temperature Check",
+      "required_drivers": [
+        "RF Votsch Climate Chamber",
+        "REFERENCE_TEMPERATURE_DRIVER"
+      ],
+      "estimated_duration_s": "TARGET_DEPENDENT",
+      "generated_workflow": [
+        "Set Temperature And Wait",
+        "REFERENCE_TEMPERATURE_DRIVER.Measure Temperature",
+        "Compare Result"
+      ]
+    }
+  ],
+  "limitations": [
+    "Only one chamber session is supported per library instance.",
+    "Humidity control is not implemented.",
+    "Program/profile upload and execution are not implemented.",
+    "Auxiliary output channel mapping must be verified per chamber model.",
+    "No independent traceable temperature measurement is provided.",
+    "Firmware version is not exposed by the current protocol mapping.",
+    "Loss of TCP communication makes physical running state uncertain."
+  ],
+  "unknown_handling": {
+    "token": "UNKNOWN",
+    "policy": "Treat UNKNOWN safety, topology, timing, mapping, and hardware limits conservatively. Do not generate or execute a control-changing workflow until the missing value is resolved by an operator or authoritative bench contract.",
+    "defaults": {
+      "risk_level": "HIGH",
+      "retry": "NEVER_RETRY",
+      "parallel_execution": false,
+      "hardware_control_allowed": false
+    },
+    "question_order": [
+      "Resolve chamber model and rated temperature range.",
+      "Resolve DUT and fixture safe temperature range.",
+      "Resolve auxiliary output mapping and pneumatic/dryer safety.",
+      "Resolve independent reference sensor and accuracy requirements.",
+      "Resolve emergency shutdown and operator access procedure."
+    ]
+  },
+  "conformance": {
+    "required_checks": [
+      "Every public Robot keyword appears exactly once in capabilities.",
+      "Capability signatures match the source adapter.",
+      "All referenced states and errors exist.",
+      "Coupling statements use approved machine prefixes.",
+      "Contract and keyword manifest hashes match ai_contract.lock.",
+      "system_ai_contract.yaml includes every RFDS-018 mandatory section."
+    ],
+    "ci_command": "python scripts/validate_ai_contract.py",
+    "staleness_lock": "ai/ai_contract.lock"
+  },
+  "open_questions": [
+    "Exact supported chamber model list and firmware revisions.",
+    "Model-specific physical minimum and maximum temperature.",
+    "Whether digital output 8 is dryer on every target model.",
+    "Whether digital output 7 is compressed air on every target model.",
+    "Required independent reference sensor for traceable verification.",
+    "Laboratory emergency shutdown and safe door-opening criteria."
+  ]
+}

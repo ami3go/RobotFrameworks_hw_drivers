@@ -1,0 +1,13 @@
+{
+  "schema_version": "1.0",
+  "from_release": "26.04",
+  "to_release": "26.06",
+  "added": [],
+  "removed": [],
+  "unchanged_count": 108,
+  "classification": "BUG_FIX_NO_PUBLIC_API_CHANGE",
+  "notes": [
+    "All 108 v26.04 Robot keyword names and signatures remain unchanged.",
+    "Only real-hardware HIL Boolean normalization, runner spelling, teardown guarding, and release metadata changed."
+  ]
+}

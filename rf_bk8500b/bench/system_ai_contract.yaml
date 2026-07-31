@@ -1,0 +1,228 @@
+rfds018_version: '1.0'
+contract_status: TEMPLATE_INCOMPLETE
+bench_identity:
+  name: BK8500B_ELECTRONIC_LOAD_BENCH_TEMPLATE
+  version: 1.0.0
+  purpose: Conservative integration template for a bench containing the rf_bk8500b driver.
+available_drivers:
+- driver_name: BK8500BLibrary
+  driver_version: 26.4.0
+  instrument_class: LOAD
+  ai_contract: ai/ai_contract.yaml
+  required: true
+- driver_name: ProgrammablePowerSupplyLibrary
+  driver_version: UNKNOWN
+  instrument_class: PSU
+  ai_contract: UNKNOWN
+  required: true
+- driver_name: DmmLibrary
+  driver_version: UNKNOWN
+  instrument_class: DMM
+  ai_contract: UNKNOWN
+  required: false
+physical_topology:
+  nodes:
+  - id: SOURCE
+    type: PROGRAMMABLE_DC_SOURCE
+    status: UNKNOWN
+  - id: DUT_OR_SOURCE_UNDER_TEST
+    type: ELECTRICAL_SOURCE_OR_DUT_OUTPUT
+    status: UNKNOWN
+  - id: ELECTRONIC_LOAD
+    type: BK8500B_SERIES_LOAD
+    status: DECLARED
+  - id: EXTERNAL_DMM
+    type: DMM
+    status: OPTIONAL_UNKNOWN
+  connections: []
+  required_connection_pattern:
+  - from: DUT_OR_SOURCE_UNDER_TEST.POSITIVE
+    to: ELECTRONIC_LOAD.LOAD_POSITIVE
+    signal: DC_POWER
+  - from: DUT_OR_SOURCE_UNDER_TEST.NEGATIVE
+    to: ELECTRONIC_LOAD.LOAD_NEGATIVE
+    signal: DC_RETURN
+  - from: EXTERNAL_DMM.VOLTAGE_INPUT
+    to: DUT_OR_SOURCE_UNDER_TEST.OUTPUT
+    signal: DC_VOLTAGE_MEASUREMENT
+    condition: Only when external DMM voltage measurement is required.
+  unknowns:
+  - Actual cable gauge, connector type, polarity labeling, fuse arrangement, and maximum ratings.
+  - Whether the DUT is itself a power source or is powered by a separate programmable supply.
+  - Whether remote sense is wired and safe to enable.
+shared_resources:
+- name: LOAD_CONTROL_PORT
+  type: SERIAL_OR_VISA
+  identifier: ${LOAD_PORT}
+  access: EXCLUSIVE
+  owners:
+  - BK8500BLibrary
+- name: LOAD_INPUT_POWER_PATH
+  type: ELECTRICAL
+  identifier: UNKNOWN
+  access: EXCLUSIVE
+  owners:
+  - ProgrammablePowerSupplyLibrary
+  - BK8500BLibrary
+- name: BENCH_EVIDENCE_DIRECTORY
+  type: FILESYSTEM
+  identifier: ${OUTPUT_DIR}
+  access: SHARED_WRITE
+  owners:
+  - BK8500BLibrary
+  - DmmLibrary
+signal_graph:
+  producers:
+  - driver: ProgrammablePowerSupplyLibrary
+    signal: DC_POWER
+    endpoint: SOURCE.OUTPUT
+    status: UNKNOWN
+  - driver: DUT_OR_SOURCE_UNDER_TEST
+    signal: DC_POWER
+    endpoint: DUT_OR_SOURCE_UNDER_TEST.OUTPUT
+    status: UNKNOWN
+  consumers:
+  - driver: BK8500BLibrary
+    signal: DC_POWER
+    endpoint: ELECTRONIC_LOAD.INPUT
+  observers:
+  - driver: BK8500BLibrary
+    quantities:
+    - VOLTAGE
+    - CURRENT
+    - POWER
+    - RESISTANCE
+  - driver: DmmLibrary
+    quantities:
+    - VOLTAGE
+    - CURRENT
+    status: OPTIONAL_UNKNOWN
+preferred_measurement_sources:
+- quantity: VOLTAGE
+  preferred_driver: DmmLibrary
+  fallback_driver: BK8500BLibrary
+  reason: Use a calibrated external DMM for accuracy decisions; load telemetry is suitable for monitoring and protection evidence.
+- quantity: CURRENT
+  preferred_driver: DmmLibrary
+  fallback_driver: BK8500BLibrary
+  reason: Use an external current reference when accuracy must be independent of the load under test.
+- quantity: POWER
+  preferred_driver: BK8500BLibrary
+  fallback_driver: EXTERNAL_CALCULATION
+  reason: Load telemetry provides synchronized voltage/current/power snapshots; production accuracy requires traceable external references.
+- quantity: PROTECTION_STATE
+  preferred_driver: BK8500BLibrary
+  fallback_driver: NONE
+  reason: Protection flags and input state are instrument-owned status quantities.
+requirement_coverage:
+- requirement_id: BENCH-SAFE-START
+  verification_objective: VO-LOAD-001
+  drivers:
+  - BK8500BLibrary
+  status: DEFINED
+- requirement_id: BENCH-CC-ACCURACY
+  verification_objective: VO-LOAD-002
+  drivers:
+  - BK8500BLibrary
+  - ProgrammablePowerSupplyLibrary
+  - DmmLibrary
+  status: BLOCKED_BY_UNKNOWN_BENCH_DETAILS
+- requirement_id: BENCH-TELEMETRY
+  verification_objective: VO-LOAD-003
+  drivers:
+  - BK8500BLibrary
+  status: DEFINED
+- requirement_id: BENCH-PROTECTION
+  verification_objective: VO-LOAD-004
+  drivers:
+  - BK8500BLibrary
+  - ProgrammablePowerSupplyLibrary
+  status: BLOCKED_BY_UNKNOWN_BENCH_DETAILS
+test_templates:
+- name: COMMUNICATION_SMOKE
+  estimated_duration_s: 10
+  destructive: false
+  workflow:
+  - Connect To Electronic Load
+  - Identify Electronic Load
+  - Get Electronic Load Capabilities
+  - Electronic Load Input Should Be Off
+  - Run Electronic Load Health Check
+  - Disconnect Electronic Load
+- name: SAFE_CONSTANT_CURRENT
+  estimated_duration_s: 30
+  destructive: false
+  workflow:
+  - Verify wiring and operator authorization
+  - Connect and identify source, load, and optional DMM
+  - Verify source output OFF and load input OFF
+  - Configure source voltage/current limits
+  - Configure load CC mode, current protection, and setpoint
+  - Enable source output
+  - Enable load input
+  - Wait at least 0.2 seconds
+  - Measure with DMM and load telemetry
+  - Disable load input
+  - Disable source output
+  - Export diagnostics and disconnect
+bench_constraints:
+  operator_actions:
+  - Confirm polarity and cable rating before enabling source energy.
+  - Confirm an accessible independent emergency shutdown method.
+  - Enter exact DUT/source voltage, current, and power limits.
+  safety_zones:
+  - zone: LOAD_POWER_PATH
+    maximum_voltage_v: UNKNOWN
+    maximum_current_a: UNKNOWN
+    maximum_power_w: UNKNOWN
+  maximum_simultaneous_operations: 1
+  environmental_limits:
+    ambient_temperature_c: UNKNOWN
+    ventilation_clearance: UNKNOWN
+    rack_airflow: UNKNOWN
+scheduling_rules:
+  resource_conflicts:
+  - No concurrent owner may use LOAD_CONTROL_PORT.
+  - No second controller may alter the same electronic load or source output.
+  driver_ordering:
+  - Connect and identify all instruments before energization.
+  - Complete electrical routing before enabling the source.
+  - Configure the load while input is OFF.
+  - Enable source before load only when open-circuit source operation is safe.
+  - Disable load before source for normal teardown unless the bench-specific emergency procedure states otherwise.
+  stabilization_rules:
+  - after: Enable Electronic Load Input
+    before: ANY_MEASUREMENT
+    min_delay_s: 0.2
+  - after: Reset Electronic Load
+    before: ANY_STATE_DEPENDENT_OPERATION
+    min_delay_s: 0.5
+  parallel_execution_limits:
+    max_parallel_hazardous_operations: 1
+    max_parallel_sessions_per_physical_load: 1
+global_safety:
+  forbidden_sequences:
+  - never:
+    - ENABLE_SOURCE
+    - VERIFY_WIRING
+    reason: Wiring and polarity must be verified before source energy is enabled.
+  - never:
+    - ENABLE_LOAD_INPUT
+    - CONFIGURE_LOAD
+    reason: Load configuration must be complete while input is OFF.
+  - never:
+    - RAW_SCPI_WRITE
+    - ENABLE_LOAD_INPUT
+    reason: Synchronize and verify typed state after any raw write.
+  emergency_shutdown_workflow:
+  - Use the independent hardware emergency shutdown to remove source energy.
+  - Attempt `Disable Electronic Load Input` without delaying hardware shutdown.
+  - Attempt `Set Short Circuit Mode    enabled=${FALSE}`.
+  - Capture source and load status only after the power path is safe.
+  - Disconnect instrument sessions and preserve Robot, CSV, JSON, and transcript evidence.
+open_questions:
+- Exact programmable power-supply driver, model, limits, and RFDS-017 contract are UNKNOWN.
+- Exact DMM driver, wiring, and calibration status are UNKNOWN.
+- DUT/source electrical ratings and normal operating range are UNKNOWN.
+- Actual physical topology, fixture, fusing, remote sense, emergency stop, and grounding are UNKNOWN.
+- Operator authorization policy and evidence-retention requirements are UNKNOWN.

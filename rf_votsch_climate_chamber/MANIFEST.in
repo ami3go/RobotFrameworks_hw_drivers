@@ -1,0 +1,15 @@
+include LICENSE README.md CHANGELOG.md CONTRIBUTING.md SECURITY.md SUPPORT.md CODE_OF_CONDUCT.md
+recursive-include docs *
+recursive-include examples *
+recursive-include scripts *
+recursive-include tests *
+recursive-include .github *
+global-exclude __pycache__ *.py[cod] .coverage
+
+include PROJECT_REQUIREMENTS.md
+include mkdocs.yml
+recursive-include history *.md
+recursive-include review *.md
+recursive-include guide *.md
+recursive-include ai *
+include system_ai_contract.yaml

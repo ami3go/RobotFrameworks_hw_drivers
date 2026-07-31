@@ -1,0 +1,8 @@
+schema: RFDS-017-lock
+schema_version: "1.0"
+contract_file: ai/ai_contract.yaml
+contract_sha256: 14531ee0cfd28f5a139fc1cad0c5bdfe140ed256168bb6a27f25cd9c75805168
+driver_id: rf_phidget_relay
+driver_version: "26.2"
+capability_count: 18
+generated_utc: "2026-07-22T00:00:00Z"

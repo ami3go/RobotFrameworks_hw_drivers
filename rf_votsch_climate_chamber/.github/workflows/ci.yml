@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python-version: ["3.10", "3.13"]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install -e ".[dev,docs]"
+      - run: python scripts/validate_project_layout.py
+      - run: python scripts/validate_ai_contract.py
+      - run: python -m ruff check .
+      - run: python -m mypy votsch_climate_chamber
+      - run: python -m pytest --cov=votsch_climate_chamber --cov-report=term-missing
+      - run: python -m robot --pythonpath . --outputdir results tests/robot
+      - run: python -m robot --dryrun --pythonpath . --outputdir results/examples examples
+      - run: python -m mkdocs build --strict
+      - run: python -m robot.libdoc votsch_climate_chamber.robot_library.VotschClimateChamberLibrary docs/VotschClimateChamberLibrary.html
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: robot-results-${{ matrix.os }}-py${{ matrix.python-version }}
+          path: |
+            results/
+            docs/VotschClimateChamberLibrary.html
+
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: python -m pip install --upgrade pip build twine
+      - run: python -m build
+      - run: python -m twine check dist/*
+      - run: python -m pip install dist/*.whl
+      - run: python -c "from votsch_climate_chamber import RELEASE_VERSION; assert RELEASE_VERSION == 'v26.02'"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: distributions
+          path: dist/

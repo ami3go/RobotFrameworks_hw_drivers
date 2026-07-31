@@ -1,0 +1,7 @@
+site_name: RF Phidget Relay
+site_description: Robot Framework library for two PhidgetInterfaceKit 0/0/4 boards
+docs_dir: docs
+nav:
+  - Home: index.md
+  - Keywords: keywords.md
+

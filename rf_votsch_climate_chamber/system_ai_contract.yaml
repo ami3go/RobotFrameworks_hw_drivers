@@ -1,0 +1,288 @@
+{
+  "schema": {
+    "id": "RFDS-018",
+    "version": "1.0",
+    "contract_type": "AI_TEST_BENCH_CONTRACT",
+    "format": "JSON-compatible YAML"
+  },
+  "identity": {
+    "bench_name": "Standalone Votsch Climate Chamber Integration Template",
+    "status": "TEMPLATE_REQUIRES_OPERATOR_COMPLETION",
+    "contract_version": "1.0",
+    "driver_release": "v26.02"
+  },
+  "available_drivers": [
+    {
+      "name": "RF Votsch Climate Chamber",
+      "version": "v26.02",
+      "robot_library": "VotschClimateChamberLibrary",
+      "ai_contract": "ai/ai_contract.yaml",
+      "role": "ENVIRONMENTAL_TEMPERATURE_CONTROL",
+      "required": true
+    },
+    {
+      "name": "DUT_DRIVER",
+      "version": "UNKNOWN",
+      "role": "DUT_CONTROL_AND_TELEMETRY",
+      "required": false
+    },
+    {
+      "name": "REFERENCE_TEMPERATURE_DRIVER",
+      "version": "UNKNOWN",
+      "role": "TRACEABLE_TEMPERATURE_MEASUREMENT",
+      "required": false
+    }
+  ],
+  "physical_topology": {
+    "nodes": [
+      {
+        "id": "CHAMBER",
+        "type": "CLIMATE_CHAMBER",
+        "model": "UNKNOWN",
+        "network_endpoint": "${CHAMBER_IP}:2049"
+      },
+      {
+        "id": "DUT",
+        "type": "DEVICE_UNDER_TEST",
+        "model": "UNKNOWN",
+        "location": "INSIDE_CHAMBER_VOLUME"
+      },
+      {
+        "id": "REFERENCE_SENSOR",
+        "type": "TEMPERATURE_REFERENCE",
+        "model": "UNKNOWN",
+        "location": "NEAR_DUT"
+      }
+    ],
+    "links": [
+      {
+        "from": "CHAMBER.CHAMBER_VOLUME",
+        "to": "DUT.AMBIENT",
+        "signal": "AMBIENT_TEMPERATURE"
+      },
+      {
+        "from": "CHAMBER.CHAMBER_VOLUME",
+        "to": "REFERENCE_SENSOR.SENSING_ELEMENT",
+        "signal": "AMBIENT_TEMPERATURE"
+      },
+      {
+        "from": "TEST_HOST.LAN",
+        "to": "CHAMBER.TCP_CONTROL",
+        "signal": "ETHERNET_TCP"
+      }
+    ]
+  },
+  "shared_resources": [
+    {
+      "name": "CHAMBER_VOLUME",
+      "type": "PHYSICAL_ENVIRONMENT",
+      "exclusive": true,
+      "owner": "RF Votsch Climate Chamber"
+    },
+    {
+      "name": "CHAMBER_TCP_ENDPOINT",
+      "type": "NETWORK_ENDPOINT",
+      "exclusive": true,
+      "value": "${CHAMBER_IP}:2049"
+    },
+    {
+      "name": "FIXTURE_POWER",
+      "type": "POWER_RAIL",
+      "exclusive": "UNKNOWN",
+      "value": "UNKNOWN"
+    },
+    {
+      "name": "OPERATOR_ACCESS",
+      "type": "SAFETY_RESOURCE",
+      "exclusive": true
+    }
+  ],
+  "signal_graph": [
+    {
+      "producer": "CHAMBER.CHAMBER_VOLUME",
+      "signal": "AMBIENT_TEMPERATURE",
+      "consumers": [
+        "DUT.AMBIENT",
+        "REFERENCE_SENSOR.SENSING_ELEMENT"
+      ],
+      "unit": "degC"
+    },
+    {
+      "producer": "REFERENCE_SENSOR",
+      "signal": "REFERENCE_TEMPERATURE",
+      "consumers": [
+        "TEST_ORACLE"
+      ],
+      "unit": "degC"
+    },
+    {
+      "producer": "DUT_DRIVER",
+      "signal": "DUT_TELEMETRY",
+      "consumers": [
+        "TEST_ORACLE"
+      ],
+      "unit": "MODEL_DEPENDENT"
+    }
+  ],
+  "preferred_measurement_sources": {
+    "temperature_control": {
+      "driver": "RF Votsch Climate Chamber",
+      "keyword": "Get Climate Chamber Temperature",
+      "confidence": "MEDIUM"
+    },
+    "temperature_accuracy": {
+      "driver": "REFERENCE_TEMPERATURE_DRIVER",
+      "keyword": "UNKNOWN",
+      "confidence": "UNKNOWN",
+      "required_for": [
+        "CALIBRATION",
+        "TRACEABLE_VERIFICATION"
+      ]
+    },
+    "dut_function": {
+      "driver": "DUT_DRIVER",
+      "keyword": "UNKNOWN",
+      "confidence": "UNKNOWN"
+    }
+  },
+  "requirement_coverage": [
+    {
+      "requirement": "CHAMBER-CONNECTION",
+      "drivers": [
+        "RF Votsch Climate Chamber"
+      ],
+      "verification_objectives": [
+        "VO-CC-001"
+      ]
+    },
+    {
+      "requirement": "CHAMBER-SETPOINT",
+      "drivers": [
+        "RF Votsch Climate Chamber"
+      ],
+      "verification_objectives": [
+        "VO-CC-002"
+      ]
+    },
+    {
+      "requirement": "CHAMBER-STABILITY",
+      "drivers": [
+        "RF Votsch Climate Chamber"
+      ],
+      "verification_objectives": [
+        "VO-CC-003"
+      ]
+    },
+    {
+      "requirement": "DUT-TEMPERATURE-PERFORMANCE",
+      "drivers": [
+        "RF Votsch Climate Chamber",
+        "DUT_DRIVER",
+        "REFERENCE_TEMPERATURE_DRIVER"
+      ],
+      "verification_objectives": [
+        "VO-CC-006"
+      ]
+    }
+  ],
+  "test_templates": [
+    {
+      "name": "DUT Functional Test At Stable Temperature",
+      "preconditions": [
+        "${CHAMBER_IP} resolved",
+        "${SAFE_MIN}/${SAFE_MAX} approved",
+        "DUT fixture and power configured",
+        "Emergency procedure available"
+      ],
+      "workflow": [
+        "Connect Climate Chamber    ip=${CHAMBER_IP}    temperature_min=${SAFE_MIN}    temperature_max=${SAFE_MAX}",
+        "Set Temperature And Wait    target=${TARGET}    tolerance=${TOLERANCE}    stable_samples=3    timeout=${TIMEOUT}",
+        "DUT_DRIVER.Execute Verification",
+        "REFERENCE_TEMPERATURE_DRIVER.Measure Temperature",
+        "Stop And Disconnect Climate Chamber"
+      ],
+      "oracle": "DUT requirements pass and independent temperature is within approved tolerance.",
+      "risk_level": "HIGH"
+    }
+  ],
+  "bench_constraints": {
+    "operator_actions": [
+      "Confirm chamber is empty of personnel and door is secured.",
+      "Confirm DUT, fixture, cables, batteries, and materials are rated for target.",
+      "Confirm condensation/dew-point strategy when crossing cold temperatures.",
+      "Confirm safe access temperature before opening after test."
+    ],
+    "safety_zones": [
+      {
+        "name": "CHAMBER_INTERIOR",
+        "hazards": [
+          "HOT_SURFACE",
+          "COLD_SURFACE",
+          "CONDENSATION",
+          "MOVING_AIR"
+        ],
+        "access": "OPERATOR_PROCEDURE_REQUIRED"
+      }
+    ],
+    "maximum_simultaneous_operations": 1,
+    "environmental_limits": {
+      "minimum_degC": "UNKNOWN",
+      "maximum_degC": "UNKNOWN",
+      "dut_safe_minimum_degC": "UNKNOWN",
+      "dut_safe_maximum_degC": "UNKNOWN"
+    }
+  },
+  "scheduling_rules": {
+    "resource_conflicts": [
+      "Only one workflow may own CHAMBER_VOLUME.",
+      "Do not run multiple temperature transitions in parallel."
+    ],
+    "driver_ordering": [
+      "Configure DUT safe state before chamber start.",
+      "Reach stable temperature before dependent DUT measurement.",
+      "Stop chamber before disconnect when safe teardown is requested."
+    ],
+    "stabilization_rules": [
+      "Use at least three consecutive samples for production verification unless requirement specifies otherwise.",
+      "Use independent reference temperature for traceable accuracy decisions."
+    ],
+    "parallel_execution_limits": {
+      "chamber_control": 1,
+      "dut_measurements_inside_same_stable_dwell": "ALLOWED_IF_RESOURCES_DO_NOT_CONFLICT"
+    }
+  },
+  "global_safety": {
+    "forbidden_sequences": [
+      [
+        "Disconnect Climate Chamber",
+        "Assume Chamber Stopped"
+      ],
+      [
+        "Stabilization Timeout",
+        "Open Chamber Door"
+      ],
+      [
+        "Unknown DUT Temperature Rating",
+        "Start Climate Chamber"
+      ]
+    ],
+    "emergency_shutdown_workflow": [
+      "Attempt Stop Climate Chamber if communication is available.",
+      "Use chamber local emergency stop or laboratory isolation when software control is unavailable.",
+      "Remove DUT power through the approved bench emergency path when safe.",
+      "Verify actual chamber running state and safe access temperature locally.",
+      "Do not open chamber until laboratory procedure permits access."
+    ],
+    "control_authorization": "DENIED_WHILE_ANY_CRITICAL_FIELD_IS_UNKNOWN"
+  },
+  "open_questions": [
+    "CHAMBER_IP",
+    "Chamber model and firmware",
+    "Chamber rated temperature range",
+    "DUT and fixture temperature ratings",
+    "DUT driver and power topology",
+    "Reference temperature instrument and sensor location",
+    "Condensation/dew-point controls",
+    "Emergency shutdown and safe access procedure"
+  ]
+}

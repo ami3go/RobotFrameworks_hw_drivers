@@ -1,0 +1,1426 @@
+%YAML 1.2
+---
+# RFDS-017 AI Driver Contract, specification version 3.0
+# Driver: bk8500_load / BK8500Library
+# This file is the machine-readable source of truth. An AI planner must be able
+# to generate correct Robot Framework tests from this file alone, without
+# reading the driver source.
+
+contract:
+  rfds: RFDS-017
+  specification_version: "3.0"
+  contract_revision: 12
+  generated_for_driver_version: "26.16.0"
+  lifecycle: {phase: 1, gate: 5, package: bk8500_load}
+
+identity:
+  driver_name: bk8500_load
+  package_name: rf_bk8500_load
+  package_release: 16
+  package_file: rf_bk8500_load_v26.16.zip
+  robot_library_name: BK8500Library
+  library_scope: GLOBAL
+  version: "26.16.0"
+  lifecycle_version: "26.01.05"
+  maintenance_revision: 11
+  instrument_family: B&K Precision 8500 series DC electronic load
+  supported_models: [8500, 8502, 8510, 8512, 8514, 8518, 8520, 8522, 8524, 8526]
+  instrument_class: electronic_load
+  role_on_bench: sink
+  interface:
+    physical: Rear panel DB9 carrying TTL levels, reached through the vendor's IT-E132B USB-to-TTL adapter
+    framing: fixed 26 byte binary
+    baud_rates: [4800, 9600, 19200, 38400]
+    data_bits: 8
+    parity: none
+    stop_bits: 1
+    flow_control: none
+    signal_lines: >
+      DTR and RTS must be asserted. The adapter takes part of its interface
+      enable from them; with either line low the link is silent and every
+      transaction times out with no error from the instrument. The driver
+      asserts both explicitly on open and verifies the result rather than
+      relying on the serial library's platform-dependent default.
+    hardware_warning: >
+      The DB9 is TTL, not RS-232. Connecting it to a standard RS-232 port can
+      damage the instrument. Use the IT-E132B or an equivalent level shifter.
+  protocol_reference: 8500 Series user manual, chapter "Remote operation", firmware command set 0x12..0x6B
+  units: {voltage: V, current: A, power: W, resistance: ohm, time: s}
+  import_examples:
+    hardware: "Library    BK8500Library    port=/dev/ttyUSB0    baudrate=9600    model=8500"
+    hardware_auto_baud: "Library    BK8500Library    port=/dev/ttyUSB0    baudrate=AUTO    model=8500"
+    simulated: "Library    BK8500Library    simulated=${TRUE}    model=8500"
+
+
+verification:
+  latest_physical_hardware_run:
+    evidence_date: "2026-07-28"
+    driver_version_tested: "26.14.0"
+    installed_distribution_version: "26.14.0"
+    result: PASS
+    tests: {total: 56, passed: 56, failed: 0, public_keyword_tests: 55, workflow_tests: 1}
+    host: Windows-11-10.0.22631-SP0
+    python_version: "3.13.5"
+    robot_framework_version: "7.4.2"
+    transport: {port: COM12, baudrate: 9600, address: 0}
+    device: {model: "8500", serial_number: "1687710135", firmware_version: "1.84"}
+    evidence_path: evidence/hardware_conformance/v26.14_com12_2026-07-28
+    confirmed:
+      - all exported public Robot Framework keywords are callable on the physical device
+      - the save, reconfigure and recall list workflow passes
+      - the echo-aware serial opening and response path returns a valid identity
+      - suite safe teardown passes
+    scope_limit: >
+      This run does not include per-keyword raw TX/RX trace files, protocol-vector
+      results, or injected malformed-response and timeout recovery evidence.
+      It therefore does not alone close RFDS-019 Levels 2 through 4.
+  release_26_15:
+    change_type: documentation_and_evidence
+    functional_core: unchanged_from_26_14
+    relationship: >
+      Release 26.15 updates package metadata and all current documentation around
+      the passing v26.14 hardware baseline. Protocol, transport, driver and Robot
+      keyword behaviour are unchanged.
+  release_26_16:
+    change_type: connection_feature
+    feature: automatic_baud_rate_detection
+    status: simulator_and_unit_verified_physical_confirmation_pending
+    relationship: >
+      Release 26.16 retains the verified v26.14 protocol path and adds optional
+      read-only baud probing. Numeric baud with auto detection disabled preserves
+      the previous deterministic connection behaviour.
+
+interpretation_notes:
+  stabilization_delay_s: >
+    The delay each capability declares is applied by the driver itself after
+    the command completes. A planner does not need to insert its own sleep for
+    it, and should not subtract it from a measurement budget twice. The
+    behaviour can be switched off with apply_stabilization_delays=False on the
+    driver, in which case the declared delays become the planner's
+    responsibility.
+  reply_framing: >
+    Write commands must return a 0x12 status frame. Some USB-to-TTL paths first
+    produce an exact local echo of the transmitted write packet; releases 26.14+
+    discard that echo and continue waiting for the real device status within
+    the original timeout budget. An echo without a following device response is
+    a transport failure, not command success. Read commands are answered either
+    with the request command byte or with a status-tagged data frame; the driver
+    records the observed data-reply style.
+  serial_open_sequence: >
+    Create the serial object closed, request DTR and RTS high, open the selected
+    port, reassert both lines, wait 1.0 second, then clear buffers. This sequence
+    matches the verified COM12 bench script and avoids platform-specific line
+    state changes during open.
+  baud_rate_detection: >
+    Automatic detection tries the requested numeric rate first, then the unique
+    supported candidates. Every attempt uses only the product-information query
+    0x6A. Exact echo, malformed or empty identity and timeout are failures. By
+    default two consecutive identities must match. Failed ports are closed before
+    the next rate and the successful port remains open at the detected rate.
+  persistence_settle: >
+    EEPROM save/recall replies can arrive before firmware is ready for the next
+    list or settings edit. The driver applies 0.5 s after saves and 0.2 s after
+    recalls. Do not issue a parallel command on the same instrument during this
+    barrier. This timing was added from the physical COM9 conformance result.
+
+mental_model:
+  summary: >
+    A programmable current sink. The instrument sits across a source under test
+    and draws a controlled current, voltage, power or resistance from it. The
+    driver never produces energy; every risk it carries is the risk of drawing
+    too much from the device under test, or of leaving the input closed when a
+    test ends.
+  key_concepts:
+    - name: control_ownership
+      description: >
+        The front panel and the bus compete for control. Command 0x20 claims
+        remote control; until it is claimed, setting commands may be rejected
+        and the input cannot be closed by this driver.
+    - name: mode
+      description: >
+        The regulation law, one of CC (constant current), CV (constant voltage),
+        CW (constant power) or CR (constant resistance). Each mode owns its own
+        setpoint register; changing mode does not clear the others.
+    - name: function
+      description: >
+        What the load does with the mode: FIXED holds the setpoint, TRANSIENT
+        toggles between two levels, LIST plays a programmed sequence, BATTERY
+        discharges to a cut-off voltage, SHORT applies the maximum sink current.
+    - name: input_state
+      description: >
+        The input relay. Everything else is configuration; only the input state
+        determines whether current actually flows.
+    - name: protection_limits
+      description: >
+        Instrument-side maximum voltage, current and power. They are independent
+        of the setpoint and survive mode changes. They are the last line of
+        defence and are set once during setup, not per measurement.
+  measurement_capability:
+    provides: [dc_voltage_at_load_terminals, dc_sink_current, dc_input_power, protection_state]
+    sample_rate: single-shot on request, roughly 10..30 readings per second at 9600 baud
+    is_synchronous: true
+    notes: >
+      A reading is one 0x5F transaction. There is no buffered acquisition and no
+      timestamping, so this instrument is not a substitute for a scope or a DAQ
+      when microsecond timing matters.
+
+state_machine:
+  states:
+    - {name: DISCONNECTED, description: No serial port open. Only Open Load Connection is legal.}
+    - {name: LOCAL, description: Port open, instrument under front panel control. Reads are legal, the input cannot be closed by the driver.}
+    - {name: REMOTE_IDLE, description: Remote control claimed, input open. All configuration is legal here.}
+    - {name: REMOTE_ACTIVE, description: Remote control claimed, input closed, current flowing.}
+    - {name: FAULT, description: The instrument reports a protection bit (reverse polarity, OV, OC, OP, OT).}
+  initial_state: DISCONNECTED
+  transitions:
+    - {from: DISCONNECTED, to: LOCAL, keyword: Open Load Connection}
+    - {from: LOCAL, to: REMOTE_IDLE, keyword: Claim Remote Control}
+    - {from: REMOTE_IDLE, to: REMOTE_ACTIVE, keyword: Load Input On}
+    - {from: REMOTE_ACTIVE, to: REMOTE_IDLE, keyword: Load Input Off}
+    - {from: REMOTE_ACTIVE, to: FAULT, event: instrument asserts a demand-state protection bit}
+    - {from: FAULT, to: REMOTE_IDLE, keyword: Load Input Off, note: The fault cause must be removed before the input is closed again.}
+    - {from: REMOTE_IDLE, to: LOCAL, keyword: Release Remote Control}
+    - {from: any, to: DISCONNECTED, keyword: Close Load Connection, note: Performs the safe-state sequence first unless safe=False.}
+  invariants:
+    - The driver refuses Load Input On unless remote control was claimed in this session.
+    - Every keyword that changes a setting is legal only in REMOTE_IDLE or REMOTE_ACTIVE.
+    - Changing mode, function or setpoint while in REMOTE_ACTIVE changes the load on the DUT immediately.
+  state_observability:
+    keyword: Measure Load Input
+    fields: {input_on: operation_state bit 3, remote_control_enabled: operation_state bit 2, active_protections: demand_state bits 0..4}
+
+resources:
+  consumed:
+    - {type: serial_port, identifier: constructor argument "port", exclusive: true, notes: One driver instance per physical port. The 26 byte protocol has no framing recovery, so two writers on one port corrupt each other.}
+    - {type: instrument, identifier: "model + serial number", exclusive: true, notes: The instrument accepts one controller at a time.}
+    - {type: dut_electrical_node, identifier: bench-defined, exclusive: true, notes: The load's input terminals must be the only sink on that node unless the bench contract says otherwise.}
+  provided:
+    - {type: measurement, quantity: dc_voltage, node: load_input_terminals, accuracy: "±(0.02% + 0.025% FS)", resolution: 1 mV below 18 V, 10 mV above}
+    - {type: measurement, quantity: dc_current, node: load_input_terminals, accuracy: "±(0.2% + 0.15% FS)", resolution: 0.1 mA in the low range, 1 mA in the high range}
+    - {type: measurement, quantity: dc_power, node: load_input_terminals, accuracy: "±(1% + 0.1% FS)", resolution: 1 mW below 100 W, 100 mW above}
+    - {type: stimulus, quantity: controlled_sink_current, node: load_input_terminals}
+  not_provided: [source_capability, ac_measurement, waveform_capture, timestamped_streaming]
+
+dependencies:
+  python: ">=3.9"
+  packages: [{name: pyserial, version: ">=3.4", required_for: SerialTransport only}, {name: robotframework, version: ">=6.0", required_for: keyword layer}]
+  operating_system_notes: >
+    On Linux the user must belong to the dialout group to open /dev/ttyUSB*.
+    On Windows the port is named COMn. The IT-E132B adapter is PL-2303 based
+    and needs the Prolific driver installed. Some third-party PL-2303 clones
+    and some virtual COM drivers do not raise DTR or RTS on open; the driver
+    asserts both and fails with a message naming the line rather than timing
+    out silently.
+  other_drivers: none
+  bench_prerequisites:
+    - A source under test connected with the correct polarity. Reverse polarity is detected but is a fault, not a supported configuration.
+    - Wiring rated for the intended sink current. The driver cannot detect undersized leads.
+    - A TTL-level adapter between the PC and the instrument's DB9. A direct RS-232 connection can damage the instrument.
+    - The instrument's front panel baud rate is one of 4800, 9600, 19200 or 38400. A suite may provide it explicitly or enable read-only automatic detection.
+
+capabilities:
+
+  - keyword: Open Load Connection
+    signature: "Open Load Connection    port=None    baudrate=9600    model=None    alias=default    address=0    timeout=1.0    simulated=False    identify=True    assert_dtr=True    assert_rts=True    source_voltage=None    source_resistance=None    auto_detect_baudrate=None    baudrate_candidates=None    probe_timeout=None    confirm_baudrate_identity=None"
+    purpose: Open a transport to one DC load, optionally detect its baud rate with read-only identity queries, verify identity and make it the current connection.
+    inputs:
+      port: {type: string, required_when: simulated is False, example: /dev/ttyUSB0}
+      baudrate: {type: integer_or_AUTO, allowed: [AUTO, 4800, 9600, 19200, 38400], default: 9600, note: "A numeric rate is deterministic. AUTO enables probing with 9600 preferred. Rates above 38400 are rejected before the port is opened."}
+      model: {type: string, optional: true, note: Used for validation limits until the instrument reports its own model.}
+      alias: {type: string, default: default, note: Handle for Switch Load Connection.}
+      address: {type: integer, range: [0, 254], default: 0}
+      timeout: {type: float, unit: s, default: 1.0}
+      simulated: {type: boolean, default: false, note: Uses the in-process instrument model; no hardware is touched.}
+      identify: {type: boolean, default: true}
+      assert_dtr: {type: boolean, default: true, note: "Leave true. The instrument requires DTR asserted; set false only for a documented non-standard adapter."}
+      assert_rts: {type: boolean, default: true, note: "Leave true. The instrument requires RTS asserted."}
+      source_voltage: {type: float, optional: true, unit: V, applies_when: simulated is true}
+      source_resistance: {type: float, optional: true, unit: ohm, applies_when: simulated is true}
+      auto_detect_baudrate: {type: boolean, default: false, note: "When true, try the requested numeric baud first and then baudrate_candidates."}
+      baudrate_candidates: {type: string_or_list, default: "4800,9600,19200,38400", note: "Candidates are de-duplicated. Unsupported rates fail before any port is opened."}
+      probe_timeout: {type: float, unit: s, default: 0.75, range: [0.05, 10.0], note: "Per-transaction timeout used during each baud probe."}
+      confirm_baudrate_identity: {type: boolean, default: true, note: "Require two consecutive matching product identities before accepting a rate."}
+    outputs: {type: string, description: the alias of the opened connection}
+    preconditions:
+      - The port exists and is not held by another process.
+      - No connection with the same alias is open.
+      - The adapter can raise DTR and RTS. With automatic detection disabled, the configured baud rate matches the front panel.
+    postconditions: [State is LOCAL., DTR and RTS are asserted., Validation limits follow the model reported by the instrument when identify is true., The selected baud rate and probe-attempt evidence are available through Get Load Connection Info.]
+    side_effects: [Opens and closes an OS serial handle for each failed probe., Asserts DTR and RTS and disables hardware and software flow control., "Automatic detection sends only command 0x6A and requires two matching identities by default; it never claims remote control or enables the load input."]
+    risk_level: low
+    timing: {typical_ms: 120, worst_case_ms: 8000, note: "Worst case includes four baud candidates, one-second serial startup per candidate and probe timeouts."}
+    stabilization_delay_s: 0
+    retry_policy: &retry_transport {attempts: 3, backoff_s: 0.05, retry_on: [BK8500ProtocolError, BK8500TimeoutError], do_not_retry_on: [BK8500CommandError, BK8500ValidationError, BK8500SafetyError]}
+    errors: [BK8500ConfigurationError, BK8500ConnectionError, BK8500TimeoutError, BK8500ProtocolError]
+    exclusive_resources: [serial_port, instrument]
+
+  - keyword: Switch Load Connection
+    signature: "Switch Load Connection    alias"
+    purpose: Make a previously opened load the target of subsequent keywords.
+    inputs: {alias: {type: string, required: true}}
+    outputs: {type: string, description: the alias that was current before the switch}
+    preconditions: [A connection with that alias is open.]
+    postconditions: [Subsequent keywords address the selected load.]
+    side_effects: [No instrument traffic.]
+    risk_level: low
+    timing: {typical_ms: 0, worst_case_ms: 1}
+    stabilization_delay_s: 0
+    retry_policy: &retry_none {attempts: 1, retry_on: []}
+    errors: [BK8500ConnectionError]
+    exclusive_resources: []
+
+  - keyword: Close Load Connection
+    signature: "Close Load Connection    alias=None    safe=True"
+    purpose: Return one load to its safe state and release the port.
+    inputs: {alias: {type: string, optional: true, default: current connection}, safe: {type: boolean, default: true, note: When false the safe-state sequence is skipped and the input is left as it is.}}
+    outputs: {type: none}
+    preconditions: []
+    postconditions: [State is DISCONNECTED for that alias., Input is open and the front panel is usable when safe is true., "If the closed alias was the current one, no connection is current afterwards: call Switch Load Connection before the next keyword rather than relying on an implicit choice."]
+    side_effects: [Sends the safe-state sequence 0x20, 0x21, 0x5D, 0x55, 0x20., Closes the OS port handle.]
+    risk_level: low
+    timing: {typical_ms: 250, worst_case_ms: 3000}
+    stabilization_delay_s: 0
+    retry_policy: *retry_transport
+    errors: [BK8500ConnectionError]
+    exclusive_resources: []
+
+  - keyword: Close All Load Connections
+    signature: "Close All Load Connections    safe=True"
+    purpose: Suite teardown. Safe-state and close every open load.
+    inputs: {safe: {type: boolean, default: true}}
+    outputs: {type: none}
+    preconditions: []
+    postconditions: [No connection remains open.]
+    side_effects: [As Close Load Connection, once per open alias.]
+    risk_level: low
+    timing: {typical_ms: 250, worst_case_ms: 3000, note: per open connection}
+    stabilization_delay_s: 0
+    retry_policy: *retry_transport
+    errors: []
+    exclusive_resources: []
+
+  - keyword: Get Load Product Information
+    signature: "Get Load Product Information"
+    purpose: Read model, serial number and firmware version (command 0x6A).
+    inputs: {}
+    outputs: {type: dictionary, keys: [model, serial_number, firmware_version, firmware_raw], note: "firmware_raw holds the two undecoded bytes; the manual does not state whether the encoding is hexadecimal or BCD."}
+    preconditions: [A connection is open.]
+    postconditions: [No state change.]
+    side_effects: [One 0x6A transaction.]
+    risk_level: none
+    timing: {typical_ms: 60, worst_case_ms: 1000}
+    stabilization_delay_s: 0
+    retry_policy: *retry_transport
+    errors: [BK8500ConnectionError, BK8500TimeoutError, BK8500ProtocolError]
+    exclusive_resources: [serial_port]
+
+  - keyword: Get Load Rated Limits
+    signature: "Get Load Rated Limits"
+    purpose: Report the rated envelope the driver validates against, so a planner can size its stimulus.
+    inputs: {}
+    outputs: {type: dictionary, keys: [model, max_voltage_v, max_current_a, max_power_w]}
+    preconditions: [A connection is open.]
+    postconditions: [No state change.]
+    side_effects: [No instrument traffic; the values come from the driver's model table.]
+    risk_level: none
+    timing: {typical_ms: 0, worst_case_ms: 1}
+    stabilization_delay_s: 0
+    retry_policy: *retry_none
+    errors: [BK8500ConnectionError]
+    exclusive_resources: []
+
+  - keyword: Claim Remote Control
+    signature: "Claim Remote Control"
+    purpose: Take the instrument out of front panel control (command 0x20, data 1).
+    inputs: {}
+    outputs: {type: none}
+    preconditions: [A connection is open.]
+    postconditions: [State is REMOTE_IDLE., Setting keywords and Load Input On become legal.]
+    side_effects: [The front panel stops responding except for the LOCAL key., The RMT annunciator lights.]
+    risk_level: low
+    timing: {typical_ms: 60, worst_case_ms: 1000}
+    stabilization_delay_s: 0
+    retry_policy: *retry_transport
+    errors: [BK8500ConnectionError, BK8500CommandError, BK8500TimeoutError]
+    exclusive_resources: [instrument]
+
+  - keyword: Release Remote Control
+    signature: "Release Remote Control"
+    purpose: Hand the instrument back to the operator (command 0x20, data 0).
+    inputs: {}
+    outputs: {type: none}
+    preconditions: [A connection is open.]
+    postconditions: [State is LOCAL.]
+    side_effects: [The input state is not changed by this keyword. Open the input first.]
+    risk_level: medium
+    timing: {typical_ms: 60, worst_case_ms: 1000}
+    stabilization_delay_s: 0
+    retry_policy: *retry_transport
+    errors: [BK8500ConnectionError, BK8500CommandError]
+    exclusive_resources: [instrument]
+
+  - keyword: Set Local Key Enabled
+    signature: "Set Local Key Enabled    enabled=True"
+    purpose: Enable or disable the front panel LOCAL key while under remote control (command 0x55).
+    inputs: {enabled: {type: boolean, default: true}}
+    outputs: {type: none}
+    preconditions: [State is REMOTE_IDLE or REMOTE_ACTIVE.]
+    postconditions: [The operator can or cannot recover local control from the panel.]
+    side_effects: [Disabling the key removes the operator's manual escape route; the bench emergency stop is then the only manual intervention.]
+    risk_level: medium
+    timing: {typical_ms: 60, worst_case_ms: 1000}
+    stabilization_delay_s: 0
+    retry_policy: *retry_transport
+    errors: [BK8500ConnectionError, BK8500CommandError]
+    exclusive_resources: [instrument]
+
+  - keyword: Load Input On
+    signature: "Load Input On"
+    purpose: Close the input and start sinking current (command 0x21, data 1).
+    inputs: {}
+    outputs: {type: none}
+    preconditions:
+      - Remote control has been claimed in this session, otherwise the driver refuses locally.
+      - Mode, setpoint and protection limits are already configured.
+      - The DUT is connected with the correct polarity and can supply the programmed load.
+    postconditions: [State is REMOTE_ACTIVE., Current flows within the instrument's slew rate.]
+    side_effects: [Energy is dissipated in the load., The DUT is loaded immediately with no ramp.]
+    risk_level: high
+    timing: {typical_ms: 60, worst_case_ms: 1000, note: Electrical settling after the frame is instrument and DUT dependent; allow 50..200 ms before the first reading.}
+    stabilization_delay_s: 0.1
+    retry_policy: *retry_none
+    errors: [BK8500StateError, BK8500CommandError, BK8500ConnectionError]
+    exclusive_resources: [instrument, dut_electrical_node]
+
+  - keyword: Load Input Off
+    signature: "Load Input Off"
+    purpose: Open the input and stop sinking current (command 0x21, data 0).
+    inputs: {}
+    outputs: {type: none}
+    preconditions: [A connection is open.]
+    postconditions: [State is REMOTE_IDLE., Sink current falls to zero.]
+    side_effects: [The DUT sees an abrupt unload; a source with a slow control loop may overshoot.]
+    risk_level: low
+    timing: {typical_ms: 60, worst_case_ms: 1000}
+    stabilization_delay_s: 0.2
+    retry_policy: *retry_transport
+    errors: [BK8500ConnectionError, BK8500CommandError]
+    exclusive_resources: [instrument, dut_electrical_node]
+
+  - keyword: Reset Load To Safe State
+    signature: "Reset Load To Safe State"
+    purpose: Deterministic teardown; input open, FIXED function, front panel returned to the operator.
+    inputs: {}
+    outputs: {type: none}
+    preconditions: [A connection is open.]
+    postconditions: [State is LOCAL., Input is open., Function is FIXED., The LOCAL key is enabled.]
+    side_effects: [Sends 0x20(1), 0x21(0), 0x5D(0), 0x55(1), 0x20(0) in that order.]
+    risk_level: low
+    timing: {typical_ms: 300, worst_case_ms: 5000}
+    stabilization_delay_s: 0.1
+    retry_policy: *retry_transport
+    errors: [BK8500ConnectionError, BK8500CommandError]
+    exclusive_resources: [instrument]
+
+  - keyword: Set Remote Sense
+    signature: "Set Remote Sense    enabled"
+    purpose: Enable or disable 4-wire sensing at the DUT terminals (command 0x56).
+    inputs: {enabled: {type: boolean, required: true}}
+    outputs: {type: none}
+    preconditions: [State is REMOTE_IDLE or REMOTE_ACTIVE., The sense leads are physically connected before enabling.]
+    postconditions: [Voltage regulation and measurement reference the sense terminals.]
+    side_effects: [Enabling remote sense without wired sense leads makes the instrument regulate on an undefined voltage; the demand-state bit "remote_sense_terminal_not_connected" reports this.]
+    risk_level: medium
+    timing: {typical_ms: 60, worst_case_ms: 1000}
+    stabilization_delay_s: 0.2
+    retry_policy: *retry_transport
+    errors: [BK8500ConnectionError, BK8500CommandError]
+    exclusive_resources: [instrument]
+
+  - keyword: Get Remote Sense
+    signature: "Get Remote Sense"
+    purpose: Read the remote sensing state (command 0x57).
+    inputs: {}
+    outputs: {type: boolean}
+    preconditions: [A connection is open.]
+    postconditions: [No state change.]
+    side_effects: [One 0x57 transaction.]
+    risk_level: none
+    timing: {typical_ms: 60, worst_case_ms: 1000}
+    stabilization_delay_s: 0
+    retry_policy: *retry_transport
+    errors: [BK8500ConnectionError, BK8500ProtocolError]
+    exclusive_resources: [serial_port]
+
+  - keyword: Configure Load Protection
+    signature: "Configure Load Protection    max_voltage=None    max_current=None    max_power=None"
+    purpose: Write the instrument's own protection limits (commands 0x22, 0x24, 0x26).
+    inputs:
+      max_voltage: {type: float, unit: V, range: [0, model rated voltage], optional: true}
+      max_current: {type: float, unit: A, range: [0, model rated current], optional: true}
+      max_power: {type: float, unit: W, range: [0, model rated power], optional: true}
+    outputs: {type: none}
+    preconditions: [State is REMOTE_IDLE. Setting limits below the present operating point while the input is closed will trip protection.]
+    postconditions: [The instrument enforces the limits independently of the setpoint.]
+    side_effects: [Values are retained by the instrument across mode changes and, on some firmware, across power cycles.]
+    risk_level: low
+    timing: {typical_ms: 180, worst_case_ms: 3000}
+    stabilization_delay_s: 0
+    retry_policy: *retry_transport
+    errors: [BK8500ValidationError, BK8500CommandError, BK8500ConnectionError]
+    exclusive_resources: [instrument]
+
+  - keyword: Get Load Protection Limits
+    signature: "Get Load Protection Limits"
+    purpose: Read back the configured protection limits (commands 0x23, 0x25, 0x27).
+    inputs: {}
+    outputs: {type: dictionary, keys: [max_voltage_v, max_current_a, max_power_w], units: [V, A, W]}
+    preconditions: [A connection is open.]
+    postconditions: [No state change.]
+    side_effects: [Three transactions.]
+    risk_level: none
+    timing: {typical_ms: 180, worst_case_ms: 3000}
+    stabilization_delay_s: 0
+    retry_policy: *retry_transport
+    errors: [BK8500ConnectionError, BK8500ProtocolError]
+    exclusive_resources: [serial_port]
+
+  - keyword: Set Load Mode
+    signature: "Set Load Mode    mode"
+    purpose: Select the regulation law (command 0x28).
+    inputs: {mode: {type: string, allowed: [CC, CV, CW, CR], case_insensitive: true}}
+    outputs: {type: string, description: the mode that was applied}
+    preconditions: [State is REMOTE_IDLE or REMOTE_ACTIVE.]
+    postconditions: [The instrument regulates according to the selected mode's own setpoint register.]
+    side_effects: [Changing mode while the input is closed changes the load on the DUT immediately, using whatever value that mode's setpoint register already holds.]
+    risk_level: medium
+    timing: {typical_ms: 60, worst_case_ms: 1000}
+    stabilization_delay_s: 0.05
+    retry_policy: *retry_transport
+    errors: [BK8500ValidationError, BK8500CommandError, BK8500ConnectionError]
+    exclusive_resources: [instrument]
+
+  - keyword: Get Load Mode
+    signature: "Get Load Mode"
+    purpose: Read the active regulation mode (command 0x29).
+    inputs: {}
+    outputs: {type: string, allowed: [CC, CV, CW, CR]}
+    preconditions: [A connection is open.]
+    postconditions: [No state change.]
+    side_effects: [One 0x29 transaction.]
+    risk_level: none
+    timing: {typical_ms: 60, worst_case_ms: 1000}
+    stabilization_delay_s: 0
+    retry_policy: *retry_transport
+    errors: [BK8500ConnectionError, BK8500ProtocolError]
+    exclusive_resources: [serial_port]
+
+  - keyword: Set Load Setpoint
+    signature: "Set Load Setpoint    mode    value"
+    purpose: Write the regulation level belonging to one mode (commands 0x2A, 0x2C, 0x2E, 0x30).
+    inputs:
+      mode: {type: string, allowed: [CC, CV, CW, CR]}
+      value: {type: float, unit: "A for CC, V for CV, W for CW, ohm for CR", range: "0 to the model rating; CR is limited to 0.1 .. 4000 ohm"}
+    outputs: {type: none}
+    preconditions: [State is REMOTE_IDLE or REMOTE_ACTIVE.]
+    postconditions: [That mode's setpoint register holds the value, quantised to the instrument resolution (0.1 mA, 1 mV, 1 mW, 1 mohm).]
+    side_effects: [If the input is closed and this mode is active, the load on the DUT changes immediately.]
+    risk_level: medium
+    timing: {typical_ms: 60, worst_case_ms: 1000}
+    stabilization_delay_s: 0.05
+    retry_policy: *retry_transport
+    errors: [BK8500ValidationError, BK8500CommandError, BK8500ConnectionError]
+    exclusive_resources: [instrument]
+
+  - keyword: Get Load Setpoint
+    signature: "Get Load Setpoint    mode"
+    purpose: Read a mode's regulation level (commands 0x2B, 0x2D, 0x2F, 0x31).
+    inputs: {mode: {type: string, allowed: [CC, CV, CW, CR]}}
+    outputs: {type: float, unit: "A / V / W / ohm depending on mode"}
+    preconditions: [A connection is open.]
+    postconditions: [No state change.]
+    side_effects: [One transaction.]
+    risk_level: none
+    timing: {typical_ms: 60, worst_case_ms: 1000}
+    stabilization_delay_s: 0
+    retry_policy: *retry_transport
+    errors: [BK8500ValidationError, BK8500ConnectionError, BK8500ProtocolError]
+    exclusive_resources: [serial_port]
+
+  - keyword: Apply Constant Current
+    signature: "Apply Constant Current    current    enable_input=False"
+    purpose: Select CC mode, write the current setpoint, force FIXED function and optionally close the input.
+    inputs:
+      current: {type: float, unit: A, range: [0, model rated current]}
+      enable_input: {type: boolean, default: false, note: When true this keyword starts current flow and inherits the risk of Load Input On.}
+    outputs: {type: none}
+    preconditions: [State is REMOTE_IDLE or REMOTE_ACTIVE., Protection limits configured.]
+    postconditions: [Mode is CC., Function is FIXED., Input is closed when enable_input is true.]
+    side_effects: [Ordering is fixed: mode, then setpoint, then function, then input, so the DUT never sees a stale level.]
+    risk_level: high
+    timing: {typical_ms: 200, worst_case_ms: 3000}
+    stabilization_delay_s: 0.1
+    retry_policy: *retry_transport
+    errors: [BK8500ValidationError, BK8500StateError, BK8500CommandError]
+    exclusive_resources: [instrument, dut_electrical_node]
+
+  - keyword: Apply Constant Voltage
+    signature: "Apply Constant Voltage    voltage    enable_input=False"
+    purpose: Select CV mode, write the voltage setpoint, force FIXED function and optionally close the input.
+    inputs: {voltage: {type: float, unit: V, range: [0, model rated voltage]}, enable_input: {type: boolean, default: false}}
+    outputs: {type: none}
+    preconditions: [State is REMOTE_IDLE or REMOTE_ACTIVE., Protection limits configured.]
+    postconditions: [Mode is CV., Function is FIXED.]
+    side_effects: [In CV the load draws whatever current is needed to hold the terminal voltage; a stiff source can drive the current straight to the protection limit.]
+    risk_level: high
+    timing: {typical_ms: 200, worst_case_ms: 3000}
+    stabilization_delay_s: 0.1
+    retry_policy: *retry_transport
+    errors: [BK8500ValidationError, BK8500StateError, BK8500CommandError]
+    exclusive_resources: [instrument, dut_electrical_node]
+
+  - keyword: Apply Constant Power
+    signature: "Apply Constant Power    power    enable_input=False"
+    purpose: Select CW mode, write the power setpoint, force FIXED function and optionally close the input.
+    inputs: {power: {type: float, unit: W, range: [0, model rated power]}, enable_input: {type: boolean, default: false}}
+    outputs: {type: none}
+    preconditions: [State is REMOTE_IDLE or REMOTE_ACTIVE., Protection limits configured.]
+    postconditions: [Mode is CW., Function is FIXED.]
+    side_effects: [Constant power means current rises as the source voltage falls; on a discharging battery this accelerates towards the current limit.]
+    risk_level: high
+    timing: {typical_ms: 200, worst_case_ms: 3000}
+    stabilization_delay_s: 0.1
+    retry_policy: *retry_transport
+    errors: [BK8500ValidationError, BK8500StateError, BK8500CommandError]
+    exclusive_resources: [instrument, dut_electrical_node]
+
+  - keyword: Apply Constant Resistance
+    signature: "Apply Constant Resistance    resistance    enable_input=False"
+    purpose: Select CR mode, write the resistance setpoint, force FIXED function and optionally close the input.
+    inputs: {resistance: {type: float, unit: ohm, range: [0.1, 4000]}, enable_input: {type: boolean, default: false}}
+    outputs: {type: none}
+    preconditions: [State is REMOTE_IDLE or REMOTE_ACTIVE., Protection limits configured.]
+    postconditions: [Mode is CR., Function is FIXED.]
+    side_effects: [Small resistances at high source voltage produce large currents; check V/R against the model rating before closing the input.]
+    risk_level: high
+    timing: {typical_ms: 200, worst_case_ms: 3000}
+    stabilization_delay_s: 0.1
+    retry_policy: *retry_transport
+    errors: [BK8500ValidationError, BK8500StateError, BK8500CommandError]
+    exclusive_resources: [instrument, dut_electrical_node]
+
+  - keyword: Set Load Function
+    signature: "Set Load Function    function"
+    purpose: Select FIXED, TRANSIENT, LIST or BATTERY operation (command 0x5D).
+    inputs: {function: {type: string, allowed: [FIXED, TRANSIENT, LIST, BATTERY], rejected: [SHORT]}}
+    outputs: {type: string, description: the function that was applied}
+    preconditions: [State is REMOTE_IDLE or REMOTE_ACTIVE., For TRANSIENT the transient parameters are already programmed., For LIST the list is already programmed., For BATTERY the cut-off voltage is already set.]
+    postconditions: [The selected function governs the load's behaviour when the input closes.]
+    side_effects: [SHORT is refused by the driver because it commands the model's maximum sink current; use Set Load Function Unchecked when the bench contract permits it.]
+    risk_level: medium
+    timing: {typical_ms: 60, worst_case_ms: 1000}
+    stabilization_delay_s: 0.05
+    retry_policy: *retry_transport
+    errors: [BK8500SafetyError, BK8500ValidationError, BK8500CommandError]
+    exclusive_resources: [instrument]
+
+  - keyword: Set Load Function Unchecked
+    signature: "Set Load Function Unchecked    function"
+    purpose: Select any function including SHORT, bypassing the driver's SHORT guard.
+    inputs: {function: {type: string, allowed: [FIXED, SHORT, TRANSIENT, LIST, BATTERY]}}
+    outputs: {type: string}
+    preconditions: [State is REMOTE_IDLE., The bench contract explicitly authorises a short-circuit test on this DUT., The DUT and wiring survive the model's full rated sink current.]
+    postconditions: [The selected function is active.]
+    side_effects: [With SHORT and the input closed the load draws its maximum rated current. This can destroy the DUT, the wiring or the fixture.]
+    risk_level: critical
+    timing: {typical_ms: 60, worst_case_ms: 1000}
+    stabilization_delay_s: 0.05
+    retry_policy: *retry_none
+    errors: [BK8500ValidationError, BK8500CommandError]
+    exclusive_resources: [instrument, dut_electrical_node]
+
+  - keyword: Get Load Function
+    signature: "Get Load Function"
+    purpose: Read the active function (command 0x5E).
+    inputs: {}
+    outputs: {type: string, allowed: [FIXED, SHORT, TRANSIENT, LIST, BATTERY]}
+    preconditions: [A connection is open.]
+    postconditions: [No state change.]
+    side_effects: [One 0x5E transaction.]
+    risk_level: none
+    timing: {typical_ms: 60, worst_case_ms: 1000}
+    stabilization_delay_s: 0
+    retry_policy: *retry_transport
+    errors: [BK8500ConnectionError, BK8500ProtocolError]
+    exclusive_resources: [serial_port]
+
+  - keyword: Configure Load Transient
+    signature: "Configure Load Transient    mode    level_a    dwell_a    level_b    dwell_b    operation=CONTINUOUS"
+    purpose: Program A/B transient toggling for one mode (commands 0x32, 0x34, 0x36, 0x38).
+    inputs:
+      mode: {type: string, allowed: [CC, CV, CW, CR]}
+      level_a: {type: float, unit: mode dependent, range: same as the mode setpoint}
+      dwell_a: {type: float, unit: s, range: [0, 6.5535], note: The wire field is 2 bytes of 0.1 ms, so 6.5535 s is the hard ceiling.}
+      level_b: {type: float, unit: mode dependent}
+      dwell_b: {type: float, unit: s, range: [0, 6.5535]}
+      operation: {type: string, allowed: [CONTINUOUS, PULSE, TOGGLED], default: CONTINUOUS}
+    outputs: {type: none}
+    preconditions: [State is REMOTE_IDLE.]
+    postconditions: [The transient registers hold the programmed pair. The function must still be set to TRANSIENT for them to take effect.]
+    side_effects: [None until the function is TRANSIENT and the input is closed.]
+    risk_level: low
+    timing: {typical_ms: 60, worst_case_ms: 1000}
+    stabilization_delay_s: 0
+    retry_policy: *retry_transport
+    errors: [BK8500ValidationError, BK8500CommandError]
+    exclusive_resources: [instrument]
+
+  - keyword: Get Load Transient
+    signature: "Get Load Transient    mode"
+    purpose: Read back the transient parameters of one mode (commands 0x33, 0x35, 0x37, 0x39).
+    inputs: {mode: {type: string, allowed: [CC, CV, CW, CR]}}
+    outputs: {type: dictionary, keys: [mode, level_a, dwell_a_s, level_b, dwell_b_s, operation]}
+    preconditions: [A connection is open.]
+    postconditions: [No state change.]
+    side_effects: [One transaction.]
+    risk_level: none
+    timing: {typical_ms: 60, worst_case_ms: 1000}
+    stabilization_delay_s: 0
+    retry_policy: *retry_transport
+    errors: [BK8500ValidationError, BK8500ProtocolError]
+    exclusive_resources: [serial_port]
+
+  - keyword: Set Load Trigger Source
+    signature: "Set Load Trigger Source    source"
+    purpose: Select what advances a transient, list or battery run (command 0x58).
+    inputs: {source: {type: string, allowed: [IMMEDIATE, EXTERNAL, BUS], note: "IMMEDIATE is the front panel Trigger key, EXTERNAL is the rear panel TTL input, BUS is the software trigger."}}
+    outputs: {type: string}
+    preconditions: [State is REMOTE_IDLE or REMOTE_ACTIVE.]
+    postconditions: [Trigger Load is only accepted when the source is BUS.]
+    side_effects: [None.]
+    risk_level: low
+    timing: {typical_ms: 60, worst_case_ms: 1000}
+    stabilization_delay_s: 0
+    retry_policy: *retry_transport
+    errors: [BK8500ValidationError, BK8500CommandError]
+    exclusive_resources: [instrument]
+
+  - keyword: Get Load Trigger Source
+    signature: "Get Load Trigger Source"
+    purpose: Read the configured trigger source (command 0x59).
+    inputs: {}
+    outputs: {type: string, allowed: [IMMEDIATE, EXTERNAL, BUS]}
+    preconditions: [A connection is open.]
+    postconditions: [No state change.]
+    side_effects: [One 0x59 transaction.]
+    risk_level: none
+    timing: {typical_ms: 60, worst_case_ms: 1000}
+    stabilization_delay_s: 0
+    retry_policy: *retry_transport
+    errors: [BK8500ProtocolError]
+    exclusive_resources: [serial_port]
+
+  - keyword: Trigger Load
+    signature: "Trigger Load"
+    purpose: Issue a software trigger (command 0x5A).
+    inputs: {}
+    outputs: {type: none}
+    preconditions: [Trigger source is BUS, otherwise the instrument answers with status 0xB0., The function that consumes the trigger is already selected.]
+    postconditions: [The transient, list or battery sequence advances.]
+    side_effects: [The load on the DUT changes at the instant of the trigger.]
+    risk_level: medium
+    timing: {typical_ms: 60, worst_case_ms: 1000, note: "Trigger latency over the serial link is tens of milliseconds and jitters with baud rate; do not use it as a timing reference."}
+    stabilization_delay_s: 0
+    retry_policy: *retry_none
+    errors: [BK8500CommandError, BK8500ConnectionError]
+    exclusive_resources: [instrument, dut_electrical_node]
+
+  - keyword: Configure Load List
+    signature: "Configure Load List    mode    steps    repeat=ONCE    name=None"
+    purpose: Program a complete list sequence (commands 0x3A, 0x3C, 0x3E and the per-step 0x40/0x42/0x44/0x46, plus 0x48).
+    inputs:
+      mode: {type: string, allowed: [CC, CV, CW, CR]}
+      steps: {type: "list of (level, dwell_seconds) pairs", min_length: 2, max_length: 1000, note: "Step indices are 1-based. Physical BK8500 model 8500 firmware 1.84 rejected command 0x3E for a one-step list; this driver therefore requires at least two steps. Effective maximum follows partition: 1x1000, 2x500, 4x250, or 8x120."}
+      repeat: {type: string, allowed: [ONCE, REPEAT], default: ONCE}
+      name: {type: string, max_length: 10, optional: true, note: ASCII only.}
+    outputs: {type: none}
+    preconditions: [State is REMOTE_IDLE., The profile contains at least two steps., The list partition allows the requested number of steps.]
+    postconditions: [The list is resident in volatile memory. Use Save Load List File to persist it., "Validation is all-or-nothing: partition capacity, every step and the list name are checked before the first list-write frame is sent."]
+    side_effects: [The driver forces the load input OFF before list editing., "Programming is one transaction per step: a 1000 step list takes roughly a minute at 9600 baud."]
+    risk_level: low
+    timing: {typical_ms: 60, worst_case_ms: 1000, note: per step}
+    stabilization_delay_s: 0
+    retry_policy: *retry_transport
+    errors: [BK8500ValidationError, BK8500CommandError]
+    exclusive_resources: [instrument]
+
+  - keyword: Get Load List Step
+    signature: "Get Load List Step    mode    index"
+    purpose: Read one list step back (commands 0x41, 0x43, 0x45, 0x47).
+    inputs: {mode: {type: string, allowed: [CC, CV, CW, CR]}, index: {type: integer, range: [1, 1000]}}
+    outputs: {type: dictionary, keys: [index, level, dwell_s]}
+    preconditions: [A connection is open.]
+    postconditions: [No state change.]
+    side_effects: [One transaction.]
+    risk_level: none
+    timing: {typical_ms: 60, worst_case_ms: 1000}
+    stabilization_delay_s: 0
+    retry_policy: *retry_transport
+    errors: [BK8500ValidationError, BK8500ProtocolError]
+    exclusive_resources: [serial_port]
+
+  - keyword: Get Load List Step Count
+    signature: "Get Load List Step Count"
+    purpose: Read the programmed number of list steps (command 0x3F).
+    inputs: {}
+    outputs: {type: integer}
+    preconditions: [A connection is open.]
+    postconditions: [No state change.]
+    side_effects: [One 0x3F transaction.]
+    risk_level: none
+    timing: {typical_ms: 60, worst_case_ms: 1000}
+    stabilization_delay_s: 0
+    retry_policy: *retry_transport
+    errors: [BK8500ProtocolError]
+    exclusive_resources: [serial_port]
+
+  - keyword: Save Load List File
+    signature: "Save Load List File    location"
+    purpose: Persist the current list into an instrument file slot (command 0x4C).
+    inputs: {location: {type: integer, range: [1, 8], note: Must be consistent with the memory partition scheme.}}
+    outputs: {type: none}
+    preconditions: [State is REMOTE_IDLE., A list is programmed.]
+    postconditions: [The list survives a power cycle.]
+    side_effects: [Overwrites whatever was stored in that slot. Writes to instrument non-volatile memory, which has finite endurance.]
+    risk_level: low
+    timing: {typical_ms: 200, worst_case_ms: 2000}
+    stabilization_delay_s: 0.5
+    retry_policy: *retry_none
+    errors: [BK8500ValidationError, BK8500CommandError]
+    exclusive_resources: [instrument]
+
+  - keyword: Recall Load List File
+    signature: "Recall Load List File    location"
+    purpose: Load a stored list into working memory (command 0x4D).
+    inputs: {location: {type: integer, range: [1, 8], note: Must be enabled by the active partition.}}
+    outputs: {type: none}
+    preconditions: [State is REMOTE_IDLE., A list was previously saved to that slot.]
+    postconditions: [The recalled list replaces the working list.]
+    side_effects: [Discards an unsaved working list.]
+    risk_level: low
+    timing: {typical_ms: 200, worst_case_ms: 2000}
+    stabilization_delay_s: 0.2
+    retry_policy: *retry_transport
+    errors: [BK8500ValidationError, BK8500CommandError]
+    exclusive_resources: [instrument]
+
+  - keyword: Set Battery Cutoff Voltage
+    signature: "Set Battery Cutoff Voltage    voltage"
+    purpose: Set the terminal voltage at which a battery discharge test stops (command 0x4E).
+    inputs: {voltage: {type: float, unit: V, range: [0, model rated voltage]}}
+    outputs: {type: none}
+    preconditions: [State is REMOTE_IDLE.]
+    postconditions: [A BATTERY function run stops when the terminal voltage falls to this value.]
+    side_effects: ["A cut-off set too low will over-discharge the cell under test: the driver cannot know the chemistry and does not second-guess the value."]
+    risk_level: medium
+    timing: {typical_ms: 60, worst_case_ms: 1000}
+    stabilization_delay_s: 0
+    retry_policy: *retry_transport
+    errors: [BK8500ValidationError, BK8500CommandError]
+    exclusive_resources: [instrument]
+
+  - keyword: Get Battery Cutoff Voltage
+    signature: "Get Battery Cutoff Voltage"
+    purpose: Read the battery test cut-off voltage (command 0x4F).
+    inputs: {}
+    outputs: {type: float, unit: V}
+    preconditions: [A connection is open.]
+    postconditions: [No state change.]
+    side_effects: [One 0x4F transaction.]
+    risk_level: none
+    timing: {typical_ms: 60, worst_case_ms: 1000}
+    stabilization_delay_s: 0
+    retry_policy: *retry_transport
+    errors: [BK8500ProtocolError]
+    exclusive_resources: [serial_port]
+
+  - keyword: Set Load On Timer
+    signature: "Set Load On Timer    seconds    enabled=True"
+    purpose: Program and arm the LOAD ON timer (commands 0x50 and 0x52).
+    inputs: {seconds: {type: float, unit: s, range: [0, 60000], note: Whole seconds; fractions are rounded.}, enabled: {type: boolean, default: true}}
+    outputs: {type: none}
+    preconditions: [State is REMOTE_IDLE.]
+    postconditions: [When enabled, the instrument opens its input by itself after the programmed time.]
+    side_effects: ["The input can open without any keyword being called, so a later measurement may find the input off. This is a useful safety net for unattended discharge, and a trap for long test sequences."]
+    risk_level: medium
+    timing: {typical_ms: 120, worst_case_ms: 2000}
+    stabilization_delay_s: 0
+    retry_policy: *retry_transport
+    errors: [BK8500ValidationError, BK8500CommandError]
+    exclusive_resources: [instrument]
+
+  - keyword: Get Load On Timer
+    signature: "Get Load On Timer"
+    purpose: Read the LOAD ON timer value and state (commands 0x51 and 0x53).
+    inputs: {}
+    outputs: {type: dictionary, keys: [seconds, enabled]}
+    preconditions: [A connection is open.]
+    postconditions: [No state change.]
+    side_effects: [Two transactions.]
+    risk_level: none
+    timing: {typical_ms: 120, worst_case_ms: 2000}
+    stabilization_delay_s: 0
+    retry_policy: *retry_transport
+    errors: [BK8500ProtocolError]
+    exclusive_resources: [serial_port]
+
+  - keyword: Save Load Settings
+    signature: "Save Load Settings    register"
+    purpose: Store the present instrument settings into a register (command 0x5B).
+    inputs: {register: {type: integer, range: [1, 25]}}
+    outputs: {type: none}
+    preconditions: [State is REMOTE_IDLE.]
+    postconditions: [The register holds the present settings.]
+    side_effects: [Overwrites the register. Writes to non-volatile memory.]
+    risk_level: low
+    timing: {typical_ms: 200, worst_case_ms: 2000}
+    stabilization_delay_s: 0.5
+    retry_policy: *retry_none
+    errors: [BK8500ValidationError, BK8500CommandError]
+    exclusive_resources: [instrument]
+
+  - keyword: Recall Load Settings
+    signature: "Recall Load Settings    register"
+    purpose: Restore settings from a register (command 0x5C).
+    inputs: {register: {type: integer, range: [1, 25]}}
+    outputs: {type: none}
+    preconditions: [State is REMOTE_IDLE., The register was written earlier.]
+    postconditions: ["Mode, setpoints and limits are replaced by the stored values."]
+    side_effects: ["A recall can silently raise a setpoint or lower a protection limit. Re-read both before closing the input."]
+    risk_level: medium
+    timing: {typical_ms: 200, worst_case_ms: 2000}
+    stabilization_delay_s: 0.1
+    retry_policy: *retry_transport
+    errors: [BK8500ValidationError, BK8500CommandError]
+    exclusive_resources: [instrument]
+
+  - keyword: Measure Load Input
+    signature: "Measure Load Input"
+    purpose: Take one reading of voltage, current, power and both state registers (command 0x5F).
+    inputs: {}
+    outputs:
+      type: dictionary
+      keys: [voltage_v, current_a, power_w, input_on, active_protections, operation_state, demand_state]
+      notes: "operation_state and demand_state are name to boolean maps of the two instrument status registers."
+    preconditions: [A connection is open.]
+    postconditions: [No state change.]
+    side_effects: [One 0x5F transaction.]
+    risk_level: none
+    timing: {typical_ms: 60, worst_case_ms: 1000, note: "Roughly 10 to 30 readings per second at 9600 baud; this is the sampling ceiling for any polling loop built on this driver."}
+    stabilization_delay_s: 0
+    retry_policy: *retry_transport
+    errors: [BK8500ConnectionError, BK8500TimeoutError, BK8500ProtocolError]
+    exclusive_resources: [serial_port]
+
+  - keyword: Get Load Voltage
+    signature: "Get Load Voltage"
+    purpose: Measured terminal voltage.
+    inputs: {}
+    outputs: {type: float, unit: V}
+    preconditions: [A connection is open.]
+    postconditions: [No state change.]
+    side_effects: [One 0x5F transaction.]
+    risk_level: none
+    timing: {typical_ms: 60, worst_case_ms: 1000}
+    stabilization_delay_s: 0
+    retry_policy: *retry_transport
+    errors: [BK8500ConnectionError, BK8500ProtocolError]
+    exclusive_resources: [serial_port]
+
+  - keyword: Get Load Current
+    signature: "Get Load Current"
+    purpose: Measured sink current.
+    inputs: {}
+    outputs: {type: float, unit: A}
+    preconditions: [A connection is open.]
+    postconditions: [No state change.]
+    side_effects: [One 0x5F transaction.]
+    risk_level: none
+    timing: {typical_ms: 60, worst_case_ms: 1000}
+    stabilization_delay_s: 0
+    retry_policy: *retry_transport
+    errors: [BK8500ConnectionError, BK8500ProtocolError]
+    exclusive_resources: [serial_port]
+
+  - keyword: Get Load Power
+    signature: "Get Load Power"
+    purpose: Measured input power.
+    inputs: {}
+    outputs: {type: float, unit: W}
+    preconditions: [A connection is open.]
+    postconditions: [No state change.]
+    side_effects: [One 0x5F transaction.]
+    risk_level: none
+    timing: {typical_ms: 60, worst_case_ms: 1000}
+    stabilization_delay_s: 0
+    retry_policy: *retry_transport
+    errors: [BK8500ConnectionError, BK8500ProtocolError]
+    exclusive_resources: [serial_port]
+
+  - keyword: Wait Until Load Reading Is Stable
+    signature: "Wait Until Load Reading Is Stable    quantity=current    tolerance=0.01    window=1.0    timeout=10.0    interval=0.1"
+    purpose: Block until a measured quantity stays inside a peak-to-peak band for a continuous window.
+    inputs:
+      quantity: {type: string, allowed: [voltage, current, power]}
+      tolerance: {type: float, unit: same as the quantity, note: maximum peak-to-peak spread inside the window}
+      window: {type: float, unit: s}
+      timeout: {type: float, unit: s}
+      interval: {type: float, unit: s, note: "Values below about 0.04 s do not increase the sample rate at 9600 baud."}
+    outputs: {type: dictionary, description: the last reading, same shape as Measure Load Input}
+    preconditions: [A connection is open.]
+    postconditions: [No state change.]
+    side_effects: [Occupies the serial port for the duration of the wait.]
+    risk_level: none
+    timing: {typical_ms: 1000, worst_case_ms: "timeout argument"}
+    stabilization_delay_s: 0
+    retry_policy: *retry_transport
+    errors: [BK8500StateError, BK8500ValidationError, BK8500ProtocolError]
+    exclusive_resources: [serial_port]
+
+  - keyword: Load Voltage Should Be Within
+    signature: "Load Voltage Should Be Within    expected    tolerance"
+    purpose: Pass/fail oracle on the measured terminal voltage.
+    inputs: {expected: {type: float, unit: V}, tolerance: {type: float, unit: V, note: absolute, symmetric}}
+    outputs: {type: float, description: the measured value, so it can be logged or reused}
+    preconditions: [A connection is open., The DUT has settled; combine with Wait Until Load Reading Is Stable for transient-prone sources.]
+    postconditions: [No state change.]
+    side_effects: [One 0x5F transaction. Raises BK8500VerificationError, which Robot reports as a normal test failure.]
+    risk_level: none
+    timing: {typical_ms: 60, worst_case_ms: 1000}
+    stabilization_delay_s: 0
+    retry_policy: *retry_transport
+    errors: [BK8500VerificationError, BK8500ProtocolError]
+    exclusive_resources: [serial_port]
+
+  - keyword: Load Current Should Be Within
+    signature: "Load Current Should Be Within    expected    tolerance"
+    purpose: Pass/fail oracle on the measured sink current.
+    inputs: {expected: {type: float, unit: A}, tolerance: {type: float, unit: A}}
+    outputs: {type: float}
+    preconditions: [A connection is open., The load has settled.]
+    postconditions: [No state change.]
+    side_effects: [One 0x5F transaction.]
+    risk_level: none
+    timing: {typical_ms: 60, worst_case_ms: 1000}
+    stabilization_delay_s: 0
+    retry_policy: *retry_transport
+    errors: [BK8500VerificationError, BK8500ProtocolError]
+    exclusive_resources: [serial_port]
+
+  - keyword: Load Power Should Be Within
+    signature: "Load Power Should Be Within    expected    tolerance"
+    purpose: Pass/fail oracle on the measured input power.
+    inputs: {expected: {type: float, unit: W}, tolerance: {type: float, unit: W}}
+    outputs: {type: float}
+    preconditions: [A connection is open., The load has settled.]
+    postconditions: [No state change.]
+    side_effects: [One 0x5F transaction.]
+    risk_level: none
+    timing: {typical_ms: 60, worst_case_ms: 1000}
+    stabilization_delay_s: 0
+    retry_policy: *retry_transport
+    errors: [BK8500VerificationError, BK8500ProtocolError]
+    exclusive_resources: [serial_port]
+
+  - keyword: Load Should Report No Protection Faults
+    signature: "Load Should Report No Protection Faults"
+    purpose: Fail the test if the instrument asserts reverse polarity, over-voltage, over-current, over-power or over-temperature.
+    inputs: {}
+    outputs: {type: dictionary, description: the reading that was checked}
+    preconditions: [A connection is open.]
+    postconditions: [No state change.]
+    side_effects: [One 0x5F transaction. Raises BK8500ProtectionError listing the asserted flags.]
+    risk_level: none
+    timing: {typical_ms: 60, worst_case_ms: 1000}
+    stabilization_delay_s: 0
+    retry_policy: *retry_transport
+    errors: [BK8500ProtectionError, BK8500ProtocolError]
+    exclusive_resources: [serial_port]
+
+  - keyword: Load Input State Should Be
+    signature: "Load Input State Should Be    expected"
+    purpose: Assert that the input relay is in the expected state.
+    inputs: {expected: {type: string, allowed: [ON, OFF]}}
+    outputs: {type: none}
+    preconditions: [A connection is open.]
+    postconditions: [No state change.]
+    side_effects: [One 0x5F transaction.]
+    risk_level: none
+    timing: {typical_ms: 60, worst_case_ms: 1000}
+    stabilization_delay_s: 0
+    retry_policy: *retry_transport
+    errors: [BK8500VerificationError, BK8500ProtocolError]
+    exclusive_resources: [serial_port]
+
+  - keyword: Load Mode Should Be
+    signature: "Load Mode Should Be    expected"
+    purpose: Assert the active regulation mode.
+    inputs: {expected: {type: string, allowed: [CC, CV, CW, CR]}}
+    outputs: {type: none}
+    preconditions: [A connection is open.]
+    postconditions: [No state change.]
+    side_effects: [One 0x29 transaction.]
+    risk_level: none
+    timing: {typical_ms: 60, worst_case_ms: 1000}
+    stabilization_delay_s: 0
+    retry_policy: *retry_transport
+    errors: [BK8500VerificationError, BK8500ValidationError]
+    exclusive_resources: [serial_port]
+
+  - keyword: Get Load Connection Info
+    signature: "Get Load Connection Info"
+    purpose: Diagnostic. Report the current alias, transport, address, selected baud, probe evidence, limits and all open aliases.
+    inputs: {}
+    outputs: {type: dictionary, keys: [alias, transport, address, signal_lines, response_style, baudrate, baudrate_auto_detected, baudrate_probe_attempts, limits, open_aliases], note: "signal_lines reports measured DTR/RTS or null for simulation. response_style is echo, status_tagged, or null. baudrate_probe_attempts is empty for deterministic or simulated opens and contains ordered PASS/FAIL evidence after automatic detection."}
+    preconditions: [A connection is open.]
+    postconditions: [No state change.]
+    side_effects: [No instrument traffic.]
+    risk_level: none
+    timing: {typical_ms: 0, worst_case_ms: 1}
+    stabilization_delay_s: 0
+    retry_policy: *retry_none
+    errors: [BK8500ConnectionError]
+    exclusive_resources: []
+
+error_catalogue:
+  - id: BK8500ConfigurationError
+    meaning: The driver was constructed with an unusable port, model, timeout or baud-probe configuration.
+    typical_cause: A baud candidate outside 4800, 9600, 19200 and 38400, invalid timeout, or a typo in the port name.
+    recoverable: false
+    planner_action: Fix the suite configuration. Do not retry.
+  - id: BK8500ConnectionError
+    meaning: The port could not be opened, or a keyword was called with no connection open.
+    typical_cause: Wrong device path, missing permissions (dialout group), the port is held by another process, an adapter that will not raise DTR or RTS, or Open Load Connection was never called.
+    recoverable: false
+    planner_action: Fail the suite in setup. Retrying the same port will not help.
+  - id: BK8500TimeoutError
+    meaning: Fewer than 26 bytes arrived within the timeout.
+    typical_cause: "Baud rate mismatch, the instrument is off, the cable is unplugged, the address does not match, or DTR/RTS are not asserted. Check the adapter LEDs: they blink only when frames are actually moving."
+    recoverable: sometimes
+    planner_action: The driver already retries up to three times, flushing the input buffer before each attempt. If it still fails, check the signal_lines field of Get Load Connection Info before suspecting the instrument.
+  - id: BK8500ProtocolError
+    meaning: A frame arrived but is malformed, or a data frame was expected and a status frame arrived.
+    typical_cause: Line noise, a competing writer on the same port, or a frame boundary lost after a partial read.
+    recoverable: true
+    planner_action: The driver already retries up to three times. If it still fails, treat the port as unreliable and stop the suite.
+  - id: BK8500CommandError
+    meaning: The instrument answered with status 0x90, 0xA0, 0xB0 or 0xC0.
+    status_map: {0x90: checksum incorrect, 0xA0: parameter out of range, 0xB0: command cannot be carried out in this state, 0xC0: invalid command}
+    typical_cause: 0xA0 means the value exceeded the instrument's own limit; 0xB0 usually means remote control was not claimed, or a trigger was sent with the wrong trigger source.
+    recoverable: false
+    planner_action: Do not retry. Check the precondition list of the keyword that failed.
+  - id: BK8500ValidationError
+    meaning: The driver rejected a parameter before transmitting it.
+    typical_cause: A setpoint above the model rating, a dwell longer than 6.5535 s, a register outside 1..25, a list name longer than 10 characters.
+    recoverable: false
+    planner_action: Correct the test data. This error never reaches the instrument, so no state changed.
+  - id: BK8500StateError
+    meaning: The operation is illegal in the present driver state.
+    typical_cause: Load Input On before Claim Remote Control, or a stability wait that timed out.
+    recoverable: true
+    planner_action: Insert the missing precondition keyword, or extend the timeout.
+  - id: BK8500SafetyError
+    meaning: A driver safety rule blocks the operation.
+    typical_cause: Selecting the SHORT function through Set Load Function.
+    recoverable: false
+    planner_action: Do not work around this in generated tests. Escalate to a human who can authorise Set Load Function Unchecked.
+  - id: BK8500ProtectionError
+    meaning: The instrument reports an active protection flag.
+    flags: [reverse_voltage, over_voltage, over_current, over_power, over_temperature]
+    typical_cause: Reversed DUT leads, a source stiffer than expected, a CR setpoint too low, or blocked cooling.
+    recoverable: false
+    planner_action: Open the input immediately, stop the test, and report the flag names. Do not clear and continue automatically.
+  - id: BK8500VerificationError
+    meaning: A pass/fail oracle failed. Subclass of AssertionError, so Robot reports it as a test failure.
+    typical_cause: The DUT is out of specification, or the tolerance is tighter than the instrument's accuracy allows.
+    recoverable: false
+    planner_action: Report as a test failure. Before tightening or loosening a tolerance, check it against the accuracy figures in resources.provided.
+
+safety_rules:
+  hard_rules:
+    - id: SR-1
+      rule: Never call Load Input On before Claim Remote Control.
+      enforcement: Enforced in the driver; raises BK8500StateError without transmitting.
+    - id: SR-2
+      rule: Never leave a test with the input closed.
+      enforcement: Test teardown must call Load Input Off or Reset Load To Safe State. Close Load Connection performs the safe-state sequence by default.
+    - id: SR-3
+      rule: Configure protection limits before the first Load Input On of a suite.
+      enforcement: Convention plus the suite setup contract below. The driver cannot verify DUT wiring.
+    - id: SR-4
+      rule: Never select the SHORT function in a generated test.
+      enforcement: Set Load Function raises BK8500SafetyError. Set Load Function Unchecked exists only for explicitly authorised, human-reviewed suites.
+    - id: SR-5
+      rule: Never exceed the model's rated voltage, current or power, and never exceed the DUT's rating even when the instrument would allow it.
+      enforcement: The driver validates against the model table. The DUT rating is bench knowledge and must come from the RFDS-018 bench contract.
+    - id: SR-6
+      rule: Stop the test on any protection flag. Do not clear and retry automatically.
+      enforcement: Load Should Report No Protection Faults raises BK8500ProtectionError.
+    - id: SR-7
+      rule: Do not disable the front panel LOCAL key in an unattended suite.
+      enforcement: Convention. Set Local Key Enabled with enabled=False removes the operator's manual escape route.
+  forbidden_sequences:
+    - {sequence: [Set Load Function Unchecked SHORT, Load Input On], reason: Commands the model's full rated sink current into the DUT.}
+    - {sequence: [Apply Constant Voltage below the source voltage, Load Input On], reason: In CV the load sinks whatever current is needed to pull the terminal down, so a stiff source runs straight into the current limit.}
+    - {sequence: [Release Remote Control while the input is closed], reason: Leaves the load energised with no bus control; the operator inherits a live sink.}
+    - {sequence: [Recall Load Settings, Load Input On], reason: A recall can raise a setpoint or lower a limit silently. Read both back first.}
+  operator_actions_required:
+    - Connect the DUT with the correct polarity before the suite runs. Reverse polarity is reported as a fault, not corrected.
+    - Use a TTL-level adapter on the instrument's DB9. A direct connection to a standard RS-232 port can damage the instrument.
+    - Confirm that the wiring and fixture are rated for the highest current the suite programs.
+    - Confirm airflow around the instrument for sustained high-power tests.
+  thermal_note: >
+    All energy drawn from the DUT is dissipated inside the load. Sustained
+    operation near the power rating raises the internal temperature and can
+    trip over-temperature protection; derating and airflow are bench concerns
+    that this driver cannot observe.
+
+verification_objectives:
+  - id: VO-IDENT
+    objective: The instrument is reachable and identifies itself.
+    procedure: [Open Load Connection, Get Load Product Information]
+    oracle: "model is non-empty and firmware_version matches ^[0-9A-F]+\\.[0-9A-F]+$"
+    risk: none
+  - id: VO-PROT-RT
+    objective: Protection limits can be written and read back.
+    procedure: [Configure Load Protection, Get Load Protection Limits]
+    oracle: "each returned value equals the written value within one instrument count (1 mV, 0.1 mA, 1 mW)"
+    risk: none
+  - id: VO-MODE-RT
+    objective: Every regulation mode can be selected and observed.
+    procedure: [Set Load Mode for each of CC CV CW CR, Load Mode Should Be]
+    oracle: "the mode read back equals the mode written, for all four modes"
+    risk: none
+  - id: VO-SETPOINT-RT
+    objective: Setpoints survive a write/read round trip at the instrument's resolution.
+    procedure: [Set Load Setpoint, Get Load Setpoint]
+    oracle: "abs(read - written) <= one instrument count for that quantity"
+    risk: none
+  - id: VO-INPUT-OFF
+    objective: With the input open the load draws no current.
+    procedure: [Load Input Off, Load Current Should Be Within]
+    oracle: "measured current <= 5 mA"
+    risk: none
+  - id: VO-CC-REG
+    objective: In CC the sink current tracks the setpoint.
+    procedure: [Configure Load Protection, Apply Constant Current with enable_input, Wait Until Load Reading Is Stable, Load Current Should Be Within]
+    oracle: "abs(measured - setpoint) <= 0.2 % of reading + 0.15 % of full scale, widened by the source's own regulation"
+    risk: high
+    teardown_required: true
+  - id: VO-CR-REG
+    objective: In CR the current follows Ohm's law at the measured terminal voltage.
+    procedure: [Apply Constant Resistance with enable_input, Wait Until Load Reading Is Stable, Measure Load Input, Load Current Should Be Within]
+    oracle: "abs(measured_current - measured_voltage / resistance) <= 1 % of reading + 0.3 % of full scale"
+    risk: high
+    teardown_required: true
+  - id: VO-POWER-CONSISTENCY
+    objective: Reported power agrees with the product of reported voltage and current.
+    procedure: [Sink a steady load, Measure Load Input]
+    oracle: "abs(power_w - voltage_v * current_a) <= 2 % of the product, floor 50 mW"
+    risk: medium
+  - id: VO-TRAN-RT
+    objective: Transient parameters survive a round trip, including the 0.1 ms dwell quantisation.
+    procedure: [Configure Load Transient, Get Load Transient]
+    oracle: "levels equal within one count and dwell times equal within 0.1 ms"
+    risk: none
+  - id: VO-LIST-RT
+    objective: A programmed list reads back step by step.
+    procedure: [Configure Load List, Get Load List Step Count, Get Load List Step]
+    oracle: "step count equals the number of programmed steps and each step's level and dwell match within one count"
+    risk: none
+  - id: VO-TRIG
+    objective: The software trigger is accepted only when the trigger source is BUS.
+    procedure: [Set Load Trigger Source IMMEDIATE, Trigger Load, Set Load Trigger Source BUS, Trigger Load]
+    oracle: "the first Trigger Load raises BK8500CommandError with status 0xB0 and the second succeeds"
+    risk: low
+  - id: VO-GUARD
+    objective: The driver refuses a setpoint above the model rating without transmitting it.
+    procedure: [Get Load Rated Limits, Set Load Setpoint above the rating]
+    oracle: "BK8500ValidationError is raised and the instrument setpoint is unchanged"
+    risk: none
+  - id: VO-SHORT-GUARD
+    objective: The SHORT function is not reachable through the ordinary keyword.
+    procedure: [Set Load Function SHORT]
+    oracle: "BK8500SafetyError is raised"
+    risk: none
+  - id: VO-TEARDOWN
+    objective: The safe-state sequence always de-energises the load.
+    procedure: [Sink a load, Reset Load To Safe State, Load Input State Should Be OFF, Get Load Function]
+    oracle: "input state is OFF and function is FIXED"
+    risk: medium
+  - id: VO-PROTECTION-TRIP
+    objective: An over-current condition is reported through the demand-state register.
+    procedure: [Configure Load Protection with a max current below the intended sink, Apply Constant Current above it, Load Should Report No Protection Faults]
+    oracle: "BK8500ProtectionError is raised listing over_current"
+    risk: high
+    note: Run this only on a bench and DUT explicitly authorised for a deliberate protection trip.
+
+setup_teardown_contract:
+  suite_setup:
+    ordered_steps:
+      - Open Load Connection with the bench's port, baud rate, address and model.
+      - Get Load Product Information and record model, serial number and firmware in the test log.
+      - Claim Remote Control.
+      - Configure Load Protection with limits derived from the DUT rating, not the instrument rating.
+      - Load Input Off, to start from a known de-energised state.
+    rationale: Nothing may sink current before the protection limits are in place.
+  test_setup:
+    ordered_steps: [Set Load Function FIXED, Set the mode and setpoint required by the test]
+  test_teardown:
+    ordered_steps: [Load Input Off, Set Load Function FIXED]
+    must_run_on_failure: true
+    rationale: A failing test must never hand a closed input to the next test.
+  suite_teardown:
+    ordered_steps: [Reset Load To Safe State, Close All Load Connections]
+    must_run_on_failure: true
+  robot_snippet: |
+    *** Settings ***
+    Library           BK8500Library    auto_connect=${FALSE}
+    Suite Setup       Connect To DC Load
+    Suite Teardown    Disconnect From DC Load
+    Test Teardown     Return Load To Idle
+
+limitations:
+  - id: LIM-1
+    limitation: Single-shot measurement only. There is no buffered acquisition, no hardware timestamping and no streaming.
+    consequence: Sample rate is bounded by the serial round trip, roughly 10 to 30 readings per second at 9600 baud. Anything faster needs a scope or a DAQ.
+  - id: LIM-2
+    limitation: Transient and list dwell fields are 2 bytes of 0.1 ms, so 6.5535 s is the maximum dwell.
+    consequence: Longer profiles must be built from several steps, or driven from the test rather than the instrument.
+  - id: LIM-3
+    limitation: Trigger latency over the serial link is tens of milliseconds and jitters.
+    consequence: Do not use Trigger Load as a timing reference for a measurement that needs better than about 50 ms alignment. Use the EXTERNAL trigger input for that.
+  - id: LIM-4
+    limitation: The driver cannot detect DUT wiring, fixture rating or airflow.
+    consequence: Safety rules SR-3, SR-5 and the operator actions depend on bench-level information from an RFDS-018 contract.
+  - id: LIM-5
+    limitation: The instrument has no query for the input relay state other than the operation-state register inside a 0x5F reading.
+    consequence: Input state is only observable together with a measurement; there is no zero-cost state poll.
+  - id: LIM-6
+    limitation: Calibration commands (0x60..0x69) and the bar code command (0x6B) are not exposed.
+    consequence: Calibration must be performed with the vendor's tools. This is deliberate; a mis-issued calibration command corrupts the instrument's EEPROM.
+  - id: LIM-7
+    limitation: Multi-drop addressing is defined by the protocol but is not validated by this driver beyond passing the address through.
+    consequence: Treat one port as one instrument until a bench proves otherwise.
+  - id: LIM-8
+    limitation: The BATTERY function is programmable (cut-off voltage, function selection) but the driver does not implement amp-hour readout.
+    consequence: Capacity must be integrated by the test from periodic readings, or read from the front panel.
+  - id: LIM-11
+    limitation: The manual does not state the command byte of a reply to a read command, and the vendor's own examples never check it.
+    consequence: The driver accepts both framings and records which one the instrument used in response_style. A reply of 0x12 with status 0x80 and an otherwise empty payload is genuinely ambiguous between "success, no data" and "data beginning with 0x80"; the driver refuses to guess and raises BK8500ProtocolError. Confirm response_style on the first hardware run.
+  - id: LIM-12
+    limitation: Firmware version decoding assumes hexadecimal, not BCD.
+    consequence: The decoded string may be wrong for some firmware. The undecoded bytes are returned as firmware_raw so the value can be checked against the front panel.
+  - id: LIM-10
+    limitation: The link depends on DTR and RTS being asserted, and neither line is available as flow control.
+    consequence: Any adapter or virtual COM driver that drops these lines makes the instrument appear dead. The driver asserts and verifies them on open, but cannot re-verify them mid-session; a mid-run drop surfaces as BK8500TimeoutError.
+  - id: LIM-9
+    limitation: The simulated transport models the register set and a Thevenin source, not the analogue behaviour of the instrument.
+    consequence: A suite that passes in simulation proves keyword and sequencing correctness, not measurement correctness. Simulation never substitutes for a hardware run in a release gate.
+
+planning_hints:
+  sequencing:
+    - Always order operations as: connect, identify, claim remote, set protection, set mode, set setpoint, close input, settle, measure, open input.
+    - Set the setpoint before closing the input. A mode's setpoint register keeps its previous value, so closing the input first can apply a stale load.
+    - Insert Wait Until Load Reading Is Stable between closing the input and the first oracle when the source has a slow control loop.
+  choosing_a_mode:
+    - CC for supply regulation, efficiency and thermal soak tests.
+    - CV for testing a source's current limit and for characterising a battery charger.
+    - CW for battery run-time and constant-power discharge profiles.
+    - CR for emulating a resistive load and for soft start-up, since the current rises with the source voltage.
+  choosing_tolerances:
+    - Derive tolerances from resources.provided accuracy figures plus the DUT's own specification. A tolerance tighter than the instrument's accuracy will fail intermittently for no useful reason.
+    - Current accuracy is the binding term in most CC tests; voltage accuracy is usually far better than the DUT.
+  budgeting_time:
+    - Estimate roughly 60 ms per transaction at 9600 baud. A 1000 step list is about one minute of programming alone.
+    - Prefer one Measure Load Input over three separate Get Load Voltage / Current / Power calls; it is one transaction instead of three and the values are consistent with each other.
+  parallelism:
+    - One driver instance per serial port, and no concurrent keyword calls against one instance. The protocol has no framing recovery.
+    - Several loads on separate ports may be used from one suite through connection aliases.
+  bench_integration:
+    - This driver is a sink. A complete test usually pairs it with a source (PSU) driver and often a DMM for an independent voltage reference.
+    - When a bench contract lists a DMM as the preferred voltage source for a measurement, use the DMM for the oracle and this driver's reading only as a sanity check.
+  developing_without_hardware:
+    - Use simulated=${TRUE} to develop and lint a suite. Keyword names, argument handling, sequencing and teardown are all exercised.
+    - The package test tests/test_all_keyword_execution.py invokes every public keyword against the simulator.
+    - Do not report a simulated run as evidence of a passed verification objective that involves real measurement.
+  complete_driver_verification:
+    - Run hardware_tests/01_all_library_keywords.robot for one independently reported result per public keyword.
+    - Keep ALLOW_INPUT_ON false unless the source, wiring, polarity and current limit have been verified.
+    - Keep ALLOW_PERSISTENT_WRITES false unless overwriting the selected settings register and list slot is acceptable.
+
+unknown_handling:
+  principle: >
+    When the driver cannot determine something, it says so rather than
+    guessing. A planner must treat UNKNOWN as a reason to ask or to stop, not
+    as permission to proceed.
+  cases:
+    - situation: The instrument model is not in the driver's model table.
+      behaviour: Validation falls back to the UNKNOWN envelope (60 V, 15 A, 300 W), the smallest rating in the series, so no request can exceed the real instrument.
+      planner_action: Supply the correct model in Open Load Connection, or restrict the test to the conservative envelope.
+    - situation: The declared model and the instrument's reported model disagree.
+      behaviour: The driver logs a warning and uses the instrument's reported model.
+      planner_action: Treat this as a bench configuration defect and report it.
+    - situation: The DUT's rating is not known to the driver.
+      behaviour: The driver validates only against the instrument rating.
+      planner_action: Obtain the DUT rating from the bench contract. Never let the instrument rating stand in for it.
+    - situation: A reading is requested while the input is open.
+      behaviour: The instrument returns the terminal voltage with the current near zero. This is valid data, not an error.
+      planner_action: Check input_on in the reading before interpreting a zero current as a DUT failure.
+    - situation: The instrument answers a read with a status frame carrying no data.
+      behaviour: BK8500ProtocolError, naming the ambiguity, rather than returning 0x80 counts as if it were a measurement.
+      planner_action: Treat the read command as unsupported by that firmware and route the objective elsewhere.
+    - situation: The firmware version string looks implausible (for example 1.0A).
+      behaviour: The driver reports its best-effort decode and the raw bytes.
+      planner_action: Compare firmware_raw with the front panel before relying on the string in a report.
+    - situation: A quantity this driver does not measure is requested (temperature, ripple, AC content).
+      behaviour: Not offered. There is no keyword for it.
+      planner_action: Route the objective to another instrument in the bench contract.
+  never_do:
+    - Never infer a value the instrument did not return.
+    - Never widen a tolerance to make a test pass.
+    - Never substitute a simulated run for a hardware verification objective.
+
+conformance:
+  rules:
+    - id: CR-1
+      rule: Every keyword listed in capabilities exists in BK8500Library with the documented name and argument names.
+      verified_by: tests/test_contract_conformance.py::test_every_contract_capability_exists
+    - id: CR-2
+      rule: Every keyword in the library appears in capabilities.
+      verified_by: tests/test_contract_conformance.py::test_no_undocumented_keywords
+    - id: CR-3
+      rule: Every error id in error_catalogue is an exception class exported by the package.
+      verified_by: tests/test_contract_conformance.py::test_error_catalogue_matches_exceptions
+    - id: CR-4
+      rule: Every error referenced by a capability appears in error_catalogue.
+      verified_by: tests/test_contract_conformance.py::test_capability_errors_are_catalogued
+    - id: CR-5
+      rule: The contract version equals the package version.
+      verified_by: tests/test_contract_conformance.py::test_version_matches_package
+    - id: CR-6
+      rule: ai_contract.lock holds the SHA-256 of ai_contract.yaml, so a silent edit is detectable.
+      verified_by: tests/test_contract_conformance.py::test_lock_file_matches_contract
+    - id: CR-7
+      rule: Every verification objective id appears as a documented test in atest/.
+      verified_by: tests/test_contract_conformance.py::test_verification_objectives_have_tests
+    - id: CR-8
+      rule: Every public keyword executes against the simulator in one complete API regression.
+      verified_by: tests/test_all_keyword_execution.py::test_every_public_keyword_executes_against_simulated_device
+    - id: CR-9
+      rule: The physical-device conformance suite references every public keyword and gates hazardous actions.
+      verified_by: tests/test_hardware_conformance_suite.py
+  regeneration: python3 tools/generate_lock.py
+  contract_is_authoritative: >
+    Where this contract and the source disagree, the conformance tests fail and
+    the disagreement is a defect. Neither is silently preferred.

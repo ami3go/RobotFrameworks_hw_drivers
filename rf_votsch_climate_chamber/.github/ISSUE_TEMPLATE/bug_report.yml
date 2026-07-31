@@ -1,0 +1,32 @@
+name: Bug report
+description: Report a reproducible library or driver problem
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Do not include credentials, proprietary DUT data, or unsafe operating instructions.
+  - type: input
+    id: version
+    attributes:
+      label: Library version
+      placeholder: v26.02
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Python, Robot Framework, OS, chamber model and firmware.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduction steps
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Redacted logs and communication statistics

@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python: ["3.10", "3.11", "3.12", "3.13"]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install -e ".[dev]"
+      - run: python scripts/verify_project_structure.py
+      - run: python scripts/verify_ai_contract.py
+      - run: python -m pytest
+      - run: python -m robot --outputdir robot-results tests/robot/adapter_acceptance.robot
+      - run: python scripts/run_all_examples.py --outputdir dryrun-results
+      - run: python -m ruff check BK8500BLibrary tests/test_robot_library.py tests/robot/FakeBK8500BLibrary.py scripts/build_release.py scripts/run_example.py scripts/run_all_examples.py scripts/verify_project_structure.py scripts/verify_ai_contract.py scripts/verify_release_artifacts.py scripts/generate_libdoc.py tests/test_ai_contract.py
+      - run: python scripts/generate_libdoc.py
+      - run: python -m compileall -q BK8500BLibrary bk8500b scripts
+
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: python -m pip install --upgrade pip build twine
+      - run: python -m pip install -e ".[dev]"
+      - run: python scripts/verify_project_structure.py
+      - run: python scripts/verify_ai_contract.py
+      - run: python -m build
+      - run: python -m twine check dist/*
+      - run: python scripts/build_release.py

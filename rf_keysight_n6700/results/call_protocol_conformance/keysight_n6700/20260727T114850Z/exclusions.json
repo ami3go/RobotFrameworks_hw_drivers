@@ -1,0 +1,96 @@
+{
+  "schema_version": "1.0",
+  "module_profile": "N6775A",
+  "exclusions": [
+    {
+      "keyword": "Connect To Simulated N6700",
+      "reason": "Real N6775A profile; simulator connection is not a physical-module command.",
+      "verification": "covered by canonical connection path or software-only suite"
+    },
+    {
+      "keyword": "Connect To N6700 Via VISA",
+      "reason": "The self-check uses the canonical Connect To N6700 keyword so audit tracing and one profile work for VISA or Ethernet.",
+      "verification": "covered by canonical connection path or software-only suite"
+    },
+    {
+      "keyword": "Connect To N6700 Via Ethernet",
+      "reason": "The self-check uses the canonical Connect To N6700 keyword so audit tracing and one profile work for VISA or Ethernet.",
+      "verification": "covered by canonical connection path or software-only suite"
+    },
+    {
+      "keyword": "Set N6700 SMU Mode",
+      "reason": "N6775A is a basic power-supply module, not an N678x SMU or electronic-load module. Test case 16 verifies fail-before-transmit behavior.",
+      "verification": "expected UnsupportedFeatureError through Robot Framework"
+    },
+    {
+      "keyword": "Get N6700 SMU Mode",
+      "reason": "N6775A is a basic power-supply module, not an N678x SMU or electronic-load module. Test case 16 verifies fail-before-transmit behavior.",
+      "verification": "expected UnsupportedFeatureError through Robot Framework"
+    },
+    {
+      "keyword": "Configure N6700 SMU Voltage Priority",
+      "reason": "N6775A is a basic power-supply module, not an N678x SMU or electronic-load module. Test case 16 verifies fail-before-transmit behavior.",
+      "verification": "expected UnsupportedFeatureError through Robot Framework"
+    },
+    {
+      "keyword": "Configure N6700 SMU Current Priority",
+      "reason": "N6775A is a basic power-supply module, not an N678x SMU or electronic-load module. Test case 16 verifies fail-before-transmit behavior.",
+      "verification": "expected UnsupportedFeatureError through Robot Framework"
+    },
+    {
+      "keyword": "Set N6700 SMU Output Off Mode",
+      "reason": "N6775A is a basic power-supply module, not an N678x SMU or electronic-load module. Test case 16 verifies fail-before-transmit behavior.",
+      "verification": "expected UnsupportedFeatureError through Robot Framework"
+    },
+    {
+      "keyword": "Get N6700 SMU Output Off Mode",
+      "reason": "N6775A is a basic power-supply module, not an N678x SMU or electronic-load module. Test case 16 verifies fail-before-transmit behavior.",
+      "verification": "expected UnsupportedFeatureError through Robot Framework"
+    },
+    {
+      "keyword": "Set N6700 Load Mode",
+      "reason": "N6775A is a basic power-supply module, not an N678x SMU or electronic-load module. Test case 16 verifies fail-before-transmit behavior.",
+      "verification": "expected UnsupportedFeatureError through Robot Framework"
+    },
+    {
+      "keyword": "Get N6700 Load Mode",
+      "reason": "N6775A is a basic power-supply module, not an N678x SMU or electronic-load module. Test case 16 verifies fail-before-transmit behavior.",
+      "verification": "expected UnsupportedFeatureError through Robot Framework"
+    },
+    {
+      "keyword": "Set N6700 Load Level",
+      "reason": "N6775A is a basic power-supply module, not an N678x SMU or electronic-load module. Test case 16 verifies fail-before-transmit behavior.",
+      "verification": "expected UnsupportedFeatureError through Robot Framework"
+    },
+    {
+      "keyword": "Get N6700 Load Level",
+      "reason": "N6775A is a basic power-supply module, not an N678x SMU or electronic-load module. Test case 16 verifies fail-before-transmit behavior.",
+      "verification": "expected UnsupportedFeatureError through Robot Framework"
+    },
+    {
+      "keyword": "Set N6700 Load Input",
+      "reason": "N6775A is a basic power-supply module, not an N678x SMU or electronic-load module. Test case 16 verifies fail-before-transmit behavior.",
+      "verification": "expected UnsupportedFeatureError through Robot Framework"
+    },
+    {
+      "keyword": "Turn On N6700 Load Input",
+      "reason": "N6775A is a basic power-supply module, not an N678x SMU or electronic-load module. Test case 16 verifies fail-before-transmit behavior.",
+      "verification": "expected UnsupportedFeatureError through Robot Framework"
+    },
+    {
+      "keyword": "Turn Off N6700 Load Input",
+      "reason": "N6775A is a basic power-supply module, not an N678x SMU or electronic-load module. Test case 16 verifies fail-before-transmit behavior.",
+      "verification": "expected UnsupportedFeatureError through Robot Framework"
+    },
+    {
+      "keyword": "Get N6700 Load Input State",
+      "reason": "N6775A is a basic power-supply module, not an N678x SMU or electronic-load module. Test case 16 verifies fail-before-transmit behavior.",
+      "verification": "expected UnsupportedFeatureError through Robot Framework"
+    },
+    {
+      "keyword": "Configure N6700 Load CC",
+      "reason": "N6775A is a basic power-supply module, not an N678x SMU or electronic-load module. Test case 16 verifies fail-before-transmit behavior.",
+      "verification": "expected UnsupportedFeatureError through Robot Framework"
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+robotframework>=6.1
+
+[test]
+pytest>=7.0
+robotframework>=6.1
+
+[yaml]
+PyYAML>=6.0

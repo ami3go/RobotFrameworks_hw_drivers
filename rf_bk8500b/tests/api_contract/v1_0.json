@@ -1,0 +1,1450 @@
+{
+  "contract": "v1.0",
+  "exports": [
+    "BK8500B",
+    "AsyncBK8500B",
+    "DriverConfig",
+    "RetryPolicy",
+    "ReconnectPolicy",
+    "SafetyPolicy",
+    "Protocol",
+    "OperatingMode",
+    "DynamicMode",
+    "TriggerSource",
+    "SessionState",
+    "CommandOutcome",
+    "InstrumentIdentity",
+    "InstrumentCapabilities",
+    "Measurement",
+    "MeasurementSnapshot",
+    "AppliedSetpoint",
+    "DeviceStatus",
+    "DiagnosticSnapshot",
+    "HealthReport",
+    "SelfTestResult",
+    "SCPIErrorEntry",
+    "ProtectionFlag",
+    "SafetyToken",
+    "SlewRate",
+    "TransientConfig",
+    "LEDConfig",
+    "OCPTestConfig",
+    "OCPTestResult",
+    "TimingTestConfig",
+    "TimingTestResult",
+    "ListConfig",
+    "ListRunResult",
+    "SafeEnableConfig",
+    "SafeEnableResult",
+    "BK8500BError",
+    "ConfigurationError",
+    "InvalidStateTransitionError",
+    "LockTimeoutError",
+    "UnsupportedModelError",
+    "UnsupportedFeatureError",
+    "TransportError",
+    "PortBusyError",
+    "ConnectionLostError",
+    "ReadTimeoutError",
+    "WriteTimeoutError",
+    "ProtocolError",
+    "SCPIProtocolError",
+    "LegacyProtocolError",
+    "ChecksumError",
+    "FrameSyncError",
+    "MalformedResponseError",
+    "ResponseTooLargeError",
+    "DeviceError",
+    "SCPICommandError",
+    "ProtectionTrippedError",
+    "DeviceRejectedCommandError",
+    "InstrumentRangeError",
+    "UnsafeOperationError",
+    "IndeterminateCommandOutcome"
+  ],
+  "package_version": "0.1.0",
+  "symbols": {
+    "AppliedSetpoint": {
+      "fields": [
+        {
+          "default": "<required>",
+          "name": "requested",
+          "type": "float"
+        },
+        {
+          "default": "<required>",
+          "name": "applied",
+          "type": "float"
+        },
+        {
+          "default": "<required>",
+          "name": "unit",
+          "type": "str"
+        },
+        {
+          "default": "<required>",
+          "name": "wire_value",
+          "type": "int | str"
+        },
+        {
+          "default": "<required>",
+          "name": "verified",
+          "type": "bool"
+        }
+      ],
+      "kind": "type",
+      "signature": "(requested: 'float', applied: 'float', unit: 'str', wire_value: 'int | str', verified: 'bool') -> None"
+    },
+    "AsyncBK8500B": {
+      "kind": "type",
+      "methods": {
+        "clear_protection": "(self, *, token: 'SafetyToken')",
+        "clear_status": "(self)",
+        "close": "(self) -> 'None'",
+        "configure_and_enable": "(self, config: 'SafeEnableConfig', *, token: 'SafetyToken | None' = None)",
+        "configure_led": "(self, config: 'LEDConfig')",
+        "configure_list": "(self, config: 'ListConfig')",
+        "configure_ocp_test": "(self, config: 'OCPTestConfig')",
+        "configure_timing_test": "(self, config: 'TimingTestConfig')",
+        "configure_transient": "(self, config: 'TransientConfig')",
+        "connect": "(self) -> 'None'",
+        "diagnostic_snapshot": "(self)",
+        "drain_error_queue": "(self, *, maximum: 'int | None' = None)",
+        "get_capabilities": "(self, *, refresh: 'bool' = False)",
+        "get_current_range": "(self)",
+        "get_current_setpoint": "(self)",
+        "get_current_slew": "(self)",
+        "get_device_status": "(self)",
+        "get_event_status_enable": "(self)",
+        "get_input_enabled": "(self)",
+        "get_led_config": "(self)",
+        "get_load_off_voltage": "(self)",
+        "get_load_on_voltage": "(self)",
+        "get_operating_mode": "(self)",
+        "get_operation_enable": "(self)",
+        "get_power_on_status_clear": "(self)",
+        "get_power_setpoint": "(self)",
+        "get_questionable_enable": "(self)",
+        "get_remote_sense": "(self)",
+        "get_resistance_setpoint": "(self)",
+        "get_scpi_version": "(self)",
+        "get_service_request_enable": "(self)",
+        "get_short_enabled": "(self)",
+        "get_transient_config": "(self)",
+        "get_voltage_autorange": "(self)",
+        "get_voltage_range": "(self)",
+        "get_voltage_setpoint": "(self)",
+        "health_check": "(self)",
+        "identify": "(self)",
+        "is_operation_complete": "(self, *, timeout_s: 'float | None' = None)",
+        "measure_all": "(self)",
+        "measure_current": "(self)",
+        "measure_current_maximum": "(self)",
+        "measure_current_minimum": "(self)",
+        "measure_current_peak_to_peak": "(self)",
+        "measure_power": "(self)",
+        "measure_resistance": "(self)",
+        "measure_voltage": "(self)",
+        "measure_voltage_maximum": "(self)",
+        "measure_voltage_minimum": "(self)",
+        "measure_voltage_peak_to_peak": "(self)",
+        "operation_complete": "(self, *, timeout_s: 'float | None' = None)",
+        "query_raw_scpi": "(self, command: 'str', *, timeout_s: 'float | None' = None)",
+        "read_event_status_register": "(self)",
+        "read_next_error": "(self)",
+        "read_operation_condition": "(self)",
+        "read_operation_event": "(self)",
+        "read_questionable_condition": "(self)",
+        "read_questionable_event": "(self)",
+        "read_status_byte": "(self)",
+        "recall_state": "(self, slot: 'int')",
+        "reconnect": "(self)",
+        "reset_device": "(self)",
+        "run_list": "(self, *, timeout_s: 'float | None' = None)",
+        "run_ocp_test": "(self, *, timeout_s: 'float | None' = None)",
+        "run_timing_test": "(self, *, timeout_s: 'float | None' = None)",
+        "save_state": "(self, slot: 'int')",
+        "self_test": "(self, *, timeout_s: 'float | None' = None)",
+        "set_current_range": "(self, amperes: 'float')",
+        "set_current_setpoint": "(self, amperes: 'float')",
+        "set_current_slew": "(self, value: 'float')",
+        "set_current_slew_fall": "(self, value: 'float')",
+        "set_current_slew_rise": "(self, value: 'float')",
+        "set_event_status_enable": "(self, value: 'int')",
+        "set_input_enabled": "(self, enabled: 'bool', *, token: 'SafetyToken | None' = None)",
+        "set_load_off_voltage": "(self, volts: 'float')",
+        "set_load_on_voltage": "(self, volts: 'float')",
+        "set_operating_mode": "(self, mode)",
+        "set_operation_enable": "(self, value: 'int')",
+        "set_power_on_status_clear": "(self, enabled: 'bool')",
+        "set_power_setpoint": "(self, watts: 'float')",
+        "set_questionable_enable": "(self, value: 'int')",
+        "set_remote_sense": "(self, enabled: 'bool')",
+        "set_resistance_setpoint": "(self, ohms: 'float')",
+        "set_service_request_enable": "(self, value: 'int')",
+        "set_short_enabled": "(self, enabled: 'bool', *, token: 'SafetyToken')",
+        "set_voltage_autorange": "(self, enabled: 'bool')",
+        "set_voltage_range": "(self, volts: 'float')",
+        "set_voltage_setpoint": "(self, volts: 'float')",
+        "synchronize_state": "(self)",
+        "transact_raw_legacy": "(self, frame: 'bytes', *, timeout_s: 'float | None' = None)",
+        "trigger": "(self)",
+        "write_raw_scpi": "(self, command: 'str', *, timeout_s: 'float | None' = None)"
+      },
+      "signature": "(config: 'DriverConfig', *, transport: 'Transport | None' = None, audit_sink: 'AuditSink | None' = None, metrics_sink: 'MetricsSink | None' = None) -> 'None'"
+    },
+    "BK8500B": {
+      "kind": "type",
+      "methods": {
+        "clear_peak": "(self) -> 'None'",
+        "clear_protection": "(self, *, token: 'SafetyToken') -> 'None'",
+        "clear_status": "(self) -> 'None'",
+        "close": "(self) -> 'None'",
+        "configure_and_enable": "(self, config: 'SafeEnableConfig', *, token: 'SafetyToken | None' = None) -> 'SafeEnableResult'",
+        "configure_led": "(self, config: 'LEDConfig') -> 'None'",
+        "configure_list": "(self, config: 'ListConfig') -> 'None'",
+        "configure_ocp_test": "(self, config: 'OCPTestConfig') -> 'None'",
+        "configure_timing_test": "(self, config: 'TimingTestConfig') -> 'None'",
+        "configure_transient": "(self, config: 'TransientConfig') -> 'None'",
+        "connect": "(self) -> 'None'",
+        "diagnostic_snapshot": "(self) -> 'DiagnosticSnapshot'",
+        "drain_error_queue": "(self, *, maximum: 'int | None' = None) -> 'tuple[SCPIErrorEntry, ...]'",
+        "get_capabilities": "(self, *, refresh: 'bool' = False) -> 'InstrumentCapabilities'",
+        "get_current_protection": "(self) -> 'float'",
+        "get_current_range": "(self) -> 'float'",
+        "get_current_setpoint": "(self) -> 'float'",
+        "get_current_slew": "(self) -> 'SlewRate'",
+        "get_device_status": "(self) -> 'DeviceStatus'",
+        "get_event_status_enable": "(self) -> 'int'",
+        "get_input_enabled": "(self) -> 'bool'",
+        "get_led_config": "(self) -> 'LEDConfig'",
+        "get_load_off_voltage": "(self) -> 'float'",
+        "get_load_on_voltage": "(self) -> 'float'",
+        "get_ocp_test_enabled": "(self) -> 'bool'",
+        "get_operating_mode": "(self) -> 'OperatingMode'",
+        "get_operation_enable": "(self) -> 'int'",
+        "get_power_on_status_clear": "(self) -> 'bool'",
+        "get_power_protection": "(self) -> 'float'",
+        "get_power_setpoint": "(self) -> 'float'",
+        "get_questionable_enable": "(self) -> 'int'",
+        "get_remote_sense": "(self) -> 'bool'",
+        "get_resistance_setpoint": "(self) -> 'float'",
+        "get_scpi_version": "(self) -> 'str'",
+        "get_service_request_enable": "(self) -> 'int'",
+        "get_short_enabled": "(self) -> 'bool'",
+        "get_timing_enabled": "(self) -> 'bool'",
+        "get_transient_config": "(self) -> 'TransientConfig'",
+        "get_voltage_autorange": "(self) -> 'bool'",
+        "get_voltage_range": "(self) -> 'float'",
+        "get_voltage_setpoint": "(self) -> 'float'",
+        "health_check": "(self) -> 'HealthReport'",
+        "identify": "(self) -> 'InstrumentIdentity'",
+        "is_operation_complete": "(self, *, timeout_s: 'float | None' = None) -> 'bool'",
+        "measure_all": "(self) -> 'MeasurementSnapshot'",
+        "measure_current": "(self) -> 'Measurement'",
+        "measure_current_maximum": "(self) -> 'Measurement'",
+        "measure_current_minimum": "(self) -> 'Measurement'",
+        "measure_current_peak_to_peak": "(self) -> 'Measurement'",
+        "measure_power": "(self) -> 'Measurement'",
+        "measure_resistance": "(self) -> 'Measurement'",
+        "measure_voltage": "(self) -> 'Measurement'",
+        "measure_voltage_maximum": "(self) -> 'Measurement'",
+        "measure_voltage_minimum": "(self) -> 'Measurement'",
+        "measure_voltage_peak_to_peak": "(self) -> 'Measurement'",
+        "operation_complete": "(self, *, timeout_s: 'float | None' = None) -> 'None'",
+        "query_raw_scpi": "(self, command: 'str', *, timeout_s: 'float | None' = None) -> 'str'",
+        "read_event_status_register": "(self) -> 'int'",
+        "read_next_error": "(self) -> 'SCPIErrorEntry'",
+        "read_ocp_result": "(self) -> 'OCPTestResult'",
+        "read_operation_condition": "(self) -> 'int'",
+        "read_operation_event": "(self) -> 'int'",
+        "read_peak_current_maximum": "(self) -> 'Measurement'",
+        "read_peak_current_minimum": "(self) -> 'Measurement'",
+        "read_peak_voltage_maximum": "(self) -> 'Measurement'",
+        "read_peak_voltage_minimum": "(self) -> 'Measurement'",
+        "read_questionable_condition": "(self) -> 'int'",
+        "read_questionable_event": "(self) -> 'int'",
+        "read_status_byte": "(self) -> 'int'",
+        "read_timing_result": "(self) -> 'TimingTestResult'",
+        "read_voltage_fall_time": "(self) -> 'Measurement'",
+        "read_voltage_rise_time": "(self) -> 'Measurement'",
+        "recall_state": "(self, slot: 'int') -> 'None'",
+        "reconnect": "(self) -> 'None'",
+        "reset_device": "(self) -> 'None'",
+        "run_list": "(self, *, timeout_s: 'float | None' = None) -> 'ListRunResult'",
+        "run_ocp_test": "(self, *, timeout_s: 'float | None' = None) -> 'OCPTestResult'",
+        "run_timing_test": "(self, *, timeout_s: 'float | None' = None) -> 'TimingTestResult'",
+        "save_state": "(self, slot: 'int') -> 'None'",
+        "self_test": "(self, *, timeout_s: 'float | None' = None) -> 'SelfTestResult'",
+        "set_current_protection": "(self, amperes: 'float') -> 'AppliedSetpoint'",
+        "set_current_range": "(self, amperes: 'float') -> 'AppliedSetpoint'",
+        "set_current_setpoint": "(self, amperes: 'float') -> 'AppliedSetpoint'",
+        "set_current_slew": "(self, value: 'float') -> 'AppliedSetpoint'",
+        "set_current_slew_fall": "(self, value: 'float') -> 'AppliedSetpoint'",
+        "set_current_slew_rise": "(self, value: 'float') -> 'AppliedSetpoint'",
+        "set_dynamic_slew_fall": "(self, value: 'float') -> 'AppliedSetpoint'",
+        "set_dynamic_slew_rise": "(self, value: 'float') -> 'AppliedSetpoint'",
+        "set_event_status_enable": "(self, value: 'int') -> 'None'",
+        "set_input_enabled": "(self, enabled: 'bool', *, token: 'SafetyToken | None' = None) -> 'None'",
+        "set_load_off_voltage": "(self, volts: 'float') -> 'AppliedSetpoint'",
+        "set_load_on_voltage": "(self, volts: 'float') -> 'AppliedSetpoint'",
+        "set_local": "(self) -> 'None'",
+        "set_ocp_test_enabled": "(self, enabled: 'bool') -> 'None'",
+        "set_operating_mode": "(self, mode: 'OperatingMode') -> 'None'",
+        "set_operation_enable": "(self, value: 'int') -> 'None'",
+        "set_peak_enabled": "(self, enabled: 'bool') -> 'None'",
+        "set_power_on_status_clear": "(self, enabled: 'bool') -> 'None'",
+        "set_power_protection": "(self, watts: 'float') -> 'AppliedSetpoint'",
+        "set_power_setpoint": "(self, watts: 'float') -> 'AppliedSetpoint'",
+        "set_questionable_enable": "(self, value: 'int') -> 'None'",
+        "set_remote": "(self) -> 'None'",
+        "set_remote_sense": "(self, enabled: 'bool') -> 'None'",
+        "set_remote_with_local_lockout": "(self) -> 'None'",
+        "set_resistance_setpoint": "(self, ohms: 'float') -> 'AppliedSetpoint'",
+        "set_service_request_enable": "(self, value: 'int') -> 'None'",
+        "set_short_enabled": "(self, enabled: 'bool', *, token: 'SafetyToken') -> 'None'",
+        "set_timing_enabled": "(self, enabled: 'bool') -> 'None'",
+        "set_voltage_autorange": "(self, enabled: 'bool') -> 'None'",
+        "set_voltage_range": "(self, volts: 'float') -> 'AppliedSetpoint'",
+        "set_voltage_setpoint": "(self, volts: 'float') -> 'AppliedSetpoint'",
+        "set_voltage_time_high_threshold": "(self, volts: 'float') -> 'AppliedSetpoint'",
+        "set_voltage_time_low_threshold": "(self, volts: 'float') -> 'AppliedSetpoint'",
+        "synchronize_state": "(self) -> 'DeviceStatus'",
+        "transact_raw_legacy": "(self, frame: 'bytes', *, timeout_s: 'float | None' = None) -> 'bytes'",
+        "trigger": "(self) -> 'None'",
+        "write_raw_scpi": "(self, command: 'str', *, timeout_s: 'float | None' = None) -> 'None'"
+      },
+      "signature": "(config: 'DriverConfig', *, transport: 'Transport | None' = None, audit_sink: 'AuditSink | None' = None, metrics_sink: 'MetricsSink | None' = None) -> 'None'"
+    },
+    "BK8500BError": {
+      "kind": "type",
+      "signature": "(message: 'str', *, context: 'Mapping[str, Any] | None' = None) -> 'None'"
+    },
+    "ChecksumError": {
+      "kind": "type",
+      "signature": "(message: 'str', *, context: 'Mapping[str, Any] | None' = None) -> 'None'"
+    },
+    "CommandOutcome": {
+      "kind": "EnumType",
+      "members": {
+        "CANCELLED_NOT_SENT": "cancelled_not_sent",
+        "COMPLETED": "completed",
+        "CREATED": "created",
+        "DEVICE_REJECTED": "device_rejected",
+        "FAILED_NOT_SENT": "failed_not_sent",
+        "OUTCOME_INDETERMINATE": "outcome_indeterminate",
+        "PROTOCOL_FAILURE": "protocol_failure",
+        "READING": "reading",
+        "RESPONSE_VALIDATED": "response_validated",
+        "RETRYABLE_READ_FAILURE": "retryable_read_failure",
+        "VALIDATED": "validated",
+        "WAITING_FOR_LOCK": "waiting_for_lock",
+        "WRITE_COMPLETE": "write_complete",
+        "WRITING": "writing"
+      },
+      "signature": "(*values)"
+    },
+    "ConfigurationError": {
+      "kind": "type",
+      "signature": "(message: 'str', *, context: 'Mapping[str, Any] | None' = None) -> 'None'"
+    },
+    "ConnectionLostError": {
+      "kind": "type",
+      "signature": "(message: 'str', *, context: 'Mapping[str, Any] | None' = None) -> 'None'"
+    },
+    "DeviceError": {
+      "kind": "type",
+      "signature": "(message: 'str', *, context: 'Mapping[str, Any] | None' = None) -> 'None'"
+    },
+    "DeviceRejectedCommandError": {
+      "kind": "type",
+      "signature": "(message: 'str', *, context: 'Mapping[str, Any] | None' = None) -> 'None'"
+    },
+    "DeviceStatus": {
+      "fields": [
+        {
+          "default": "<required>",
+          "name": "input_enabled",
+          "type": "bool | None"
+        },
+        {
+          "default": "<required>",
+          "name": "short_enabled",
+          "type": "bool | None"
+        },
+        {
+          "default": "<required>",
+          "name": "operating_mode",
+          "type": "OperatingMode | None"
+        },
+        {
+          "default": "<required>",
+          "name": "status_byte",
+          "type": "int | None"
+        },
+        {
+          "default": "<required>",
+          "name": "questionable_condition",
+          "type": "int | None"
+        },
+        {
+          "default": "<required>",
+          "name": "operation_condition",
+          "type": "int | None"
+        },
+        {
+          "default": "<required>",
+          "name": "protection_flags",
+          "type": "ProtectionFlag"
+        },
+        {
+          "default": "<required>",
+          "name": "unknown_bits",
+          "type": "int"
+        },
+        {
+          "default": "<required>",
+          "name": "synchronized",
+          "type": "bool"
+        }
+      ],
+      "kind": "type",
+      "signature": "(input_enabled: 'bool | None', short_enabled: 'bool | None', operating_mode: 'OperatingMode | None', status_byte: 'int | None', questionable_condition: 'int | None', operation_condition: 'int | None', protection_flags: 'ProtectionFlag', unknown_bits: 'int', synchronized: 'bool') -> None"
+    },
+    "DiagnosticSnapshot": {
+      "fields": [
+        {
+          "default": "<required>",
+          "name": "created_utc",
+          "type": "datetime"
+        },
+        {
+          "default": "<required>",
+          "name": "session_state",
+          "type": "SessionState"
+        },
+        {
+          "default": "<required>",
+          "name": "protocol",
+          "type": "Protocol"
+        },
+        {
+          "default": "<required>",
+          "name": "connected",
+          "type": "bool"
+        },
+        {
+          "default": "<required>",
+          "name": "identity",
+          "type": "InstrumentIdentity | None"
+        },
+        {
+          "default": "<required>",
+          "name": "status",
+          "type": "DeviceStatus | None"
+        },
+        {
+          "default": "<required>",
+          "name": "last_error",
+          "type": "str | None"
+        },
+        {
+          "default": "<required>",
+          "name": "counters",
+          "type": "dict[str, int | float]"
+        },
+        {
+          "default": "<required>",
+          "name": "partial",
+          "type": "bool"
+        },
+        {
+          "default": "<required>",
+          "name": "notes",
+          "type": "tuple[str, ...]"
+        }
+      ],
+      "kind": "type",
+      "methods": {
+        "to_dict": "(self) -> 'dict[str, Any]'"
+      },
+      "signature": "(created_utc: 'datetime', session_state: 'SessionState', protocol: 'Protocol', connected: 'bool', identity: 'InstrumentIdentity | None', status: 'DeviceStatus | None', last_error: 'str | None', counters: 'dict[str, int | float]', partial: 'bool', notes: 'tuple[str, ...]') -> None"
+    },
+    "DriverConfig": {
+      "fields": [
+        {
+          "default": "<required>",
+          "name": "port",
+          "type": "str"
+        },
+        {
+          "default": "<Protocol.SCPI: 'scpi'>",
+          "name": "protocol",
+          "type": "Protocol"
+        },
+        {
+          "default": "0",
+          "name": "address",
+          "type": "int"
+        },
+        {
+          "default": "9600",
+          "name": "baud_rate",
+          "type": "int"
+        },
+        {
+          "default": "8",
+          "name": "bytesize",
+          "type": "int"
+        },
+        {
+          "default": "'N'",
+          "name": "parity",
+          "type": "str"
+        },
+        {
+          "default": "1",
+          "name": "stopbits",
+          "type": "float"
+        },
+        {
+          "default": "True",
+          "name": "dtr",
+          "type": "bool"
+        },
+        {
+          "default": "True",
+          "name": "rts",
+          "type": "bool"
+        },
+        {
+          "default": "3.0",
+          "name": "connect_timeout_s",
+          "type": "float"
+        },
+        {
+          "default": "2.0",
+          "name": "read_timeout_s",
+          "type": "float"
+        },
+        {
+          "default": "2.0",
+          "name": "write_timeout_s",
+          "type": "float"
+        },
+        {
+          "default": "2.0",
+          "name": "query_timeout_s",
+          "type": "float"
+        },
+        {
+          "default": "120.0",
+          "name": "long_operation_timeout_s",
+          "type": "float"
+        },
+        {
+          "default": "5.0",
+          "name": "lock_timeout_s",
+          "type": "float"
+        },
+        {
+          "default": "5.0",
+          "name": "close_timeout_s",
+          "type": "float"
+        },
+        {
+          "default": "0.02",
+          "name": "minimum_command_interval_s",
+          "type": "float"
+        },
+        {
+          "default": "b'\\n'",
+          "name": "scpi_write_terminator",
+          "type": "bytes"
+        },
+        {
+          "default": "b'\\n'",
+          "name": "scpi_read_terminator",
+          "type": "bytes"
+        },
+        {
+          "default": "4096",
+          "name": "maximum_scpi_response_bytes",
+          "type": "int"
+        },
+        {
+          "default": "32",
+          "name": "maximum_error_queue_entries",
+          "type": "int"
+        },
+        {
+          "default": "<factory:RetryPolicy>",
+          "name": "retry",
+          "type": "RetryPolicy"
+        },
+        {
+          "default": "<factory:ReconnectPolicy>",
+          "name": "reconnect",
+          "type": "ReconnectPolicy"
+        },
+        {
+          "default": "<factory:SafetyPolicy>",
+          "name": "safety",
+          "type": "SafetyPolicy"
+        }
+      ],
+      "kind": "type",
+      "signature": "(port: 'str', protocol: 'Protocol' = <Protocol.SCPI: 'scpi'>, address: 'int' = 0, baud_rate: 'int' = 9600, bytesize: 'int' = 8, parity: 'str' = 'N', stopbits: 'float' = 1, dtr: 'bool' = True, rts: 'bool' = True, connect_timeout_s: 'float' = 3.0, read_timeout_s: 'float' = 2.0, write_timeout_s: 'float' = 2.0, query_timeout_s: 'float' = 2.0, long_operation_timeout_s: 'float' = 120.0, lock_timeout_s: 'float' = 5.0, close_timeout_s: 'float' = 5.0, minimum_command_interval_s: 'float' = 0.02, scpi_write_terminator: 'bytes' = b'\\n', scpi_read_terminator: 'bytes' = b'\\n', maximum_scpi_response_bytes: 'int' = 4096, maximum_error_queue_entries: 'int' = 32, retry: 'RetryPolicy' = <factory>, reconnect: 'ReconnectPolicy' = <factory>, safety: 'SafetyPolicy' = <factory>) -> None"
+    },
+    "DynamicMode": {
+      "kind": "EnumType",
+      "members": {
+        "CONTINUOUS": "CONTinuous",
+        "PULSE": "PULSe",
+        "TOGGLE": "TOGGLe"
+      },
+      "signature": "(*values)"
+    },
+    "FrameSyncError": {
+      "kind": "type",
+      "signature": "(message: 'str', *, context: 'Mapping[str, Any] | None' = None) -> 'None'"
+    },
+    "HealthReport": {
+      "fields": [
+        {
+          "default": "<required>",
+          "name": "healthy",
+          "type": "bool"
+        },
+        {
+          "default": "<required>",
+          "name": "session_state",
+          "type": "SessionState"
+        },
+        {
+          "default": "<required>",
+          "name": "identity",
+          "type": "InstrumentIdentity | None"
+        },
+        {
+          "default": "<required>",
+          "name": "latency_s",
+          "type": "float | None"
+        },
+        {
+          "default": "<required>",
+          "name": "consecutive_failures",
+          "type": "int"
+        },
+        {
+          "default": "<required>",
+          "name": "message",
+          "type": "str"
+        }
+      ],
+      "kind": "type",
+      "methods": {
+        "to_dict": "(self) -> 'dict[str, Any]'"
+      },
+      "signature": "(healthy: 'bool', session_state: 'SessionState', identity: 'InstrumentIdentity | None', latency_s: 'float | None', consecutive_failures: 'int', message: 'str') -> None"
+    },
+    "IndeterminateCommandOutcome": {
+      "kind": "type",
+      "signature": "(message: 'str', *, context: 'Mapping[str, Any] | None' = None) -> 'None'"
+    },
+    "InstrumentCapabilities": {
+      "fields": [
+        {
+          "default": "<required>",
+          "name": "model",
+          "type": "str"
+        },
+        {
+          "default": "<required>",
+          "name": "firmware_revision",
+          "type": "str"
+        },
+        {
+          "default": "<required>",
+          "name": "protocol",
+          "type": "Protocol"
+        },
+        {
+          "default": "<required>",
+          "name": "maximum_voltage_v",
+          "type": "float"
+        },
+        {
+          "default": "<required>",
+          "name": "maximum_current_a",
+          "type": "float"
+        },
+        {
+          "default": "<required>",
+          "name": "maximum_power_w",
+          "type": "float"
+        },
+        {
+          "default": "<required>",
+          "name": "minimum_voltage_v",
+          "type": "float | None"
+        },
+        {
+          "default": "<required>",
+          "name": "minimum_resistance_ohm",
+          "type": "float | None"
+        },
+        {
+          "default": "<required>",
+          "name": "maximum_resistance_ohm",
+          "type": "float | None"
+        },
+        {
+          "default": "<required>",
+          "name": "supported_features",
+          "type": "frozenset[str]"
+        },
+        {
+          "default": "<required>",
+          "name": "experimental_features",
+          "type": "frozenset[str]"
+        },
+        {
+          "default": "<required>",
+          "name": "evidence_ids",
+          "type": "tuple[str, ...]"
+        }
+      ],
+      "kind": "type",
+      "signature": "(model: 'str', firmware_revision: 'str', protocol: 'Protocol', maximum_voltage_v: 'float', maximum_current_a: 'float', maximum_power_w: 'float', minimum_voltage_v: 'float | None', minimum_resistance_ohm: 'float | None', maximum_resistance_ohm: 'float | None', supported_features: 'frozenset[str]', experimental_features: 'frozenset[str]', evidence_ids: 'tuple[str, ...]') -> None"
+    },
+    "InstrumentIdentity": {
+      "fields": [
+        {
+          "default": "<required>",
+          "name": "manufacturer",
+          "type": "str"
+        },
+        {
+          "default": "<required>",
+          "name": "model",
+          "type": "str"
+        },
+        {
+          "default": "<required>",
+          "name": "serial_number",
+          "type": "str"
+        },
+        {
+          "default": "<required>",
+          "name": "firmware_revision",
+          "type": "str"
+        },
+        {
+          "default": "<required>",
+          "name": "raw",
+          "type": "str"
+        }
+      ],
+      "kind": "type",
+      "signature": "(manufacturer: 'str', model: 'str', serial_number: 'str', firmware_revision: 'str', raw: 'str') -> None"
+    },
+    "InstrumentRangeError": {
+      "kind": "type",
+      "signature": "(message: 'str', *, context: 'Mapping[str, Any] | None' = None) -> 'None'"
+    },
+    "InvalidStateTransitionError": {
+      "kind": "type",
+      "signature": "(message: 'str', *, context: 'Mapping[str, Any] | None' = None) -> 'None'"
+    },
+    "LEDConfig": {
+      "fields": [
+        {
+          "default": "<required>",
+          "name": "voltage_v",
+          "type": "float"
+        },
+        {
+          "default": "<required>",
+          "name": "current_a",
+          "type": "float"
+        },
+        {
+          "default": "<required>",
+          "name": "resistance_coefficient",
+          "type": "float"
+        }
+      ],
+      "kind": "type",
+      "signature": "(voltage_v: 'float', current_a: 'float', resistance_coefficient: 'float') -> None"
+    },
+    "LegacyProtocolError": {
+      "kind": "type",
+      "signature": "(message: 'str', *, context: 'Mapping[str, Any] | None' = None) -> 'None'"
+    },
+    "ListConfig": {
+      "fields": [
+        {
+          "default": "<required>",
+          "name": "steps",
+          "type": "tuple[ListStep, ...]"
+        },
+        {
+          "default": "1",
+          "name": "repeat_count",
+          "type": "int"
+        }
+      ],
+      "kind": "type",
+      "signature": "(steps: 'tuple[ListStep, ...]', repeat_count: 'int' = 1) -> None"
+    },
+    "ListRunResult": {
+      "fields": [
+        {
+          "default": "<required>",
+          "name": "completed",
+          "type": "bool"
+        },
+        {
+          "default": "<required>",
+          "name": "maximum_voltage_v",
+          "type": "float | None"
+        },
+        {
+          "default": "<required>",
+          "name": "minimum_voltage_v",
+          "type": "float | None"
+        },
+        {
+          "default": "<required>",
+          "name": "maximum_current_a",
+          "type": "float | None"
+        },
+        {
+          "default": "<required>",
+          "name": "minimum_current_a",
+          "type": "float | None"
+        },
+        {
+          "default": "True",
+          "name": "experimental",
+          "type": "bool"
+        }
+      ],
+      "kind": "type",
+      "signature": "(completed: 'bool', maximum_voltage_v: 'float | None', minimum_voltage_v: 'float | None', maximum_current_a: 'float | None', minimum_current_a: 'float | None', experimental: 'bool' = True) -> None"
+    },
+    "LockTimeoutError": {
+      "kind": "type",
+      "signature": "(message: 'str', *, context: 'Mapping[str, Any] | None' = None) -> 'None'"
+    },
+    "MalformedResponseError": {
+      "kind": "type",
+      "signature": "(message: 'str', *, context: 'Mapping[str, Any] | None' = None) -> 'None'"
+    },
+    "Measurement": {
+      "fields": [
+        {
+          "default": "<required>",
+          "name": "value",
+          "type": "float"
+        },
+        {
+          "default": "<required>",
+          "name": "unit",
+          "type": "str"
+        },
+        {
+          "default": "<required>",
+          "name": "monotonic_timestamp_s",
+          "type": "float"
+        },
+        {
+          "default": "<required>",
+          "name": "wall_timestamp_utc",
+          "type": "datetime"
+        },
+        {
+          "default": "<required>",
+          "name": "protocol",
+          "type": "Protocol"
+        },
+        {
+          "default": "<required>",
+          "name": "valid",
+          "type": "bool"
+        },
+        {
+          "default": "None",
+          "name": "raw",
+          "type": "str | bytes | None"
+        }
+      ],
+      "kind": "type",
+      "signature": "(value: 'float', unit: 'str', monotonic_timestamp_s: 'float', wall_timestamp_utc: 'datetime', protocol: 'Protocol', valid: 'bool', raw: 'str | bytes | None' = None) -> None"
+    },
+    "MeasurementSnapshot": {
+      "fields": [
+        {
+          "default": "<required>",
+          "name": "voltage",
+          "type": "Measurement"
+        },
+        {
+          "default": "<required>",
+          "name": "current",
+          "type": "Measurement"
+        },
+        {
+          "default": "<required>",
+          "name": "power",
+          "type": "Measurement"
+        },
+        {
+          "default": "<required>",
+          "name": "resistance",
+          "type": "Measurement | None"
+        },
+        {
+          "default": "<required>",
+          "name": "status",
+          "type": "DeviceStatus | None"
+        }
+      ],
+      "kind": "type",
+      "signature": "(voltage: 'Measurement', current: 'Measurement', power: 'Measurement', resistance: 'Measurement | None', status: 'DeviceStatus | None') -> None"
+    },
+    "OCPTestConfig": {
+      "fields": [
+        {
+          "default": "<required>",
+          "name": "start_current_a",
+          "type": "float"
+        },
+        {
+          "default": "<required>",
+          "name": "end_current_a",
+          "type": "float"
+        },
+        {
+          "default": "<required>",
+          "name": "steps",
+          "type": "int"
+        },
+        {
+          "default": "<required>",
+          "name": "dwell_s",
+          "type": "float"
+        },
+        {
+          "default": "<required>",
+          "name": "trigger_voltage_v",
+          "type": "float"
+        }
+      ],
+      "kind": "type",
+      "signature": "(start_current_a: 'float', end_current_a: 'float', steps: 'int', dwell_s: 'float', trigger_voltage_v: 'float') -> None"
+    },
+    "OCPTestResult": {
+      "fields": [
+        {
+          "default": "<required>",
+          "name": "ocp_current_a",
+          "type": "float"
+        },
+        {
+          "default": "<required>",
+          "name": "maximum_power_w",
+          "type": "float"
+        },
+        {
+          "default": "<required>",
+          "name": "voltage_at_maximum_v",
+          "type": "float"
+        },
+        {
+          "default": "<required>",
+          "name": "current_at_maximum_a",
+          "type": "float"
+        }
+      ],
+      "kind": "type",
+      "signature": "(ocp_current_a: 'float', maximum_power_w: 'float', voltage_at_maximum_v: 'float', current_at_maximum_a: 'float') -> None"
+    },
+    "OperatingMode": {
+      "kind": "EnumType",
+      "members": {
+        "CURRENT": "CURRent",
+        "DYNAMIC": "DYNamic",
+        "IMPEDANCE": "IMPedance",
+        "LED": "LED",
+        "POWER": "POWer",
+        "RESISTANCE": "RESistance",
+        "VOLTAGE": "VOLTage"
+      },
+      "signature": "(*values)"
+    },
+    "PortBusyError": {
+      "kind": "type",
+      "signature": "(message: 'str', *, context: 'Mapping[str, Any] | None' = None) -> 'None'"
+    },
+    "ProtectionFlag": {
+      "kind": "EnumType",
+      "members": {
+        "OVER_CURRENT": 4,
+        "OVER_POWER": 8,
+        "OVER_TEMPERATURE": 16,
+        "OVER_VOLTAGE": 2,
+        "REMOTE_SENSE_DISCONNECTED": 32,
+        "REVERSE_VOLTAGE": 1,
+        "UNREGULATED": 64
+      },
+      "signature": "(*values)"
+    },
+    "ProtectionTrippedError": {
+      "kind": "type",
+      "signature": "(message: 'str', *, context: 'Mapping[str, Any] | None' = None) -> 'None'"
+    },
+    "Protocol": {
+      "kind": "EnumType",
+      "members": {
+        "AUTO": "auto",
+        "LEGACY": "legacy",
+        "SCPI": "scpi"
+      },
+      "signature": "(*values)"
+    },
+    "ProtocolError": {
+      "kind": "type",
+      "signature": "(message: 'str', *, context: 'Mapping[str, Any] | None' = None) -> 'None'"
+    },
+    "ReadTimeoutError": {
+      "kind": "type",
+      "signature": "(message: 'str', *, context: 'Mapping[str, Any] | None' = None) -> 'None'"
+    },
+    "ReconnectPolicy": {
+      "fields": [
+        {
+          "default": "False",
+          "name": "enabled",
+          "type": "bool"
+        },
+        {
+          "default": "3",
+          "name": "max_attempts",
+          "type": "int"
+        },
+        {
+          "default": "15.0",
+          "name": "total_deadline_s",
+          "type": "float"
+        },
+        {
+          "default": "True",
+          "name": "require_serial_match",
+          "type": "bool"
+        },
+        {
+          "default": "False",
+          "name": "restore_configuration",
+          "type": "bool"
+        }
+      ],
+      "kind": "type",
+      "signature": "(enabled: 'bool' = False, max_attempts: 'int' = 3, total_deadline_s: 'float' = 15.0, require_serial_match: 'bool' = True, restore_configuration: 'bool' = False) -> None"
+    },
+    "ResponseTooLargeError": {
+      "kind": "type",
+      "signature": "(message: 'str', *, context: 'Mapping[str, Any] | None' = None) -> 'None'"
+    },
+    "RetryPolicy": {
+      "fields": [
+        {
+          "default": "2",
+          "name": "max_read_attempts",
+          "type": "int"
+        },
+        {
+          "default": "1",
+          "name": "max_write_attempts",
+          "type": "int"
+        },
+        {
+          "default": "0.05",
+          "name": "initial_backoff_s",
+          "type": "float"
+        },
+        {
+          "default": "0.5",
+          "name": "maximum_backoff_s",
+          "type": "float"
+        },
+        {
+          "default": "0.1",
+          "name": "jitter_fraction",
+          "type": "float"
+        }
+      ],
+      "kind": "type",
+      "signature": "(max_read_attempts: 'int' = 2, max_write_attempts: 'int' = 1, initial_backoff_s: 'float' = 0.05, maximum_backoff_s: 'float' = 0.5, jitter_fraction: 'float' = 0.1) -> None"
+    },
+    "SCPICommandError": {
+      "kind": "type",
+      "signature": "(message: 'str', *, context: 'Mapping[str, Any] | None' = None) -> 'None'"
+    },
+    "SCPIErrorEntry": {
+      "fields": [
+        {
+          "default": "<required>",
+          "name": "code",
+          "type": "int"
+        },
+        {
+          "default": "<required>",
+          "name": "message",
+          "type": "str"
+        },
+        {
+          "default": "<required>",
+          "name": "raw",
+          "type": "str"
+        }
+      ],
+      "kind": "type",
+      "signature": "(code: 'int', message: 'str', raw: 'str') -> None"
+    },
+    "SCPIProtocolError": {
+      "kind": "type",
+      "signature": "(message: 'str', *, context: 'Mapping[str, Any] | None' = None) -> 'None'"
+    },
+    "SafeEnableConfig": {
+      "fields": [
+        {
+          "default": "<required>",
+          "name": "mode",
+          "type": "OperatingMode"
+        },
+        {
+          "default": "<required>",
+          "name": "setpoint",
+          "type": "float"
+        },
+        {
+          "default": "None",
+          "name": "current_limit_a",
+          "type": "float | None"
+        },
+        {
+          "default": "None",
+          "name": "voltage_limit_v",
+          "type": "float | None"
+        },
+        {
+          "default": "None",
+          "name": "power_limit_w",
+          "type": "float | None"
+        },
+        {
+          "default": "None",
+          "name": "resistance_limit_ohm",
+          "type": "float | None"
+        },
+        {
+          "default": "False",
+          "name": "remote_sense",
+          "type": "bool"
+        },
+        {
+          "default": "True",
+          "name": "verify",
+          "type": "bool"
+        }
+      ],
+      "kind": "type",
+      "signature": "(mode: 'OperatingMode', setpoint: 'float', current_limit_a: 'float | None' = None, voltage_limit_v: 'float | None' = None, power_limit_w: 'float | None' = None, resistance_limit_ohm: 'float | None' = None, remote_sense: 'bool' = False, verify: 'bool' = True) -> None"
+    },
+    "SafeEnableResult": {
+      "fields": [
+        {
+          "default": "<required>",
+          "name": "input_enabled",
+          "type": "bool"
+        },
+        {
+          "default": "<required>",
+          "name": "input_off_after_failure",
+          "type": "bool | None"
+        },
+        {
+          "default": "<required>",
+          "name": "applied_setpoint",
+          "type": "AppliedSetpoint"
+        },
+        {
+          "default": "<required>",
+          "name": "status",
+          "type": "DeviceStatus"
+        },
+        {
+          "default": "<required>",
+          "name": "audit_event_id",
+          "type": "str"
+        }
+      ],
+      "kind": "type",
+      "signature": "(input_enabled: 'bool', input_off_after_failure: 'bool | None', applied_setpoint: 'AppliedSetpoint', status: 'DeviceStatus', audit_event_id: 'str') -> None"
+    },
+    "SafetyPolicy": {
+      "fields": [
+        {
+          "default": "True",
+          "name": "require_off_before_reconfiguration",
+          "type": "bool"
+        },
+        {
+          "default": "True",
+          "name": "verify_critical_writes",
+          "type": "bool"
+        },
+        {
+          "default": "True",
+          "name": "block_unknown_model_hazards",
+          "type": "bool"
+        },
+        {
+          "default": "False",
+          "name": "require_enable_token",
+          "type": "bool"
+        },
+        {
+          "default": "True",
+          "name": "turn_input_off_on_close",
+          "type": "bool"
+        },
+        {
+          "default": "False",
+          "name": "allow_short",
+          "type": "bool"
+        },
+        {
+          "default": "False",
+          "name": "allow_broadcast_writes",
+          "type": "bool"
+        }
+      ],
+      "kind": "type",
+      "signature": "(require_off_before_reconfiguration: 'bool' = True, verify_critical_writes: 'bool' = True, block_unknown_model_hazards: 'bool' = True, require_enable_token: 'bool' = False, turn_input_off_on_close: 'bool' = True, allow_short: 'bool' = False, allow_broadcast_writes: 'bool' = False) -> None"
+    },
+    "SafetyToken": {
+      "fields": [
+        {
+          "default": "<required>",
+          "name": "nonce",
+          "type": "str"
+        },
+        {
+          "default": "<required>",
+          "name": "purpose",
+          "type": "str"
+        },
+        {
+          "default": "<required>",
+          "name": "issued_monotonic_s",
+          "type": "float"
+        },
+        {
+          "default": "<required>",
+          "name": "expires_monotonic_s",
+          "type": "float"
+        }
+      ],
+      "kind": "type",
+      "methods": {
+        "is_valid_for": "(self, purpose: 'str') -> 'bool'"
+      },
+      "signature": "(nonce: 'str', purpose: 'str', issued_monotonic_s: 'float', expires_monotonic_s: 'float') -> None"
+    },
+    "SelfTestResult": {
+      "fields": [
+        {
+          "default": "<required>",
+          "name": "code",
+          "type": "int"
+        },
+        {
+          "default": "<required>",
+          "name": "passed",
+          "type": "bool"
+        },
+        {
+          "default": "<required>",
+          "name": "raw",
+          "type": "str"
+        }
+      ],
+      "kind": "type",
+      "signature": "(code: 'int', passed: 'bool', raw: 'str') -> None"
+    },
+    "SessionState": {
+      "kind": "EnumType",
+      "members": {
+        "CLOSING": "closing",
+        "CONNECTED_READY": "connected_ready",
+        "CONNECTED_UNSYNCHRONIZED": "connected_unsynchronized",
+        "CONNECTING": "connecting",
+        "DEGRADED": "degraded",
+        "DISCONNECTED": "disconnected",
+        "FAILED": "failed",
+        "IDENTIFYING": "identifying",
+        "RECONNECTING": "reconnecting"
+      },
+      "signature": "(*values)"
+    },
+    "SlewRate": {
+      "fields": [
+        {
+          "default": "<required>",
+          "name": "rise_a_per_us",
+          "type": "float"
+        },
+        {
+          "default": "<required>",
+          "name": "fall_a_per_us",
+          "type": "float"
+        }
+      ],
+      "kind": "type",
+      "signature": "(rise_a_per_us: 'float', fall_a_per_us: 'float') -> None"
+    },
+    "TimingTestConfig": {
+      "fields": [
+        {
+          "default": "<required>",
+          "name": "load_setting_enabled",
+          "type": "bool"
+        },
+        {
+          "default": "<required>",
+          "name": "mode",
+          "type": "OperatingMode"
+        },
+        {
+          "default": "<required>",
+          "name": "value",
+          "type": "float"
+        },
+        {
+          "default": "<required>",
+          "name": "start_source",
+          "type": "TriggerSource"
+        },
+        {
+          "default": "<required>",
+          "name": "start_edge",
+          "type": "TriggerEdge"
+        },
+        {
+          "default": "<required>",
+          "name": "start_level",
+          "type": "float"
+        },
+        {
+          "default": "<required>",
+          "name": "end_source",
+          "type": "TriggerSource"
+        },
+        {
+          "default": "<required>",
+          "name": "end_edge",
+          "type": "TriggerEdge"
+        },
+        {
+          "default": "<required>",
+          "name": "end_level",
+          "type": "float"
+        }
+      ],
+      "kind": "type",
+      "signature": "(load_setting_enabled: 'bool', mode: 'OperatingMode', value: 'float', start_source: 'TriggerSource', start_edge: 'TriggerEdge', start_level: 'float', end_source: 'TriggerSource', end_edge: 'TriggerEdge', end_level: 'float') -> None"
+    },
+    "TimingTestResult": {
+      "fields": [
+        {
+          "default": "<required>",
+          "name": "duration_s",
+          "type": "float"
+        }
+      ],
+      "kind": "type",
+      "signature": "(duration_s: 'float') -> None"
+    },
+    "TransientConfig": {
+      "fields": [
+        {
+          "default": "<required>",
+          "name": "high_level",
+          "type": "float"
+        },
+        {
+          "default": "<required>",
+          "name": "high_dwell_s",
+          "type": "float"
+        },
+        {
+          "default": "<required>",
+          "name": "low_level",
+          "type": "float"
+        },
+        {
+          "default": "<required>",
+          "name": "low_dwell_s",
+          "type": "float"
+        },
+        {
+          "default": "<required>",
+          "name": "slew_a_per_us",
+          "type": "float"
+        },
+        {
+          "default": "<DynamicMode.CONTINUOUS: 'CONTinuous'>",
+          "name": "mode",
+          "type": "DynamicMode"
+        }
+      ],
+      "kind": "type",
+      "signature": "(high_level: 'float', high_dwell_s: 'float', low_level: 'float', low_dwell_s: 'float', slew_a_per_us: 'float', mode: 'DynamicMode' = <DynamicMode.CONTINUOUS: 'CONTinuous'>) -> None"
+    },
+    "TransportError": {
+      "kind": "type",
+      "signature": "(message: 'str', *, context: 'Mapping[str, Any] | None' = None) -> 'None'"
+    },
+    "TriggerSource": {
+      "kind": "EnumType",
+      "members": {
+        "BUS": "BUS",
+        "CURRENT": "CURRent",
+        "EXTERNAL": "EXTernal",
+        "HOLD": "HOLD",
+        "MANUAL": "MANual",
+        "VOLTAGE": "VOLTage"
+      },
+      "signature": "(*values)"
+    },
+    "UnsafeOperationError": {
+      "kind": "type",
+      "signature": "(message: 'str', *, context: 'Mapping[str, Any] | None' = None) -> 'None'"
+    },
+    "UnsupportedFeatureError": {
+      "kind": "type",
+      "signature": "(message: 'str', *, context: 'Mapping[str, Any] | None' = None) -> 'None'"
+    },
+    "UnsupportedModelError": {
+      "kind": "type",
+      "signature": "(message: 'str', *, context: 'Mapping[str, Any] | None' = None) -> 'None'"
+    },
+    "WriteTimeoutError": {
+      "kind": "type",
+      "signature": "(message: 'str', *, context: 'Mapping[str, Any] | None' = None) -> 'None'"
+    }
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "schema_version": "1.0",
+  "artifact": "rf_hp34401a_v26.06.zip",
+  "generated_utc": "2026-07-31T10:11:00Z",
+  "builder_environment": {
+    "python": "3.13.5",
+    "platform": "Linux-6.12.13-x86_64-with-glibc2.41"
+  },
+  "source_revision": "UNKNOWN",
+  "status": "SOURCE_CANDIDATE",
+  "note": "File-backed HIL listener hotfix statically and state-regression validated; corrected Robot evidence and remaining fixture-dependent HIL profiles require release-site execution."
+}

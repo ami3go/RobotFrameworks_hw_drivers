@@ -1,0 +1,15 @@
+{
+  "driver_name": "bk8500b",
+  "product_name": "B&K Precision 8500B Robot Framework Driver",
+  "release": "26.04",
+  "python_distribution_version": "26.4.0",
+  "archive_name": "rf_bk8500b_v26.04.zip",
+  "root_folder": "rf_bk8500b",
+  "robot_library": "BK8500BLibrary",
+  "bundled_python_driver": "bk8500b 0.1.0",
+  "python_support": "3.10-3.13",
+  "robot_framework_support": "7.x",
+  "release_date": "2026-07-21",
+  "hardware_qualification": "pending",
+  "license": "MIT"
+}

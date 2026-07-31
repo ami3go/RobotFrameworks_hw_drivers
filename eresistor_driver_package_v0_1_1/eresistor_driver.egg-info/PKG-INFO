@@ -1,0 +1,319 @@
+Metadata-Version: 2.4
+Name: eresistor-driver
+Version: 0.1.1
+Summary: Python driver for RP2040 W5500 E-Resistor SCPI/HTTP programmable resistor matrix
+Author: OpenBench / E-Resistor
+License: MIT
+Keywords: SCPI,resistor,instrument,RP2040,W5500,test automation
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Topic :: Scientific/Engineering
+Classifier: Topic :: System :: Hardware
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Provides-Extra: yaml
+Requires-Dist: PyYAML>=6.0; extra == "yaml"
+Provides-Extra: test
+Requires-Dist: pytest>=7.0; extra == "test"
+Provides-Extra: dev
+Requires-Dist: pytest>=7.0; extra == "dev"
+Requires-Dist: PyYAML>=6.0; extra == "dev"
+Dynamic: license-file
+
+# E-Resistor Python Driver
+
+Python driver for the RP2040 + W5500 **E-Resistor** programmable resistor matrix board.
+
+The board is controlled mainly over Ethernet SCPI on TCP port `5025`. HTTP on port `80` is used for helper features such as `/ping`, `/identify_led`, and calibration-file download fallback.
+
+## Features
+
+- SCPI-over-TCP control for 8 channels.
+- Individual and all-channel 16-bit mask control.
+- Calibration download through SCPI or HTTP.
+- PC-side equivalent-resistance calculation.
+- Closest-mask solver for requested resistance.
+- Bulk resistance setting for any subset of channels.
+- Temperature-to-resistance table support.
+- Temperature or resistance curve simulation.
+- Watchdog / keepalive support.
+- Reconnect and state-recovery policies.
+- Safe shutdown policy.
+- Structured logging and audit-log hooks.
+- Device profiles.
+- Unit tests with no hardware required.
+
+## Installation
+
+```bash
+pip install -e .
+```
+
+For YAML profile support:
+
+```bash
+pip install -e ".[yaml]"
+```
+
+For tests:
+
+```bash
+pip install -e ".[test]"
+pytest
+```
+
+## Basic Usage
+
+```python
+from eresistor_driver import EResistorClient
+
+with EResistorClient("192.168.7.50") as dev:
+    print(dev.idn())
+    dev.identify()
+    dev.download_calibration()
+    result = dev.set_resistance(1, 10_000)
+    print(result)
+```
+
+## Discover Boards
+
+```python
+from eresistor_driver import discover_boards
+
+boards = discover_boards("192.168.7.0/24")
+
+# discover_boards() returns list[BoardInfo]
+if boards:
+    print(boards[0].ip)      # same as boards[0].host
+    print(boards[0].fw)      # same as boards[0].firmware_version
+    print(boards[0].serial)
+    print(boards[0].model)
+
+for board in boards:
+    print(f"{board.ip} serial={board.serial} fw={board.fw} http={board.http_ok} scpi={board.scpi_ok}")
+```
+
+CLI:
+
+```bash
+eresistor discover --subnet 192.168.7.0/24
+```
+
+## Mask Control
+
+```python
+with EResistorClient("192.168.7.50") as dev:
+    dev.set_mask(channel=1, mask="0001")
+    dev.set_mask(channel=2, mask=0x000F)
+    print(dev.get_mask(1))
+    dev.set_all_masks(["0000", "0001", "0003", "0007", "000F", "001F", "003F", "007F"])
+    dev.all_off()
+```
+
+Mask mapping follows the firmware convention:
+
+- bit `0` -> Q16, lowest resistance branch.
+- bit `15` -> Q1, highest resistance branch.
+- `1` means MOSFET branch ON.
+- `0000` means all branches OFF / output open.
+
+## Calibration
+
+```python
+with EResistorClient("192.168.7.50") as dev:
+    cal = dev.download_calibration()
+    dev.save_calibration("calibration.json")
+```
+
+Load from cache:
+
+```python
+with EResistorClient("192.168.7.50", calibration_config=None) as dev:
+    dev.load_calibration("calibration.json")
+```
+
+Calibration is validated before use. Invalid zero, negative, NaN, missing, duplicate, or incomplete branch records are rejected.
+
+## Resistance Solver
+
+For a mask, equivalent resistance is calculated as a parallel network:
+
+```text
+R_eq = 1 / sum(1 / R_i)
+```
+
+The closest solver enumerates all `2^16 - 1` non-open masks per channel, caches the result, and uses deterministic tie-breaking:
+
+1. lowest absolute resistance error,
+2. fewer active bits,
+3. lower mask value.
+
+```python
+with EResistorClient("192.168.7.50") as dev:
+    dev.download_calibration()
+    result = dev.set_resistance(channel=1, resistance_ohm=10_000)
+    print(result.requested_ohm)
+    print(result.calculated_ohm)
+    print(result.error_percent)
+    print(result.mask)
+```
+
+## Bulk Resistance Set
+
+```python
+with EResistorClient("192.168.7.50") as dev:
+    dev.download_calibration()
+    results = dev.set_resistances({
+        1: 1_000,
+        2: 10_000,
+        4: 100_000,
+    }, atomic=True)
+    for result in results:
+        print(result)
+```
+
+List input is also supported. `None` means leave the channel unchanged:
+
+```python
+results = dev.set_resistances([1_000, 10_000, None, 100_000])
+```
+
+## Temperature Table
+
+CSV format:
+
+```csv
+temperature_c,resistance_ohm
+-40,336000
+-30,177000
+-20,97000
+-10,55300
+0,32650
+10,19900
+20,12500
+25,10000
+30,8050
+40,5320
+50,3600
+```
+
+Usage:
+
+```python
+with EResistorClient("192.168.7.50") as dev:
+    dev.download_calibration()
+    dev.load_temperature_table(channel=1, path="ntc_10k.csv")
+    result = dev.set_temperature(channel=1, temperature_c=25.0)
+    print(result)
+```
+
+Interpolation modes:
+
+- `linear`
+- `log_resistance`
+
+## Curve Simulation
+
+Resistance profile:
+
+```csv
+time_s,resistance_ohm
+0,10000
+1,12000
+2,15000
+5,22000
+```
+
+Temperature profile:
+
+```csv
+time_s,temperature_c
+0,25
+1,30
+2,40
+5,60
+```
+
+Dwell profile:
+
+```csv
+temperature_c,dwell_s
+25,5
+40,10
+60,15
+```
+
+Usage:
+
+```python
+with EResistorClient("192.168.7.50") as dev:
+    dev.download_calibration()
+    dev.load_temperature_table_for_all("ntc_10k.csv")
+    sim = dev.create_curve_simulation(
+        channel=1,
+        path="temperature_profile.csv",
+        repeat=3,
+        on_error="stop_and_all_off",
+    )
+    sim.run()
+    sim.export_log_csv("simulation_log.csv")
+```
+
+## 24/7 Operation Notes
+
+The driver includes keepalive/watchdog support, but true fail-safe output behavior after Ethernet cable unplug or PC crash requires firmware support. The PC driver can only send `ALL:OFF` if communication is still possible.
+
+Recommended production profile defaults:
+
+```yaml
+safety:
+  connection_loss_policy: mark_lost_and_alarm
+watchdog:
+  enabled: true
+  keepalive_interval_s: 30
+  keepalive_command: SYST:STAT?
+  on_fail: reconnect
+reconnect:
+  state_policy: verify_and_hold
+shutdown_policy: all_off
+```
+
+For fully unattended operation, add a firmware-side watchdog command in the future, for example:
+
+```text
+SYST:WDOG:TIME 60
+SYST:WDOG:MODE ALLOFF
+SYST:WDOG:FEED
+```
+
+## Device Profiles
+
+```python
+from eresistor_driver import DeviceProfile, EResistorClient
+
+profile = DeviceProfile.load("examples/profile_example.yaml")
+client = EResistorClient.from_profile(profile)
+with client:
+    print(client.idn())
+```
+
+## CLI
+
+```bash
+eresistor idn --host 192.168.7.50
+eresistor blink --host 192.168.7.50
+eresistor all-off --host 192.168.7.50
+eresistor set-mask --host 192.168.7.50 --ch 1 --mask 0001
+eresistor set-resistance --host 192.168.7.50 --ch 1 --ohm 10000
+eresistor download-cal --host 192.168.7.50 --out calibration.json
+eresistor run-curve --host 192.168.7.50 --ch 1 --csv profile.csv --repeat 3
+```
+
+## Limitations
+
+- The implementation was generated from the firmware/task specification and unit-tested with fake/mock responses. It still needs validation against the real board.
+- Synchronized multi-channel curve simulation currently starts per-channel simulations concurrently. Exact merged-time-grid synchronized `ROUT:ALL:MASK` stepping is planned but not fully implemented in this first package.
+- Firmware-side watchdog support is recommended for real fail-safe behavior when the PC or Ethernet link fails.

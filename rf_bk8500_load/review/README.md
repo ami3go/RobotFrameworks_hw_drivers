@@ -1,0 +1,28 @@
+# Review records
+- `release_v26.16_baud_detection_review.md` — safety, cleanup, compatibility and diagnostics review.
+- `release_v26.16_release_readiness.md` — release gate decision and pending physical fallback evidence.
+
+- `release_v26.15_hardware_evidence_review.md` — review of the 56/56 physical COM12 report.
+- `release_v26.15_release_readiness.md` — documentation/evidence release approval.
+- `release_v26.14_echo_handling_review.md` — review of COM12 serial opening and local-echo handling.
+- `release_v26.14_release_readiness.md` — v26.14 validation and physical closure boundary.
+- `release_v26.13_list_minimum_review.md` — root cause and correction review for the one-step list rejection.
+- `release_v26.13_release_readiness.md` — v26.13 validation and hardware closure boundary.
+- `release_v26.12_hardware_result_review.md` — review of the 54/55 COM9 result and targeted correction.
+- `release_v26.12_release_readiness.md` — v26.12 validation and physical closure boundary.
+- `release_v26.11_all_keyword_conformance_review.md` — review of complete real-device keyword coverage and safety gates.
+- `release_v26.11_release_readiness.md` — release 11 validation and hardware execution boundary.
+- `release_v26.10_example_dependency_review.md` — root cause and correction review for missing `Log Dictionary`.
+- `release_v26.10_release_readiness.md` — release 10 validation and residual hardware risk.
+- `release_v26.9_library_import_review.md` — root cause and correction review for missing Robot keywords.
+- `release_v26.9_release_readiness.md` — release 9 validation and residual hardware risk.
+- `release_v26.8_runner_and_environment_review.md` — review of direct launchers and automatic environment repair.
+- `release_v26.8_release_readiness.md` — release 8 validation criteria and open hardware risk.
+- `release_v26.7_structure_and_ai_review.md` — review of the flat package layout and root AI deliverables.
+- `release_v26.7_release_readiness.md` — release 7 automated evidence and open hardware risk.
+- `release_v26.6_project_compliance_review.md` — compliance against project and RFDS source instructions.
+- `release_v26.6_code_review.md` — maintenance code and safety review.
+- `release_v26.6_change_review_matrix.md` — review evidence for every release change.
+- `release_v26.6_release_readiness.md` — final automated evidence and open risks.
+- `phase1_gate5_code_review.md` — original Gate 5 code-review response.
+- `phase1_gate_report.md` — cumulative Phase 1 gate status.
