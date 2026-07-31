@@ -1,0 +1,10 @@
+name: Manual HIL
+on: {workflow_dispatch: {inputs: {approved: {description: 'Type YES after bench safety review', required: true}}}}
+jobs:
+  hil:
+    if: ${{ github.event.inputs.approved == 'YES' }}
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+      - run: python -m pip install -e .[dev]
+      - run: python -m robot --outputdir results/hil --include hardware tests/hardware

@@ -1,0 +1,15 @@
+decisions:
+- id: ADR-26.07-001
+  decision: Remove API 2 compatibility aliases and duplicate Python package
+  reason: Explicit cleanup request; canonical RFDS-002 API is authoritative
+  impact: API_VERSION incremented to 3.0.0
+- id: ADR-26.07-002
+  decision: Use RFDS-005 flat package layout
+  reason: RFDS-005 owns package layout and prohibits src layout
+- id: ADR-26.08-001
+  decision: Verify setpoint writes using bounded polling instead of one immediate
+    readback
+  reason: Real chamber acknowledged writes before the public setpoint register updated
+- id: ADR-26.08-002
+  decision: Require explicit auxiliary-output channel mappings on real hardware
+  reason: Digital output 8 was rejected on the tested chamber during safe shutdown

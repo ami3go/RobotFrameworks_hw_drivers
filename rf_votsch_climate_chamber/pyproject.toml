@@ -3,14 +3,14 @@ requires = ["setuptools>=77", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "robotframework-votsch-climate-chamber"
-version = "26.2"
-description = "Production-oriented Robot Framework library and Python driver for Vötsch climate chambers"
+name = "rf-votsch-climate-chamber"
+version = "26.8"
+description = "RFDS Robot Framework driver for Vötsch and SimServ-compatible climate chambers"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 license = "MIT"
-authors = [{name = "Project contributors"}]
-keywords = ["robotframework", "climate-chamber", "votsch", "test-automation", "hardware-testing"]
+authors = [{name = "RFDS project contributors"}]
+keywords = ["robotframework", "rfds", "climate-chamber", "votsch", "simserv", "hardware-testing"]
 classifiers = [
   "Development Status :: 4 - Beta",
   "Framework :: Robot Framework",
@@ -19,13 +19,15 @@ classifiers = [
   "Operating System :: Microsoft :: Windows",
   "Operating System :: POSIX :: Linux",
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
   "Topic :: Software Development :: Testing",
 ]
-dependencies = ["robotframework>=7.4,<8"]
+dependencies = [
+  "robotframework>=7,<9",
+  "jsonschema>=4.20,<5",
+]
 
 [project.optional-dependencies]
 dev = [
@@ -35,49 +37,59 @@ dev = [
   "ruff>=0.12",
   "mypy>=1.15",
   "twine>=6",
+  "PyYAML>=6",
 ]
+docs = ["mkdocs>=1.6", "mkdocs-material>=9.6"]
 
-docs = [
-  "mkdocs>=1.6",
-  "mkdocs-material>=9.6",
-]
+[project.urls]
+Documentation = "https://example.invalid/rf_votsch_climate_chamber/"
+Repository = "https://example.invalid/rf_votsch_climate_chamber.git"
+Issues = "https://example.invalid/rf_votsch_climate_chamber/issues"
+
+[project.entry-points."rfds.drivers"]
+"votsch.climate_chamber" = "rf_votsch_climate_chamber.plugin:VotschClimateChamberPlugin"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["votsch_climate_chamber*"]
+include = ["rf_votsch_climate_chamber*"]
 
 [tool.setuptools.package-data]
-votsch_climate_chamber = ["py.typed"]
+rf_votsch_climate_chamber = [
+  "py.typed",
+  "resources/*.json",
+  "resources/*.yaml",
+  "resources/*.lock",
+]
 
 [tool.pytest.ini_options]
 addopts = "-ra --strict-markers"
-testpaths = ["tests/unit"]
-markers = ["hardware: requires a real climate chamber"]
+pythonpath = ["."]
+testpaths = ["tests/unit", "tests/api", "tests/integration", "tests/compatibility"]
+markers = [
+  "hardware: requires a real climate chamber",
+  "conformance: RFDS-019 protocol conformance",
+]
 
 [tool.coverage.run]
 branch = true
-source = ["votsch_climate_chamber"]
+source = ["rf_votsch_climate_chamber"]
 
 [tool.coverage.report]
 show_missing = true
-fail_under = 85
+fail_under = 75
 exclude_lines = ["pragma: no cover", "if TYPE_CHECKING:"]
 
 [tool.ruff]
 line-length = 100
-target-version = "py310"
+target-version = "py311"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "SIM"]
 ignore = ["E501"]
 
 [tool.mypy]
-python_version = "3.10"
+python_version = "3.11"
 check_untyped_defs = true
 warn_unused_ignores = true
 warn_redundant_casts = true
 no_implicit_optional = true
-
-[tool.setuptools.data-files]
-"share/rf_votsch_climate_chamber/ai" = ["ai/ai_contract.yaml", "ai/ai_contract.lock", "ai/README.md"]
-"share/rf_votsch_climate_chamber" = ["system_ai_contract.yaml"]

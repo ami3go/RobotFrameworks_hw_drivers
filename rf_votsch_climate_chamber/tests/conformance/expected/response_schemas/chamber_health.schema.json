@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Climate chamber health result",
+  "type": "object",
+  "required": [
+    "connected",
+    "id",
+    "is_running",
+    "temperature_measured",
+    "temperature_set_point",
+    "chamber_status",
+    "communication_stats"
+  ],
+  "properties": {
+    "connected": {"type": "boolean"},
+    "id": {"type": "string"},
+    "is_running": {"type": "boolean"},
+    "temperature_measured": {"type": "number"},
+    "temperature_set_point": {"type": "number"},
+    "chamber_status": {"type": "string"},
+    "communication_stats": {"type": "object"}
+  },
+  "additionalProperties": true
+}

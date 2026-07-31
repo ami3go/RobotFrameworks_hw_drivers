@@ -1,6 +1,6 @@
 """Example Robot variable file; edit values for the local bench."""
 
-chamber_ip = "192.168.1.50"
+chamber_ip = "192.168.0.11"
 chamber_port = 2049
 temperature_min = -40
 temperature_max = 180

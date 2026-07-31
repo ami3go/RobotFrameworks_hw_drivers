@@ -1,0 +1,7 @@
+schema_version: '1.0'
+release: '26.08'
+robot_runtime_execution: NOT_RUN
+reason: Robot Framework unavailable in build environment
+python_simulator_smoke: PASS
+release_class: D0
+d1_candidate: true

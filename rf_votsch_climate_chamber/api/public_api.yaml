@@ -1,0 +1,1478 @@
+schema_version: '1.0'
+driver: rf_votsch_climate_chamber
+release_version: '26.08'
+api_version: 3.0.0
+authority: RFDS-002 v1.1
+library:
+  import: rf_votsch_climate_chamber.library
+  class: VotschClimateChamberLibrary
+  scope: SUITE
+  auto_keywords: false
+keywords:
+- keyword: Cancel Current Operation
+  canonical_keyword: Cancel Current Operation
+  python_method: cancel_current_operation
+  signature: '(self, alias: ''str | None'' = None) -> ''None'''
+  arguments:
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: None
+  tags:
+  - rfds:operation
+  - rfds:high_risk
+  device_facing: false
+  deprecated: false
+  introduced_in: '26.04'
+  protocol_vector: null
+  documentation: See generated Libdoc.
+- keyword: Chamber Should Be Running
+  canonical_keyword: Chamber Should Be Running
+  python_method: chamber_should_be_running
+  signature: '(self, alias: ''str | None'' = None) -> ''None'''
+  arguments:
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: None
+  tags:
+  - rfds:assertion
+  - rfds:none_risk
+  device_facing: true
+  deprecated: false
+  introduced_in: '26.04'
+  protocol_vector: VCC-CHAMBER_SHOULD_BE_RUNNING-001
+  documentation: See generated Libdoc.
+- keyword: Chamber Should Be Stopped
+  canonical_keyword: Chamber Should Be Stopped
+  python_method: chamber_should_be_stopped
+  signature: '(self, alias: ''str | None'' = None) -> ''None'''
+  arguments:
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: None
+  tags:
+  - rfds:assertion
+  - rfds:none_risk
+  device_facing: true
+  deprecated: false
+  introduced_in: '26.04'
+  protocol_vector: VCC-CHAMBER_SHOULD_BE_STOPPED-001
+  documentation: See generated Libdoc.
+- keyword: Check Communication
+  canonical_keyword: Check Communication
+  python_method: check_communication
+  signature: '(self, alias: ''str | None'' = None) -> ''bool'''
+  arguments:
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: bool
+  tags:
+  - rfds:connection
+  - rfds:none_risk
+  device_facing: true
+  deprecated: false
+  introduced_in: '26.04'
+  protocol_vector: VCC-CHECK_COMMUNICATION-001
+  documentation: Perform a bounded non-destructive chamber-status query and return
+    ``True``.
+- keyword: Connect
+  canonical_keyword: Connect
+  python_method: connect
+  signature: '(self, resource: ''str | None'' = None, alias: ''str'' = ''default'',
+    timeout_s: ''float | str | None'' = None, **options: ''Any'') -> ''dict[str, Any]'''
+  arguments:
+  - name: resource
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: default
+    annotation: str
+  - name: timeout_s
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: float | str | None
+  - name: options
+    kind: var_keyword
+    required: true
+    default: null
+    annotation: Any
+  return_type: dict[str, Any]
+  tags:
+  - rfds:connection
+  - rfds:low_risk
+  device_facing: true
+  deprecated: false
+  introduced_in: '26.04'
+  protocol_vector: VCC-CONNECT-001
+  documentation: 'Connect a chamber or simulator and return a ``connection_state``
+    dictionary.
+
+
+    ``resource`` accepts ``tcp://host:port``, ``host``, ``host:port``, or
+
+    ``SIM::<profile>``.  Connection is idempotent for the same alias and
+
+    normalized resource.  Functional chamber state is not changed.'
+- keyword: Connection Should Be Available
+  canonical_keyword: Connection Should Be Available
+  python_method: connection_should_be_available
+  signature: '(self, alias: ''str | None'' = None) -> ''None'''
+  arguments:
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: None
+  tags:
+  - rfds:assertion
+  - rfds:none_risk
+  device_facing: true
+  deprecated: false
+  introduced_in: '26.04'
+  protocol_vector: VCC-CONNECTION_SHOULD_BE_AVAILABLE-001
+  documentation: See generated Libdoc.
+- keyword: Delete Driver Configuration Profile
+  canonical_keyword: Delete Driver Configuration Profile
+  python_method: delete_driver_configuration_profile
+  signature: '(self, profile_name: ''str'', confirm: ''bool | str'' = False) -> ''dict[str,
+    Any]'''
+  arguments:
+  - name: profile_name
+    kind: positional_or_keyword
+    required: true
+    default: null
+    annotation: str
+  - name: confirm
+    kind: positional_or_keyword
+    required: false
+    default: false
+    annotation: bool | str
+  return_type: dict[str, Any]
+  tags:
+  - rfds:configuration
+  - rfds:destructive
+  device_facing: false
+  deprecated: false
+  introduced_in: '26.04'
+  protocol_vector: null
+  documentation: See generated Libdoc.
+- keyword: Disconnect
+  canonical_keyword: Disconnect
+  python_method: disconnect
+  signature: '(self, alias: ''str | None'' = None) -> ''None'''
+  arguments:
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: None
+  tags:
+  - rfds:connection
+  - rfds:high_risk
+  device_facing: true
+  deprecated: false
+  introduced_in: '26.04'
+  protocol_vector: VCC-DISCONNECT-001
+  documentation: 'Apply the configured safe state, close the session, and release
+    resources.
+
+
+    The operation is idempotent.  It is bounded by a 20 s cleanup budget.'
+- keyword: Disconnect All
+  canonical_keyword: Disconnect All
+  python_method: disconnect_all
+  signature: (self) -> 'None'
+  arguments: []
+  return_type: None
+  tags:
+  - rfds:connection
+  - rfds:high_risk
+  device_facing: true
+  deprecated: false
+  introduced_in: '26.04'
+  protocol_vector: VCC-DISCONNECT_ALL-001
+  documentation: See generated Libdoc.
+- keyword: Export Diagnostics
+  canonical_keyword: Export Diagnostics
+  python_method: export_diagnostics
+  signature: '(self, destination: ''str'') -> ''dict[str, Any]'''
+  arguments:
+  - name: destination
+    kind: positional_or_keyword
+    required: true
+    default: null
+    annotation: str
+  return_type: dict[str, Any]
+  tags:
+  - rfds:diagnostics
+  - rfds:low_risk
+  device_facing: false
+  deprecated: false
+  introduced_in: '26.04'
+  protocol_vector: null
+  documentation: See generated Libdoc.
+- keyword: Export Driver Configuration
+  canonical_keyword: Export Driver Configuration
+  python_method: export_driver_configuration
+  signature: '(self, destination: ''str | None'' = None, scope: ''str'' = ''EFFECTIVE'',
+    profile_name: ''str | None'' = None, overwrite: ''bool | str'' = False, alias:
+    ''str | None'' = None) -> ''dict[str, Any]'''
+  arguments:
+  - name: destination
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  - name: scope
+    kind: positional_or_keyword
+    required: false
+    default: EFFECTIVE
+    annotation: str
+  - name: profile_name
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  - name: overwrite
+    kind: positional_or_keyword
+    required: false
+    default: false
+    annotation: bool | str
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: dict[str, Any]
+  tags:
+  - rfds:configuration
+  - rfds:low_risk
+  device_facing: false
+  deprecated: false
+  introduced_in: '26.04'
+  protocol_vector: null
+  documentation: See generated Libdoc.
+- keyword: Get Active Connection
+  canonical_keyword: Get Active Connection
+  python_method: get_active_connection
+  signature: (self) -> 'str | None'
+  arguments: []
+  return_type: str | None
+  tags:
+  - rfds:connection
+  - rfds:none_risk
+  device_facing: false
+  deprecated: false
+  introduced_in: '26.04'
+  protocol_vector: null
+  documentation: See generated Libdoc.
+- keyword: Get Capability Model
+  canonical_keyword: Get Capability Model
+  python_method: get_capability_model
+  signature: (self) -> 'list[dict[str, Any]]'
+  arguments: []
+  return_type: list[dict[str, Any]]
+  tags:
+  - rfds:metadata
+  - rfds:none_risk
+  device_facing: false
+  deprecated: false
+  introduced_in: '26.04'
+  protocol_vector: null
+  documentation: See generated Libdoc.
+- keyword: Get Chamber Running State
+  canonical_keyword: Get Chamber Running State
+  python_method: get_chamber_running_state
+  signature: '(self, alias: ''str | None'' = None) -> ''bool'''
+  arguments:
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: bool
+  tags:
+  - rfds:operation
+  - rfds:none_risk
+  device_facing: true
+  deprecated: false
+  introduced_in: '26.04'
+  protocol_vector: VCC-GET_CHAMBER_RUNNING_STATE-001
+  documentation: See generated Libdoc.
+- keyword: Get Chamber Status
+  canonical_keyword: Get Chamber Status
+  python_method: get_chamber_status
+  signature: '(self, alias: ''str | None'' = None) -> ''str'''
+  arguments:
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: str
+  tags:
+  - rfds:diagnostics
+  - rfds:none_risk
+  device_facing: true
+  deprecated: false
+  introduced_in: '26.04'
+  protocol_vector: VCC-GET_CHAMBER_STATUS-001
+  documentation: See generated Libdoc.
+- keyword: Get Communication Timeout
+  canonical_keyword: Get Communication Timeout
+  python_method: get_communication_timeout
+  signature: '(self, alias: ''str | None'' = None) -> ''float'''
+  arguments:
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: float
+  tags:
+  - rfds:connection
+  - rfds:none_risk
+  device_facing: false
+  deprecated: false
+  introduced_in: '26.04'
+  protocol_vector: null
+  documentation: Return the selected session timeout or the unconnected driver default.
+- keyword: Get Compressed Air
+  canonical_keyword: Get Compressed Air
+  python_method: get_compressed_air
+  signature: '(self, alias: ''str | None'' = None) -> ''bool'''
+  arguments:
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: bool
+  tags:
+  - rfds:digital_io
+  - rfds:none_risk
+  device_facing: true
+  deprecated: false
+  introduced_in: '26.04'
+  protocol_vector: VCC-GET_COMPRESSED_AIR-001
+  documentation: Read compressed air; fail if no physical channel mapping was qualified.
+- keyword: Get Connection State
+  canonical_keyword: Get Connection State
+  python_method: get_connection_state
+  signature: '(self, alias: ''str | None'' = None, refresh: ''bool | str'' = False)
+    -> ''dict[str, Any]'''
+  arguments:
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  - name: refresh
+    kind: positional_or_keyword
+    required: false
+    default: false
+    annotation: bool | str
+  return_type: dict[str, Any]
+  tags:
+  - rfds:connection
+  - rfds:none_risk
+  device_facing: true
+  deprecated: false
+  introduced_in: '26.04'
+  protocol_vector: VCC-GET_CONNECTION_STATE-001
+  documentation: Return stable connection-state fields; optionally perform a safe
+    live probe.
+- keyword: Get Cooling Gradient
+  canonical_keyword: Get Cooling Gradient
+  python_method: get_cooling_gradient
+  signature: '(self, alias: ''str | None'' = None) -> ''float'''
+  arguments:
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: float
+  tags:
+  - rfds:temperature_control
+  - rfds:none_risk
+  device_facing: true
+  deprecated: false
+  introduced_in: '26.04'
+  protocol_vector: VCC-GET_COOLING_GRADIENT-001
+  documentation: See generated Libdoc.
+- keyword: Get Diagnostics
+  canonical_keyword: Get Diagnostics
+  python_method: get_diagnostics
+  signature: (self) -> 'dict[str, Any]'
+  arguments: []
+  return_type: dict[str, Any]
+  tags:
+  - rfds:diagnostics
+  - rfds:none_risk
+  device_facing: false
+  deprecated: false
+  introduced_in: '26.04'
+  protocol_vector: null
+  documentation: See generated Libdoc.
+- keyword: Get Driver Capabilities
+  canonical_keyword: Get Driver Capabilities
+  python_method: get_driver_capabilities
+  signature: (self) -> 'list[str]'
+  arguments: []
+  return_type: list[str]
+  tags:
+  - rfds:metadata
+  - rfds:none_risk
+  device_facing: false
+  deprecated: false
+  introduced_in: '26.04'
+  protocol_vector: null
+  documentation: Return the sorted RFDS-002 capability identifiers.
+- keyword: Get Driver Configuration
+  canonical_keyword: Get Driver Configuration
+  python_method: get_driver_configuration
+  signature: '(self, scope: ''str'' = ''EFFECTIVE'', alias: ''str | None'' = None,
+    redact_sensitive: ''bool | str'' = True, include_sources: ''bool | str'' = False)
+    -> ''dict[str, Any]'''
+  arguments:
+  - name: scope
+    kind: positional_or_keyword
+    required: false
+    default: EFFECTIVE
+    annotation: str
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  - name: redact_sensitive
+    kind: positional_or_keyword
+    required: false
+    default: true
+    annotation: bool | str
+  - name: include_sources
+    kind: positional_or_keyword
+    required: false
+    default: false
+    annotation: bool | str
+  return_type: dict[str, Any]
+  tags:
+  - rfds:configuration
+  - rfds:none_risk
+  device_facing: false
+  deprecated: false
+  introduced_in: '26.04'
+  protocol_vector: null
+  documentation: See generated Libdoc.
+- keyword: Get Driver Configuration Schema
+  canonical_keyword: Get Driver Configuration Schema
+  python_method: get_driver_configuration_schema
+  signature: (self) -> 'dict[str, Any]'
+  arguments: []
+  return_type: dict[str, Any]
+  tags:
+  - rfds:configuration
+  - rfds:none_risk
+  device_facing: false
+  deprecated: false
+  introduced_in: '26.04'
+  protocol_vector: null
+  documentation: See generated Libdoc.
+- keyword: Get Driver Default Configuration
+  canonical_keyword: Get Driver Default Configuration
+  python_method: get_driver_default_configuration
+  signature: '(self, redact_sensitive: ''bool | str'' = True) -> ''dict[str, Any]'''
+  arguments:
+  - name: redact_sensitive
+    kind: positional_or_keyword
+    required: false
+    default: true
+    annotation: bool | str
+  return_type: dict[str, Any]
+  tags:
+  - rfds:configuration
+  - rfds:none_risk
+  device_facing: false
+  deprecated: false
+  introduced_in: '26.04'
+  protocol_vector: null
+  documentation: See generated Libdoc.
+- keyword: Get Driver Information
+  canonical_keyword: Get Driver Information
+  python_method: get_driver_information
+  signature: (self) -> 'dict[str, Any]'
+  arguments: []
+  return_type: dict[str, Any]
+  tags:
+  - rfds:metadata
+  - rfds:none_risk
+  device_facing: false
+  deprecated: false
+  introduced_in: '26.04'
+  protocol_vector: null
+  documentation: Return static driver metadata without device I/O.
+- keyword: Get Dryer
+  canonical_keyword: Get Dryer
+  python_method: get_dryer
+  signature: '(self, alias: ''str | None'' = None) -> ''bool'''
+  arguments:
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: bool
+  tags:
+  - rfds:digital_io
+  - rfds:none_risk
+  device_facing: true
+  deprecated: false
+  introduced_in: '26.04'
+  protocol_vector: VCC-GET_DRYER-001
+  documentation: Read the configured dryer output; fail if no mapping was qualified.
+- keyword: Get Heating Gradient
+  canonical_keyword: Get Heating Gradient
+  python_method: get_heating_gradient
+  signature: '(self, alias: ''str | None'' = None) -> ''float'''
+  arguments:
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: float
+  tags:
+  - rfds:temperature_control
+  - rfds:none_risk
+  device_facing: true
+  deprecated: false
+  introduced_in: '26.04'
+  protocol_vector: VCC-GET_HEATING_GRADIENT-001
+  documentation: See generated Libdoc.
+- keyword: Get Identity
+  canonical_keyword: Get Identity
+  python_method: get_identity
+  signature: '(self, alias: ''str | None'' = None, refresh: ''bool | str'' = False)
+    -> ''str'''
+  arguments:
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  - name: refresh
+    kind: positional_or_keyword
+    required: false
+    default: false
+    annotation: bool | str
+  return_type: str
+  tags:
+  - rfds:identity
+  - rfds:none_risk
+  device_facing: true
+  deprecated: false
+  introduced_in: '26.04'
+  protocol_vector: VCC-GET_IDENTITY-001
+  documentation: Return cached connection identity by default; ``refresh=True`` queries
+    the chamber.
+- keyword: Get Temperature Limits
+  canonical_keyword: Get Temperature Limits
+  python_method: get_temperature_limits
+  signature: '(self, alias: ''str | None'' = None) -> ''dict[str, Any]'''
+  arguments:
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: dict[str, Any]
+  tags:
+  - rfds:temperature_control
+  - rfds:none_risk
+  device_facing: false
+  deprecated: false
+  introduced_in: '26.04'
+  protocol_vector: null
+  documentation: See generated Libdoc.
+- keyword: Get Temperature Setpoint
+  canonical_keyword: Get Temperature Setpoint
+  python_method: get_temperature_setpoint
+  signature: '(self, alias: ''str | None'' = None) -> ''float'''
+  arguments:
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: float
+  tags:
+  - rfds:temperature_control
+  - rfds:none_risk
+  device_facing: true
+  deprecated: false
+  introduced_in: '26.04'
+  protocol_vector: VCC-GET_TEMPERATURE_SETPOINT-001
+  documentation: See generated Libdoc.
+- keyword: Import Driver Configuration
+  canonical_keyword: Import Driver Configuration
+  python_method: import_driver_configuration
+  signature: '(self, source: ''Any'', mode: ''str'' = ''REPLACE'', apply: ''bool |
+    str'' = False, persist: ''bool | str'' = False, profile_name: ''str | None'' =
+    None, strict: ''bool | str'' = True, reconnect: ''bool | str'' = False, allow_device_persistent_changes:
+    ''bool | str'' = False, confirm_high_risk: ''bool | str'' = False, alias: ''str
+    | None'' = None) -> ''dict[str, Any]'''
+  arguments:
+  - name: source
+    kind: positional_or_keyword
+    required: true
+    default: null
+    annotation: Any
+  - name: mode
+    kind: positional_or_keyword
+    required: false
+    default: REPLACE
+    annotation: str
+  - name: apply
+    kind: positional_or_keyword
+    required: false
+    default: false
+    annotation: bool | str
+  - name: persist
+    kind: positional_or_keyword
+    required: false
+    default: false
+    annotation: bool | str
+  - name: profile_name
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  - name: strict
+    kind: positional_or_keyword
+    required: false
+    default: true
+    annotation: bool | str
+  - name: reconnect
+    kind: positional_or_keyword
+    required: false
+    default: false
+    annotation: bool | str
+  - name: allow_device_persistent_changes
+    kind: positional_or_keyword
+    required: false
+    default: false
+    annotation: bool | str
+  - name: confirm_high_risk
+    kind: positional_or_keyword
+    required: false
+    default: false
+    annotation: bool | str
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: dict[str, Any]
+  tags:
+  - rfds:configuration
+  - rfds:medium_risk
+  device_facing: false
+  deprecated: false
+  introduced_in: '26.04'
+  protocol_vector: null
+  documentation: See generated Libdoc.
+- keyword: Is Connected
+  canonical_keyword: Is Connected
+  python_method: is_connected
+  signature: '(self, alias: ''str | None'' = None) -> ''bool'''
+  arguments:
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: bool
+  tags:
+  - rfds:connection
+  - rfds:none_risk
+  device_facing: false
+  deprecated: false
+  introduced_in: '26.04'
+  protocol_vector: null
+  documentation: Return cached transport state without device I/O.
+- keyword: List Connections
+  canonical_keyword: List Connections
+  python_method: list_connections
+  signature: (self) -> 'list[dict[str, Any]]'
+  arguments: []
+  return_type: list[dict[str, Any]]
+  tags:
+  - rfds:connection
+  - rfds:none_risk
+  device_facing: false
+  deprecated: false
+  introduced_in: '26.04'
+  protocol_vector: null
+  documentation: See generated Libdoc.
+- keyword: List Driver Configuration Profiles
+  canonical_keyword: List Driver Configuration Profiles
+  python_method: list_driver_configuration_profiles
+  signature: (self) -> 'list[dict[str, Any]]'
+  arguments: []
+  return_type: list[dict[str, Any]]
+  tags:
+  - rfds:configuration
+  - rfds:none_risk
+  device_facing: false
+  deprecated: false
+  introduced_in: '26.04'
+  protocol_vector: null
+  documentation: See generated Libdoc.
+- keyword: Load Driver Configuration
+  canonical_keyword: Load Driver Configuration
+  python_method: load_driver_configuration
+  signature: '(self, profile_name: ''str'', apply: ''bool | str'' = False, reconnect:
+    ''bool | str'' = False, alias: ''str | None'' = None) -> ''dict[str, Any]'''
+  arguments:
+  - name: profile_name
+    kind: positional_or_keyword
+    required: true
+    default: null
+    annotation: str
+  - name: apply
+    kind: positional_or_keyword
+    required: false
+    default: false
+    annotation: bool | str
+  - name: reconnect
+    kind: positional_or_keyword
+    required: false
+    default: false
+    annotation: bool | str
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: dict[str, Any]
+  tags:
+  - rfds:configuration
+  - rfds:low_risk
+  device_facing: false
+  deprecated: false
+  introduced_in: '26.04'
+  protocol_vector: null
+  documentation: See generated Libdoc.
+- keyword: Measure Temperature
+  canonical_keyword: Measure Temperature
+  python_method: measure_temperature
+  signature: '(self, alias: ''str | None'' = None) -> ''float'''
+  arguments:
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: float
+  tags:
+  - rfds:temperature_measurement
+  - rfds:none_risk
+  device_facing: true
+  deprecated: false
+  introduced_in: '26.04'
+  protocol_vector: VCC-MEASURE_TEMPERATURE-001
+  documentation: Trigger a live chamber temperature query and return degrees Celsius.
+- keyword: Reconnect
+  canonical_keyword: Reconnect
+  python_method: reconnect
+  signature: '(self, alias: ''str | None'' = None) -> ''dict[str, Any]'''
+  arguments:
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: dict[str, Any]
+  tags:
+  - rfds:connection
+  - rfds:low_risk
+  device_facing: true
+  deprecated: false
+  introduced_in: '26.04'
+  protocol_vector: VCC-RECONNECT-001
+  documentation: See generated Libdoc.
+- keyword: Reset Driver Configuration
+  canonical_keyword: Reset Driver Configuration
+  python_method: reset_driver_configuration
+  signature: '(self, path: ''str | None'' = None, scope: ''str'' = ''INSTANCE_OVERRIDE'',
+    apply: ''bool | str'' = False, persist: ''bool | str'' = False, confirm: ''bool
+    | str'' = False, alias: ''str | None'' = None) -> ''dict[str, Any]'''
+  arguments:
+  - name: path
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  - name: scope
+    kind: positional_or_keyword
+    required: false
+    default: INSTANCE_OVERRIDE
+    annotation: str
+  - name: apply
+    kind: positional_or_keyword
+    required: false
+    default: false
+    annotation: bool | str
+  - name: persist
+    kind: positional_or_keyword
+    required: false
+    default: false
+    annotation: bool | str
+  - name: confirm
+    kind: positional_or_keyword
+    required: false
+    default: false
+    annotation: bool | str
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: dict[str, Any]
+  tags:
+  - rfds:configuration
+  - rfds:medium_risk
+  device_facing: false
+  deprecated: false
+  introduced_in: '26.04'
+  protocol_vector: null
+  documentation: See generated Libdoc.
+- keyword: Safe Shutdown
+  canonical_keyword: Safe Shutdown
+  python_method: safe_shutdown
+  signature: '(self, alias: ''str | None'' = None, timeout_s: ''float | str | None''
+    = None) -> ''dict[str, Any]'''
+  arguments:
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  - name: timeout_s
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: float | str | None
+  return_type: dict[str, Any]
+  tags:
+  - rfds:safe_shutdown
+  - rfds:high_risk
+  device_facing: true
+  deprecated: false
+  introduced_in: '26.04'
+  protocol_vector: VCC-SAFE_SHUTDOWN-001
+  documentation: 'Stop the chamber and disable only configured auxiliary outputs.
+
+
+    Unqualified dryer and compressed-air mappings are recorded as ``SKIP``
+
+    rather than transmitted to an unknown digital-output channel.'
+- keyword: Save Driver Configuration
+  canonical_keyword: Save Driver Configuration
+  python_method: save_driver_configuration
+  signature: '(self, profile_name: ''str'', scope: ''str'' = ''EFFECTIVE'', overwrite:
+    ''bool | str'' = False, set_active: ''bool | str'' = False, alias: ''str | None''
+    = None) -> ''dict[str, Any]'''
+  arguments:
+  - name: profile_name
+    kind: positional_or_keyword
+    required: true
+    default: null
+    annotation: str
+  - name: scope
+    kind: positional_or_keyword
+    required: false
+    default: EFFECTIVE
+    annotation: str
+  - name: overwrite
+    kind: positional_or_keyword
+    required: false
+    default: false
+    annotation: bool | str
+  - name: set_active
+    kind: positional_or_keyword
+    required: false
+    default: false
+    annotation: bool | str
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: dict[str, Any]
+  tags:
+  - rfds:configuration
+  - rfds:low_risk
+  device_facing: false
+  deprecated: false
+  introduced_in: '26.04'
+  protocol_vector: null
+  documentation: See generated Libdoc.
+- keyword: Select Connection
+  canonical_keyword: Select Connection
+  python_method: select_connection
+  signature: '(self, alias: ''str'') -> ''dict[str, Any]'''
+  arguments:
+  - name: alias
+    kind: positional_or_keyword
+    required: true
+    default: null
+    annotation: str
+  return_type: dict[str, Any]
+  tags:
+  - rfds:connection
+  - rfds:low_risk
+  device_facing: false
+  deprecated: false
+  introduced_in: '26.04'
+  protocol_vector: null
+  documentation: See generated Libdoc.
+- keyword: Set Communication Timeout
+  canonical_keyword: Set Communication Timeout
+  python_method: set_communication_timeout
+  signature: '(self, timeout_s: ''float | str'', alias: ''str | None'' = None) ->
+    ''float'''
+  arguments:
+  - name: timeout_s
+    kind: positional_or_keyword
+    required: true
+    default: null
+    annotation: float | str
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: float
+  tags:
+  - rfds:connection
+  - rfds:low_risk
+  device_facing: false
+  deprecated: false
+  introduced_in: '26.04'
+  protocol_vector: null
+  documentation: Apply a finite positive communication timeout and return seconds.
+- keyword: Set Compressed Air
+  canonical_keyword: Set Compressed Air
+  python_method: set_compressed_air
+  signature: '(self, enabled: ''bool | str'', alias: ''str | None'' = None) -> ''None'''
+  arguments:
+  - name: enabled
+    kind: positional_or_keyword
+    required: true
+    default: null
+    annotation: bool | str
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: None
+  tags:
+  - rfds:digital_io
+  - rfds:medium_risk
+  device_facing: true
+  deprecated: false
+  introduced_in: '26.04'
+  protocol_vector: VCC-SET_COMPRESSED_AIR-001
+  documentation: Set compressed air using the explicitly configured physical channel.
+- keyword: Set Cooling Gradient
+  canonical_keyword: Set Cooling Gradient
+  python_method: set_cooling_gradient
+  signature: '(self, value_c_per_min: ''float'', alias: ''str | None'' = None) ->
+    ''None'''
+  arguments:
+  - name: value_c_per_min
+    kind: positional_or_keyword
+    required: true
+    default: null
+    annotation: float
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: None
+  tags:
+  - rfds:temperature_control
+  - rfds:medium_risk
+  device_facing: true
+  deprecated: false
+  introduced_in: '26.04'
+  protocol_vector: VCC-SET_COOLING_GRADIENT-001
+  documentation: See generated Libdoc.
+- keyword: Set Dryer
+  canonical_keyword: Set Dryer
+  python_method: set_dryer
+  signature: '(self, enabled: ''bool | str'', alias: ''str | None'' = None) -> ''None'''
+  arguments:
+  - name: enabled
+    kind: positional_or_keyword
+    required: true
+    default: null
+    annotation: bool | str
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: None
+  tags:
+  - rfds:digital_io
+  - rfds:medium_risk
+  device_facing: true
+  deprecated: false
+  introduced_in: '26.04'
+  protocol_vector: VCC-SET_DRYER-001
+  documentation: 'Set the dryer output using the explicitly configured physical channel.
+
+
+    Real hardware defaults to unsupported until ``dryer_output_channel`` is
+
+    supplied through configuration or ``Connect`` options.'
+- keyword: Set Heating Gradient
+  canonical_keyword: Set Heating Gradient
+  python_method: set_heating_gradient
+  signature: '(self, value_c_per_min: ''float'', alias: ''str | None'' = None) ->
+    ''None'''
+  arguments:
+  - name: value_c_per_min
+    kind: positional_or_keyword
+    required: true
+    default: null
+    annotation: float
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: None
+  tags:
+  - rfds:temperature_control
+  - rfds:medium_risk
+  device_facing: true
+  deprecated: false
+  introduced_in: '26.04'
+  protocol_vector: VCC-SET_HEATING_GRADIENT-001
+  documentation: See generated Libdoc.
+- keyword: Set Temperature
+  canonical_keyword: Set Temperature
+  python_method: set_temperature
+  signature: '(self, value_c: ''float'', alias: ''str | None'' = None) -> ''None'''
+  arguments:
+  - name: value_c
+    kind: positional_or_keyword
+    required: true
+    default: null
+    annotation: float
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: None
+  tags:
+  - rfds:temperature_control
+  - rfds:high_risk
+  device_facing: true
+  deprecated: false
+  introduced_in: '26.04'
+  protocol_vector: VCC-SET_TEMPERATURE-001
+  documentation: See generated Libdoc.
+- keyword: Set Temperature And Wait
+  canonical_keyword: Set Temperature And Wait
+  python_method: set_temperature_and_wait
+  signature: '(self, value_c: ''float'', dwell_s: ''float | str'' = 0.0, tolerance_c:
+    ''float'' = 0.8, poll_interval_s: ''float | str'' = 10.0, settle_timeout_s: ''float
+    | str'' = 14400.0, stable_samples: ''int'' = 3, start_chamber: ''bool | str''
+    = True, alias: ''str | None'' = None) -> ''float'''
+  arguments:
+  - name: value_c
+    kind: positional_or_keyword
+    required: true
+    default: null
+    annotation: float
+  - name: dwell_s
+    kind: positional_or_keyword
+    required: false
+    default: 0.0
+    annotation: float | str
+  - name: tolerance_c
+    kind: positional_or_keyword
+    required: false
+    default: 0.8
+    annotation: float
+  - name: poll_interval_s
+    kind: positional_or_keyword
+    required: false
+    default: 10.0
+    annotation: float | str
+  - name: settle_timeout_s
+    kind: positional_or_keyword
+    required: false
+    default: 14400.0
+    annotation: float | str
+  - name: stable_samples
+    kind: positional_or_keyword
+    required: false
+    default: 3
+    annotation: int
+  - name: start_chamber
+    kind: positional_or_keyword
+    required: false
+    default: true
+    annotation: bool | str
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: float
+  tags:
+  - rfds:temperature_control
+  - rfds:high_risk
+  - rfds:long_running
+  device_facing: true
+  deprecated: false
+  introduced_in: '26.04'
+  protocol_vector: VCC-SET_TEMPERATURE_AND_WAIT-001
+  documentation: See generated Libdoc.
+- keyword: Set Temperature Limits
+  canonical_keyword: Set Temperature Limits
+  python_method: set_temperature_limits
+  signature: '(self, minimum_c: ''float'', maximum_c: ''float'', alias: ''str | None''
+    = None) -> ''dict[str, Any]'''
+  arguments:
+  - name: minimum_c
+    kind: positional_or_keyword
+    required: true
+    default: null
+    annotation: float
+  - name: maximum_c
+    kind: positional_or_keyword
+    required: true
+    default: null
+    annotation: float
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: dict[str, Any]
+  tags:
+  - rfds:temperature_control
+  - rfds:low_risk
+  device_facing: false
+  deprecated: false
+  introduced_in: '26.04'
+  protocol_vector: null
+  documentation: See generated Libdoc.
+- keyword: Start Chamber
+  canonical_keyword: Start Chamber
+  python_method: start_chamber
+  signature: '(self, alias: ''str | None'' = None) -> ''None'''
+  arguments:
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: None
+  tags:
+  - rfds:operation
+  - rfds:high_risk
+  device_facing: true
+  deprecated: false
+  introduced_in: '26.04'
+  protocol_vector: VCC-START_CHAMBER-001
+  documentation: See generated Libdoc.
+- keyword: Stop Chamber
+  canonical_keyword: Stop Chamber
+  python_method: stop_chamber
+  signature: '(self, alias: ''str | None'' = None) -> ''None'''
+  arguments:
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: None
+  tags:
+  - rfds:operation
+  - rfds:high_risk
+  device_facing: true
+  deprecated: false
+  introduced_in: '26.04'
+  protocol_vector: VCC-STOP_CHAMBER-001
+  documentation: See generated Libdoc.
+- keyword: Temperature Setpoint Should Be
+  canonical_keyword: Temperature Setpoint Should Be
+  python_method: temperature_setpoint_should_be
+  signature: '(self, expected_c: ''float'', tolerance_c: ''float'' = 0.05, alias:
+    ''str | None'' = None) -> ''None'''
+  arguments:
+  - name: expected_c
+    kind: positional_or_keyword
+    required: true
+    default: null
+    annotation: float
+  - name: tolerance_c
+    kind: positional_or_keyword
+    required: false
+    default: 0.05
+    annotation: float
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: None
+  tags:
+  - rfds:assertion
+  - rfds:none_risk
+  device_facing: true
+  deprecated: false
+  introduced_in: '26.04'
+  protocol_vector: VCC-TEMPERATURE_SETPOINT_SHOULD_BE-001
+  documentation: See generated Libdoc.
+- keyword: Temperature Should Be
+  canonical_keyword: Temperature Should Be
+  python_method: temperature_should_be
+  signature: '(self, expected_c: ''float'', tolerance_c: ''float'' = 0.1, alias: ''str
+    | None'' = None) -> ''None'''
+  arguments:
+  - name: expected_c
+    kind: positional_or_keyword
+    required: true
+    default: null
+    annotation: float
+  - name: tolerance_c
+    kind: positional_or_keyword
+    required: false
+    default: 0.1
+    annotation: float
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: None
+  tags:
+  - rfds:assertion
+  - rfds:none_risk
+  device_facing: true
+  deprecated: false
+  introduced_in: '26.04'
+  protocol_vector: VCC-TEMPERATURE_SHOULD_BE-001
+  documentation: See generated Libdoc.
+- keyword: Temperature Should Be Within
+  canonical_keyword: Temperature Should Be Within
+  python_method: temperature_should_be_within
+  signature: '(self, minimum_c: ''float'', maximum_c: ''float'', alias: ''str | None''
+    = None) -> ''None'''
+  arguments:
+  - name: minimum_c
+    kind: positional_or_keyword
+    required: true
+    default: null
+    annotation: float
+  - name: maximum_c
+    kind: positional_or_keyword
+    required: true
+    default: null
+    annotation: float
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: None
+  tags:
+  - rfds:assertion
+  - rfds:none_risk
+  device_facing: true
+  deprecated: false
+  introduced_in: '26.04'
+  protocol_vector: VCC-TEMPERATURE_SHOULD_BE_WITHIN-001
+  documentation: See generated Libdoc.
+- keyword: Validate Driver Configuration
+  canonical_keyword: Validate Driver Configuration
+  python_method: validate_driver_configuration
+  signature: '(self, configuration: ''Any'', mode: ''str'' = ''REPLACE'', strict:
+    ''bool | str'' = True, alias: ''str | None'' = None) -> ''dict[str, Any]'''
+  arguments:
+  - name: configuration
+    kind: positional_or_keyword
+    required: true
+    default: null
+    annotation: Any
+  - name: mode
+    kind: positional_or_keyword
+    required: false
+    default: REPLACE
+    annotation: str
+  - name: strict
+    kind: positional_or_keyword
+    required: false
+    default: true
+    annotation: bool | str
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: dict[str, Any]
+  tags:
+  - rfds:configuration
+  - rfds:none_risk
+  device_facing: false
+  deprecated: false
+  introduced_in: '26.04'
+  protocol_vector: null
+  documentation: See generated Libdoc.
+- keyword: Wait For Dwell
+  canonical_keyword: Wait For Dwell
+  python_method: wait_for_dwell
+  signature: '(self, duration_s: ''float | str'', poll_interval_s: ''float | str''
+    = 60.0, alias: ''str | None'' = None) -> ''float'''
+  arguments:
+  - name: duration_s
+    kind: positional_or_keyword
+    required: true
+    default: null
+    annotation: float | str
+  - name: poll_interval_s
+    kind: positional_or_keyword
+    required: false
+    default: 60.0
+    annotation: float | str
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: float
+  tags:
+  - rfds:temperature_measurement
+  - rfds:medium_risk
+  - rfds:long_running
+  device_facing: true
+  deprecated: false
+  introduced_in: '26.04'
+  protocol_vector: VCC-WAIT_FOR_DWELL-001
+  documentation: See generated Libdoc.
+- keyword: Wait For Temperature Stability
+  canonical_keyword: Wait For Temperature Stability
+  python_method: wait_for_temperature_stability
+  signature: '(self, target_c: ''float | None'' = None, tolerance_c: ''float'' = 0.8,
+    stable_samples: ''int'' = 3, poll_interval_s: ''float | str'' = 10.0, settle_timeout_s:
+    ''float | str'' = 14400.0, alias: ''str | None'' = None) -> ''float'''
+  arguments:
+  - name: target_c
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: float | None
+  - name: tolerance_c
+    kind: positional_or_keyword
+    required: false
+    default: 0.8
+    annotation: float
+  - name: stable_samples
+    kind: positional_or_keyword
+    required: false
+    default: 3
+    annotation: int
+  - name: poll_interval_s
+    kind: positional_or_keyword
+    required: false
+    default: 10.0
+    annotation: float | str
+  - name: settle_timeout_s
+    kind: positional_or_keyword
+    required: false
+    default: 14400.0
+    annotation: float | str
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: float
+  tags:
+  - rfds:temperature_measurement
+  - rfds:high_risk
+  - rfds:long_running
+  device_facing: true
+  deprecated: false
+  introduced_in: '26.04'
+  protocol_vector: VCC-WAIT_FOR_TEMPERATURE_STABILITY-001
+  documentation: See generated Libdoc.
+migration:
+  api_2_removed_in: '26.07'
+  removed_aliases:
+    Connect Climate Chamber: Connect
+    Disconnect Climate Chamber: Disconnect
+    Reconnect Climate Chamber: Reconnect
+    Get Climate Chamber Identification: Get Identity
+    Get Climate Chamber Model: Get Identity
+    Get Climate Chamber Serial Number: Get Identity
+    Get Climate Chamber Manufacturing Year: Get Identity
+    Get Climate Chamber Library Version: Get Driver Information
+    Get Climate Chamber Connection Statistics: Get Diagnostics
+    Get Climate Chamber Health: Get Diagnostics
+    Get Climate Chamber Status: Get Chamber Status
+    Get Climate Chamber Temperature: Measure Temperature
+    Get Climate Chamber Setpoint: Get Temperature Setpoint
+    Set Climate Chamber Temperature: Set Temperature
+    Set Climate Chamber Temperature Limits: Set Temperature Limits
+    Get Climate Chamber Temperature Limits: Get Temperature Limits
+    Start Climate Chamber: Start Chamber
+    Stop Climate Chamber: Stop Chamber
+    Stop And Disconnect Climate Chamber: Disconnect
+    Set Climate Chamber Heating Gradient: Set Heating Gradient
+    Get Climate Chamber Heating Gradient: Get Heating Gradient
+    Set Climate Chamber Cooling Gradient: Set Cooling Gradient
+    Get Climate Chamber Cooling Gradient: Get Cooling Gradient
+    Set Climate Chamber Dryer: Set Dryer
+    Get Climate Chamber Dryer: Get Dryer
+    Set Climate Chamber Compressed Air: Set Compressed Air
+    Get Climate Chamber Compressed Air: Get Compressed Air
+    Wait Until Climate Chamber Is Stable: Wait For Temperature Stability
+    Wait For Climate Chamber Dwell: Wait For Dwell
+    Climate Chamber Temperature Should Be: Temperature Should Be
+    Climate Chamber Temperature Should Be Within: Temperature Should Be Within
+    Climate Chamber Setpoint Should Be: Temperature Setpoint Should Be
+    Climate Chamber Should Be Connected: Connection Should Be Available
+    Climate Chamber Should Be Running: Chamber Should Be Running
+    Climate Chamber Should Be Stopped: Chamber Should Be Stopped
+  replacement_policy: Use canonical RFDS-002 keywords.

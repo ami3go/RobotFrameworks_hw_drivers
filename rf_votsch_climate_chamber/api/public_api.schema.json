@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "driver",
+    "release_version",
+    "api_version",
+    "library",
+    "keywords"
+  ],
+  "properties": {
+    "keywords": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "keyword",
+          "canonical_keyword",
+          "python_method",
+          "signature",
+          "return_type",
+          "device_facing",
+          "deprecated"
+        ]
+      }
+    }
+  }
+}

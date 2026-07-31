@@ -1,0 +1,16 @@
+schema_version: "1.0"
+release: "26.08"
+examples:
+  - {id: EX-01, file: 01_basic_connection.robot, profile: simulator, expected: PASS}
+  - {id: EX-02, file: 02_temperature_measurement.robot, profile: simulator, expected: PASS}
+  - {id: EX-03, file: 03_setpoint_control.robot, profile: simulator, expected: PASS}
+  - {id: EX-04, file: 04_start_stop.robot, profile: simulator, expected: PASS}
+  - {id: EX-05, file: 05_stabilize_and_dwell.robot, profile: simulator, expected: PASS}
+  - {id: EX-06, file: 06_temperature_limits.robot, profile: simulator, expected: PASS}
+  - {id: EX-07, file: 07_gradients.robot, profile: simulator, expected: PASS}
+  - {id: EX-08, file: 08_auxiliary_outputs.robot, profile: simulator, expected: PASS, warning: model-dependent on real hardware}
+  - {id: EX-09, file: 09_multiple_connections.robot, profile: simulator, expected: PASS}
+  - {id: EX-10, file: 10_configuration_profiles.robot, profile: simulator, expected: PASS}
+  - {id: EX-11, file: 11_diagnostics.robot, profile: simulator, expected: PASS}
+  - {id: EX-12, file: 12_reconnect_recovery.robot, profile: simulator, expected: PASS}
+  - {id: EX-13, file: 13_safe_shutdown.robot, profile: simulator, expected: PASS}

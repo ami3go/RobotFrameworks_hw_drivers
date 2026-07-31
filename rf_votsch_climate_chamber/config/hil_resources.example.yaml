@@ -1,0 +1,11 @@
+# Copy to a private bench repository and replace values there.
+# Do not commit real bench addresses or serial numbers into the driver package.
+chamber:
+  resource: tcp://192.168.0.50:2049
+  alias: default
+  temperature_min_c: -40.0
+  temperature_max_c: 180.0
+  setpoint_verify_timeout_s: 30.0
+  # Keep null until the exact chamber mapping is qualified.
+  dryer_output_channel: null
+  compressed_air_output_channel: null

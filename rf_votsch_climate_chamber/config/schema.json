@@ -1,0 +1,217 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/rf_votsch_climate_chamber/configuration/1.0.0",
+  "title": "RFDS Votsch climate chamber configuration",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "driver",
+    "profile",
+    "settings",
+    "extensions",
+    "metadata"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "driver": {
+      "type": "object",
+      "required": [
+        "name",
+        "api_version"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "const": "rf_votsch_climate_chamber"
+        },
+        "api_version": {
+          "type": "string"
+        }
+      }
+    },
+    "profile": {
+      "type": "object",
+      "required": [
+        "name",
+        "description"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 500
+        }
+      }
+    },
+    "settings": {
+      "type": "object",
+      "required": [
+        "connection",
+        "safety",
+        "operation",
+        "auxiliary_outputs"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "connection": {
+          "type": "object",
+          "required": [
+            "resource",
+            "timeout_s",
+            "response_timeout_s",
+            "query_retries",
+            "retry_delay_s",
+            "tcp_keepalive"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "resource": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "timeout_s": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 60
+            },
+            "response_timeout_s": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 60
+            },
+            "query_retries": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 5
+            },
+            "retry_delay_s": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 30
+            },
+            "tcp_keepalive": {
+              "type": "boolean"
+            }
+          }
+        },
+        "safety": {
+          "type": "object",
+          "required": [
+            "temperature_min_c",
+            "temperature_max_c",
+            "safe_shutdown_on_disconnect"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "temperature_min_c": {
+              "type": "number",
+              "minimum": -200,
+              "maximum": 500
+            },
+            "temperature_max_c": {
+              "type": "number",
+              "minimum": -200,
+              "maximum": 500
+            },
+            "safe_shutdown_on_disconnect": {
+              "type": "boolean"
+            }
+          }
+        },
+        "operation": {
+          "type": "object",
+          "required": [
+            "verify_writes",
+            "setpoint_verify_tolerance_c",
+            "state_change_timeout_s",
+            "progress_log_interval_s",
+            "setpoint_verify_timeout_s",
+            "setpoint_verify_poll_interval_s"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "verify_writes": {
+              "type": "boolean"
+            },
+            "setpoint_verify_tolerance_c": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 10
+            },
+            "state_change_timeout_s": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 300
+            },
+            "progress_log_interval_s": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 3600
+            },
+            "setpoint_verify_timeout_s": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 300
+            },
+            "setpoint_verify_poll_interval_s": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 30
+            }
+          }
+        },
+        "auxiliary_outputs": {
+          "type": "object",
+          "required": [
+            "dryer_output_channel",
+            "compressed_air_output_channel"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "dryer_output_channel": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 2,
+              "maximum": 999
+            },
+            "compressed_air_output_channel": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 2,
+              "maximum": 999
+            }
+          }
+        }
+      }
+    },
+    "extensions": {
+      "type": "object"
+    },
+    "metadata": {
+      "type": "object",
+      "required": [
+        "created_by"
+      ],
+      "additionalProperties": true,
+      "properties": {
+        "created_by": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

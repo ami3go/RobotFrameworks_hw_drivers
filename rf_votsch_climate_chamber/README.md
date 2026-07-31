@@ -1,170 +1,117 @@
-# Robot Framework Vötsch Climate Chamber Library
+# RFDS Vötsch Climate Chamber Driver
 
-**Release:** v26.02  
-**Python package version:** 26.2  
-**Status:** production-oriented release candidate; real-chamber validation is still required for each chamber model and site configuration.
+Release **v26.08** (`26.8` in Python metadata) hardens the canonical API 3.0 driver using evidence from real-chamber smoke execution.
 
-This repository contains two deliberately separate layers:
+> Release class: **D0 / D1 candidate**. Python, simulator, metadata, packaging, and clean-install gates are automated. Native Robot RFDS-019 execution and representative real-device qualification remain required before D1/D2/P1 acceptance.
 
-```text
-Robot Framework tests
-        │ readable, safety-focused keywords
-        ▼
-VotschClimateChamberLibrary
-        │ composition, not inheritance
-        ▼
-ClimateChamber Python driver
-        │ reconnecting TCP protocol, validation, readback
-        ▼
-Vötsch / SimServ-compatible chamber, TCP port 2049
-```
+## What changed in v26.08
 
-## Why an adapter instead of modifying the driver into Robot keywords?
+- setpoint writes now use bounded polling because real hardware can acknowledge before readback changes;
+- effective configuration is round-trippable, so close-only hardware teardown is actually applied;
+- `Safe Shutdown` stops the chamber but skips dryer/compressed-air commands until physical channels are explicitly qualified;
+- hardware suites verify configuration application and gate auxiliary I/O by authorization and mapping;
+- targeted regression tests cover the two reported hardware failures.
 
-The driver remains useful from Python, pytest, CLI tools, and other automation systems. The Robot adapter adds suite lifecycle, Robot time syntax, explicit keyword exposure, logging, assertions, and safe teardown without mixing framework concerns into the protocol layer.
+API 2 aliases remain removed as documented in [`docs/migration.md`](docs/migration.md).
+
+## Architecture and safety
+
+- explicit Robot keyword export (`auto_keywords=False`);
+- suite-scoped, named connection sessions;
+- TCP and deterministic simulator transports;
+- finite timeouts, bounded cleanup, cancellation, readback verification, and
+  configured temperature limits;
+- RFDS-007 typed errors with stable codes and recovery guidance;
+- RFDS-014 configuration profiles;
+- RFDS-015 plugin descriptor and `rfds.drivers` entry point;
+- RFDS-017 AI contract and RFDS-019 protocol vectors;
+- fixed release root `rf_votsch_climate_chamber/`.
 
 ## Installation
 
-```bash
-python -m venv .venv
-# Linux
-source .venv/bin/activate
-# Windows PowerShell
-.venv\Scripts\Activate.ps1
-
-python -m pip install --upgrade pip
-python -m pip install .
+```powershell
+py -3.11 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install --upgrade pip
+.\.venv\Scripts\python.exe -m pip install -e .
 ```
 
-For development:
+Linux:
 
 ```bash
-python -m pip install -e ".[dev]"
+python3.11 -m venv .venv
+.venv/bin/python -m pip install --upgrade pip
+.venv/bin/python -m pip install -e .
 ```
 
-## First test
+## First Robot test
 
-```robot
+```robotframework
 *** Settings ***
-Library         votsch_climate_chamber.robot_library.VotschClimateChamberLibrary
-Suite Setup     Connect Climate Chamber    192.168.1.50    -40    180
-Suite Teardown  Stop And Disconnect Climate Chamber
+Library    rf_votsch_climate_chamber.library.VotschClimateChamberLibrary
+Suite Teardown    Disconnect All
 
 *** Test Cases ***
-Run At Ambient
-    Set Temperature And Wait
-    ...    target=25
-    ...    tolerance=0.8
-    ...    stable_samples=3
-    ...    timeout=2 h
-    Climate Chamber Temperature Should Be    25    tolerance=0.8
+Read Simulator Temperature
+    ${state}=    Connect    resource=SIM::default    alias=default
+    Should Be True    ${state}[connected]
+    ${temperature}=    Measure Temperature
+    Log    ${temperature} °C
 ```
 
-Run it with:
+Run:
 
-```bash
-robot --outputdir results my_test.robot
+```powershell
+python -m robot --outputdir results/quickstart quick_start.robot
 ```
 
-## Safety defaults
+## Real chamber connection
 
-- Library import never connects to hardware.
-- Local minimum and maximum temperatures are mandatory when connecting.
-- Out-of-range setpoints fail; they are never silently clamped.
-- Waiting keywords use finite default timeouts.
-- Raw protocol commands are not exposed as Robot keywords.
-- Stopping on ordinary disconnect is configurable.
-- `Stop And Disconnect Climate Chamber` always attempts both operations.
-- Real-hardware tests are opt-in.
+```robotframework
+Connect
+...    resource=tcp://192.168.0.50:2049
+...    alias=default
+...    timeout_s=5 seconds
+...    temperature_min_c=-40
+...    temperature_max_c=180
+```
 
-A host process cannot guarantee safe chamber behavior after host power loss, network failure, relay failure, or chamber-controller malfunction. Configure independent chamber alarms and hardware limits.
+Use named arguments for `Connect`. Real hardware defaults to no dryer or compressed-air mapping. Supply `dryer_output_channel` or `compressed_air_output_channel` only after qualification.
 
-## Repository layout
+## Validation
 
-Release archives follow the shared driver convention: `rf_votsch_climate_chamber_vYY.RR.zip`. The extracted project folder is always named `rf_votsch_climate_chamber`, without a version. A later release can therefore replace the existing project folder after local changes are committed or backed up.
+```powershell
+python scripts/generate_rfds_metadata.py
+python scripts/validate_structure.py
+python scripts/validate_ai_contract.py
+python scripts/validate_call_protocol_conformance.py
+python scripts/run_python_simulator_smoke.py
+python -m pytest --cov=rf_votsch_climate_chamber --cov-branch
+```
 
-```text
-rf_votsch_climate_chamber/
-├── votsch_climate_chamber/    Python driver and Robot adapter
-├── history/                   Versioned change descriptions
-├── review/                    Versioned code and requirements reviews
-├── examples/                  13 Robot examples
-├── scripts/                   Example, validation, test, and release scripts
-├── guide/                     PyCharm, Robot Framework, and hardware guides
-├── docs/                      Markdown documentation and GitHub Pages source
-├── tests/                     Unit, acceptance, simulator, hardware smoke
-└── .github/workflows/         CI and GitHub Pages pipelines
+When Robot Framework is installed:
+
+```powershell
+python scripts/run_conformance.py
+python scripts/run_all_examples.py --dry-run
 ```
 
 ## Documentation
 
-- [Project requirements](PROJECT_REQUIREMENTS.md)
-- [Setup guides](guide/README.md)
-- [Release history](history/v26.02.md)
-- [Code review](review/v26.02_code_review.md)
-- [Keyword reference](docs/KEYWORDS.md)
-- [Architecture](docs/ARCHITECTURE.md)
-- [Safety guide](docs/SAFETY.md)
-- [Testing guide](docs/TESTING.md)
-- [Troubleshooting](docs/TROUBLESHOOTING.md)
-- [Driver review](docs/DRIVER_REVIEW.md)
-- [Production task and acceptance criteria](docs/IMPLEMENTATION_TASK_v26.01.md)
-- [Production-readiness score](docs/PRODUCTION_READINESS_REVIEW.md)
-- [Validation report](docs/VALIDATION_REPORT_v26.02.md)
-- [Release notes](docs/RELEASE_NOTES_v26.02.md)
+- [Installation](docs/installation.md)
+- [Quick start](docs/quick_start.md)
+- [Canonical keyword reference](docs/keywords.md)
+- [Architecture](docs/architecture.md)
+- [Configuration](docs/configuration.md)
+- [API 3.0 migration](docs/migration.md)
+- [Safety](docs/safety.md)
+- [RFDS-019 conformance](docs/call_protocol_conformance.md)
+- [Release notes](docs/release_notes.md)
+- [Changed-file review](review/v26.08_file_by_file_review.md)
+- [Known risks](review/known_risks.md)
 
-## AI-readable contracts
-
-Release v26.02 adds a canonical [RFDS-017 driver contract](ai/ai_contract.yaml), its [staleness lock](ai/ai_contract.lock), and an [RFDS-018 bench template](system_ai_contract.yaml). The driver contract covers all 36 public keywords. The bench template retains explicit `UNKNOWN` values for site-specific chamber, DUT, fixture, reference sensor and emergency procedures, and denies control-changing automation until those values are resolved.
-
-Validate the contracts with:
-
-```bash
-python scripts/validate_ai_contract.py
-```
-
-See [Using the AI Contracts](guide/AI_CONTRACT_USAGE.md).
-
-## Examples
-
-The `examples/` directory contains 13 complete suites covering lifecycle, limits, stabilization, cycling, gradients, auxiliary outputs, diagnostics, reconnect, assertions, external variable files, and failure-safe teardown.
-
-List or run examples with the cross-platform runner:
-
-```bash
-python scripts/run_example.py --list
-python scripts/run_example.py 1 --dryrun
-```
-
-Windows users can also call `scripts\run_example.bat` or `scripts\run_example.ps1`. Linux users can call `scripts/run_example.sh`.
-
-## Verification commands
-
-```bash
-python scripts/validate_project_layout.py
-python scripts/validate_ai_contract.py
-pytest
-robot --pythonpath . --outputdir results tests/robot
-python -m robot.libdoc votsch_climate_chamber.robot_library.VotschClimateChamberLibrary docs/VotschClimateChamberLibrary.html
-python -m build
-python -m twine check dist/*
-python -m mkdocs build --strict
-python scripts/build_release.py
-```
-
-## Release package format
+## Package identity
 
 ```text
-rf_votsch_climate_chamber_v26.02.zip
+rf_votsch_climate_chamber_v26.08.zip
 └── rf_votsch_climate_chamber/
 ```
-
-The ZIP name changes with each release. The internal folder remains fixed. The release builder and layout validator enforce this rule.
-
-## Versioning
-
-Human release tags use `vYY.RR`: `v26.01`, `v26.02`, and so on. Python package metadata uses the PEP 440 normalized equivalent: `26.1`, `26.2`.
-
-## License
-
-MIT. See [LICENSE](LICENSE).

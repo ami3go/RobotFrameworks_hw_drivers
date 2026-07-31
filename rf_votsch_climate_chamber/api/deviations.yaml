@@ -1,0 +1,14 @@
+deviations:
+- id: DEV-26.04-001
+  requirement: RFDS-003 shared rfds-core dependency
+  status: OPEN
+  severity: MAJOR
+  reason: Approved rfds-core distribution was not supplied
+  temporary_control: Local composed suite lifecycle listener and typed RFDS interfaces
+  expiry: Before P1
+- id: DEV-26.07-001
+  requirement: RFDS-002 minimum deprecation window
+  status: ACCEPTED
+  severity: BREAKING
+  reason: User explicitly directed complete legacy removal
+  control: API major increment, migration table, history, review, and RFDS-019 synchronization

@@ -1,0 +1,19 @@
+{
+  "release": "26.08",
+  "api_version": "3.0.0",
+  "python": [
+    "3.11",
+    "3.12",
+    "3.13"
+  ],
+  "robot_framework": ">=7,<9",
+  "operating_systems": [
+    "Windows",
+    "Linux"
+  ],
+  "real_device_models": "UNKNOWN",
+  "simulator": "PASS",
+  "legacy_robot_api": "REMOVED",
+  "legacy_python_package": "REMOVED",
+  "migration": "docs/migration.md"
+}

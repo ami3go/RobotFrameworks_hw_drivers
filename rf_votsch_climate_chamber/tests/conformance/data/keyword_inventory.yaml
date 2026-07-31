@@ -1,0 +1,1030 @@
+schema_version: '1.1'
+driver: rf_votsch_climate_chamber
+generated_from: api/public_api.yaml
+keywords:
+- keyword: Cancel Current Operation
+  canonical_keyword: Cancel Current Operation
+  python_method: cancel_current_operation
+  arguments:
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: None
+  device_facing: false
+  protocol_vector: null
+  deprecated: false
+- keyword: Chamber Should Be Running
+  canonical_keyword: Chamber Should Be Running
+  python_method: chamber_should_be_running
+  arguments:
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: None
+  device_facing: true
+  protocol_vector: VCC-CHAMBER_SHOULD_BE_RUNNING-001
+  deprecated: false
+- keyword: Chamber Should Be Stopped
+  canonical_keyword: Chamber Should Be Stopped
+  python_method: chamber_should_be_stopped
+  arguments:
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: None
+  device_facing: true
+  protocol_vector: VCC-CHAMBER_SHOULD_BE_STOPPED-001
+  deprecated: false
+- keyword: Check Communication
+  canonical_keyword: Check Communication
+  python_method: check_communication
+  arguments:
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: bool
+  device_facing: true
+  protocol_vector: VCC-CHECK_COMMUNICATION-001
+  deprecated: false
+- keyword: Connect
+  canonical_keyword: Connect
+  python_method: connect
+  arguments:
+  - name: resource
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: default
+    annotation: str
+  - name: timeout_s
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: float | str | None
+  - name: options
+    kind: var_keyword
+    required: true
+    default: null
+    annotation: Any
+  return_type: dict[str, Any]
+  device_facing: true
+  protocol_vector: VCC-CONNECT-001
+  deprecated: false
+- keyword: Connection Should Be Available
+  canonical_keyword: Connection Should Be Available
+  python_method: connection_should_be_available
+  arguments:
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: None
+  device_facing: true
+  protocol_vector: VCC-CONNECTION_SHOULD_BE_AVAILABLE-001
+  deprecated: false
+- keyword: Delete Driver Configuration Profile
+  canonical_keyword: Delete Driver Configuration Profile
+  python_method: delete_driver_configuration_profile
+  arguments:
+  - name: profile_name
+    kind: positional_or_keyword
+    required: true
+    default: null
+    annotation: str
+  - name: confirm
+    kind: positional_or_keyword
+    required: false
+    default: false
+    annotation: bool | str
+  return_type: dict[str, Any]
+  device_facing: false
+  protocol_vector: null
+  deprecated: false
+- keyword: Disconnect
+  canonical_keyword: Disconnect
+  python_method: disconnect
+  arguments:
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: None
+  device_facing: true
+  protocol_vector: VCC-DISCONNECT-001
+  deprecated: false
+- keyword: Disconnect All
+  canonical_keyword: Disconnect All
+  python_method: disconnect_all
+  arguments: []
+  return_type: None
+  device_facing: true
+  protocol_vector: VCC-DISCONNECT_ALL-001
+  deprecated: false
+- keyword: Export Diagnostics
+  canonical_keyword: Export Diagnostics
+  python_method: export_diagnostics
+  arguments:
+  - name: destination
+    kind: positional_or_keyword
+    required: true
+    default: null
+    annotation: str
+  return_type: dict[str, Any]
+  device_facing: false
+  protocol_vector: null
+  deprecated: false
+- keyword: Export Driver Configuration
+  canonical_keyword: Export Driver Configuration
+  python_method: export_driver_configuration
+  arguments:
+  - name: destination
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  - name: scope
+    kind: positional_or_keyword
+    required: false
+    default: EFFECTIVE
+    annotation: str
+  - name: profile_name
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  - name: overwrite
+    kind: positional_or_keyword
+    required: false
+    default: false
+    annotation: bool | str
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: dict[str, Any]
+  device_facing: false
+  protocol_vector: null
+  deprecated: false
+- keyword: Get Active Connection
+  canonical_keyword: Get Active Connection
+  python_method: get_active_connection
+  arguments: []
+  return_type: str | None
+  device_facing: false
+  protocol_vector: null
+  deprecated: false
+- keyword: Get Capability Model
+  canonical_keyword: Get Capability Model
+  python_method: get_capability_model
+  arguments: []
+  return_type: list[dict[str, Any]]
+  device_facing: false
+  protocol_vector: null
+  deprecated: false
+- keyword: Get Chamber Running State
+  canonical_keyword: Get Chamber Running State
+  python_method: get_chamber_running_state
+  arguments:
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: bool
+  device_facing: true
+  protocol_vector: VCC-GET_CHAMBER_RUNNING_STATE-001
+  deprecated: false
+- keyword: Get Chamber Status
+  canonical_keyword: Get Chamber Status
+  python_method: get_chamber_status
+  arguments:
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: str
+  device_facing: true
+  protocol_vector: VCC-GET_CHAMBER_STATUS-001
+  deprecated: false
+- keyword: Get Communication Timeout
+  canonical_keyword: Get Communication Timeout
+  python_method: get_communication_timeout
+  arguments:
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: float
+  device_facing: false
+  protocol_vector: null
+  deprecated: false
+- keyword: Get Compressed Air
+  canonical_keyword: Get Compressed Air
+  python_method: get_compressed_air
+  arguments:
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: bool
+  device_facing: true
+  protocol_vector: VCC-GET_COMPRESSED_AIR-001
+  deprecated: false
+- keyword: Get Connection State
+  canonical_keyword: Get Connection State
+  python_method: get_connection_state
+  arguments:
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  - name: refresh
+    kind: positional_or_keyword
+    required: false
+    default: false
+    annotation: bool | str
+  return_type: dict[str, Any]
+  device_facing: true
+  protocol_vector: VCC-GET_CONNECTION_STATE-001
+  deprecated: false
+- keyword: Get Cooling Gradient
+  canonical_keyword: Get Cooling Gradient
+  python_method: get_cooling_gradient
+  arguments:
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: float
+  device_facing: true
+  protocol_vector: VCC-GET_COOLING_GRADIENT-001
+  deprecated: false
+- keyword: Get Diagnostics
+  canonical_keyword: Get Diagnostics
+  python_method: get_diagnostics
+  arguments: []
+  return_type: dict[str, Any]
+  device_facing: false
+  protocol_vector: null
+  deprecated: false
+- keyword: Get Driver Capabilities
+  canonical_keyword: Get Driver Capabilities
+  python_method: get_driver_capabilities
+  arguments: []
+  return_type: list[str]
+  device_facing: false
+  protocol_vector: null
+  deprecated: false
+- keyword: Get Driver Configuration
+  canonical_keyword: Get Driver Configuration
+  python_method: get_driver_configuration
+  arguments:
+  - name: scope
+    kind: positional_or_keyword
+    required: false
+    default: EFFECTIVE
+    annotation: str
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  - name: redact_sensitive
+    kind: positional_or_keyword
+    required: false
+    default: true
+    annotation: bool | str
+  - name: include_sources
+    kind: positional_or_keyword
+    required: false
+    default: false
+    annotation: bool | str
+  return_type: dict[str, Any]
+  device_facing: false
+  protocol_vector: null
+  deprecated: false
+- keyword: Get Driver Configuration Schema
+  canonical_keyword: Get Driver Configuration Schema
+  python_method: get_driver_configuration_schema
+  arguments: []
+  return_type: dict[str, Any]
+  device_facing: false
+  protocol_vector: null
+  deprecated: false
+- keyword: Get Driver Default Configuration
+  canonical_keyword: Get Driver Default Configuration
+  python_method: get_driver_default_configuration
+  arguments:
+  - name: redact_sensitive
+    kind: positional_or_keyword
+    required: false
+    default: true
+    annotation: bool | str
+  return_type: dict[str, Any]
+  device_facing: false
+  protocol_vector: null
+  deprecated: false
+- keyword: Get Driver Information
+  canonical_keyword: Get Driver Information
+  python_method: get_driver_information
+  arguments: []
+  return_type: dict[str, Any]
+  device_facing: false
+  protocol_vector: null
+  deprecated: false
+- keyword: Get Dryer
+  canonical_keyword: Get Dryer
+  python_method: get_dryer
+  arguments:
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: bool
+  device_facing: true
+  protocol_vector: VCC-GET_DRYER-001
+  deprecated: false
+- keyword: Get Heating Gradient
+  canonical_keyword: Get Heating Gradient
+  python_method: get_heating_gradient
+  arguments:
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: float
+  device_facing: true
+  protocol_vector: VCC-GET_HEATING_GRADIENT-001
+  deprecated: false
+- keyword: Get Identity
+  canonical_keyword: Get Identity
+  python_method: get_identity
+  arguments:
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  - name: refresh
+    kind: positional_or_keyword
+    required: false
+    default: false
+    annotation: bool | str
+  return_type: str
+  device_facing: true
+  protocol_vector: VCC-GET_IDENTITY-001
+  deprecated: false
+- keyword: Get Temperature Limits
+  canonical_keyword: Get Temperature Limits
+  python_method: get_temperature_limits
+  arguments:
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: dict[str, Any]
+  device_facing: false
+  protocol_vector: null
+  deprecated: false
+- keyword: Get Temperature Setpoint
+  canonical_keyword: Get Temperature Setpoint
+  python_method: get_temperature_setpoint
+  arguments:
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: float
+  device_facing: true
+  protocol_vector: VCC-GET_TEMPERATURE_SETPOINT-001
+  deprecated: false
+- keyword: Import Driver Configuration
+  canonical_keyword: Import Driver Configuration
+  python_method: import_driver_configuration
+  arguments:
+  - name: source
+    kind: positional_or_keyword
+    required: true
+    default: null
+    annotation: Any
+  - name: mode
+    kind: positional_or_keyword
+    required: false
+    default: REPLACE
+    annotation: str
+  - name: apply
+    kind: positional_or_keyword
+    required: false
+    default: false
+    annotation: bool | str
+  - name: persist
+    kind: positional_or_keyword
+    required: false
+    default: false
+    annotation: bool | str
+  - name: profile_name
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  - name: strict
+    kind: positional_or_keyword
+    required: false
+    default: true
+    annotation: bool | str
+  - name: reconnect
+    kind: positional_or_keyword
+    required: false
+    default: false
+    annotation: bool | str
+  - name: allow_device_persistent_changes
+    kind: positional_or_keyword
+    required: false
+    default: false
+    annotation: bool | str
+  - name: confirm_high_risk
+    kind: positional_or_keyword
+    required: false
+    default: false
+    annotation: bool | str
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: dict[str, Any]
+  device_facing: false
+  protocol_vector: null
+  deprecated: false
+- keyword: Is Connected
+  canonical_keyword: Is Connected
+  python_method: is_connected
+  arguments:
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: bool
+  device_facing: false
+  protocol_vector: null
+  deprecated: false
+- keyword: List Connections
+  canonical_keyword: List Connections
+  python_method: list_connections
+  arguments: []
+  return_type: list[dict[str, Any]]
+  device_facing: false
+  protocol_vector: null
+  deprecated: false
+- keyword: List Driver Configuration Profiles
+  canonical_keyword: List Driver Configuration Profiles
+  python_method: list_driver_configuration_profiles
+  arguments: []
+  return_type: list[dict[str, Any]]
+  device_facing: false
+  protocol_vector: null
+  deprecated: false
+- keyword: Load Driver Configuration
+  canonical_keyword: Load Driver Configuration
+  python_method: load_driver_configuration
+  arguments:
+  - name: profile_name
+    kind: positional_or_keyword
+    required: true
+    default: null
+    annotation: str
+  - name: apply
+    kind: positional_or_keyword
+    required: false
+    default: false
+    annotation: bool | str
+  - name: reconnect
+    kind: positional_or_keyword
+    required: false
+    default: false
+    annotation: bool | str
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: dict[str, Any]
+  device_facing: false
+  protocol_vector: null
+  deprecated: false
+- keyword: Measure Temperature
+  canonical_keyword: Measure Temperature
+  python_method: measure_temperature
+  arguments:
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: float
+  device_facing: true
+  protocol_vector: VCC-MEASURE_TEMPERATURE-001
+  deprecated: false
+- keyword: Reconnect
+  canonical_keyword: Reconnect
+  python_method: reconnect
+  arguments:
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: dict[str, Any]
+  device_facing: true
+  protocol_vector: VCC-RECONNECT-001
+  deprecated: false
+- keyword: Reset Driver Configuration
+  canonical_keyword: Reset Driver Configuration
+  python_method: reset_driver_configuration
+  arguments:
+  - name: path
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  - name: scope
+    kind: positional_or_keyword
+    required: false
+    default: INSTANCE_OVERRIDE
+    annotation: str
+  - name: apply
+    kind: positional_or_keyword
+    required: false
+    default: false
+    annotation: bool | str
+  - name: persist
+    kind: positional_or_keyword
+    required: false
+    default: false
+    annotation: bool | str
+  - name: confirm
+    kind: positional_or_keyword
+    required: false
+    default: false
+    annotation: bool | str
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: dict[str, Any]
+  device_facing: false
+  protocol_vector: null
+  deprecated: false
+- keyword: Safe Shutdown
+  canonical_keyword: Safe Shutdown
+  python_method: safe_shutdown
+  arguments:
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  - name: timeout_s
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: float | str | None
+  return_type: dict[str, Any]
+  device_facing: true
+  protocol_vector: VCC-SAFE_SHUTDOWN-001
+  deprecated: false
+- keyword: Save Driver Configuration
+  canonical_keyword: Save Driver Configuration
+  python_method: save_driver_configuration
+  arguments:
+  - name: profile_name
+    kind: positional_or_keyword
+    required: true
+    default: null
+    annotation: str
+  - name: scope
+    kind: positional_or_keyword
+    required: false
+    default: EFFECTIVE
+    annotation: str
+  - name: overwrite
+    kind: positional_or_keyword
+    required: false
+    default: false
+    annotation: bool | str
+  - name: set_active
+    kind: positional_or_keyword
+    required: false
+    default: false
+    annotation: bool | str
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: dict[str, Any]
+  device_facing: false
+  protocol_vector: null
+  deprecated: false
+- keyword: Select Connection
+  canonical_keyword: Select Connection
+  python_method: select_connection
+  arguments:
+  - name: alias
+    kind: positional_or_keyword
+    required: true
+    default: null
+    annotation: str
+  return_type: dict[str, Any]
+  device_facing: false
+  protocol_vector: null
+  deprecated: false
+- keyword: Set Communication Timeout
+  canonical_keyword: Set Communication Timeout
+  python_method: set_communication_timeout
+  arguments:
+  - name: timeout_s
+    kind: positional_or_keyword
+    required: true
+    default: null
+    annotation: float | str
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: float
+  device_facing: false
+  protocol_vector: null
+  deprecated: false
+- keyword: Set Compressed Air
+  canonical_keyword: Set Compressed Air
+  python_method: set_compressed_air
+  arguments:
+  - name: enabled
+    kind: positional_or_keyword
+    required: true
+    default: null
+    annotation: bool | str
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: None
+  device_facing: true
+  protocol_vector: VCC-SET_COMPRESSED_AIR-001
+  deprecated: false
+- keyword: Set Cooling Gradient
+  canonical_keyword: Set Cooling Gradient
+  python_method: set_cooling_gradient
+  arguments:
+  - name: value_c_per_min
+    kind: positional_or_keyword
+    required: true
+    default: null
+    annotation: float
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: None
+  device_facing: true
+  protocol_vector: VCC-SET_COOLING_GRADIENT-001
+  deprecated: false
+- keyword: Set Dryer
+  canonical_keyword: Set Dryer
+  python_method: set_dryer
+  arguments:
+  - name: enabled
+    kind: positional_or_keyword
+    required: true
+    default: null
+    annotation: bool | str
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: None
+  device_facing: true
+  protocol_vector: VCC-SET_DRYER-001
+  deprecated: false
+- keyword: Set Heating Gradient
+  canonical_keyword: Set Heating Gradient
+  python_method: set_heating_gradient
+  arguments:
+  - name: value_c_per_min
+    kind: positional_or_keyword
+    required: true
+    default: null
+    annotation: float
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: None
+  device_facing: true
+  protocol_vector: VCC-SET_HEATING_GRADIENT-001
+  deprecated: false
+- keyword: Set Temperature
+  canonical_keyword: Set Temperature
+  python_method: set_temperature
+  arguments:
+  - name: value_c
+    kind: positional_or_keyword
+    required: true
+    default: null
+    annotation: float
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: None
+  device_facing: true
+  protocol_vector: VCC-SET_TEMPERATURE-001
+  deprecated: false
+- keyword: Set Temperature And Wait
+  canonical_keyword: Set Temperature And Wait
+  python_method: set_temperature_and_wait
+  arguments:
+  - name: value_c
+    kind: positional_or_keyword
+    required: true
+    default: null
+    annotation: float
+  - name: dwell_s
+    kind: positional_or_keyword
+    required: false
+    default: 0.0
+    annotation: float | str
+  - name: tolerance_c
+    kind: positional_or_keyword
+    required: false
+    default: 0.8
+    annotation: float
+  - name: poll_interval_s
+    kind: positional_or_keyword
+    required: false
+    default: 10.0
+    annotation: float | str
+  - name: settle_timeout_s
+    kind: positional_or_keyword
+    required: false
+    default: 14400.0
+    annotation: float | str
+  - name: stable_samples
+    kind: positional_or_keyword
+    required: false
+    default: 3
+    annotation: int
+  - name: start_chamber
+    kind: positional_or_keyword
+    required: false
+    default: true
+    annotation: bool | str
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: float
+  device_facing: true
+  protocol_vector: VCC-SET_TEMPERATURE_AND_WAIT-001
+  deprecated: false
+- keyword: Set Temperature Limits
+  canonical_keyword: Set Temperature Limits
+  python_method: set_temperature_limits
+  arguments:
+  - name: minimum_c
+    kind: positional_or_keyword
+    required: true
+    default: null
+    annotation: float
+  - name: maximum_c
+    kind: positional_or_keyword
+    required: true
+    default: null
+    annotation: float
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: dict[str, Any]
+  device_facing: false
+  protocol_vector: null
+  deprecated: false
+- keyword: Start Chamber
+  canonical_keyword: Start Chamber
+  python_method: start_chamber
+  arguments:
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: None
+  device_facing: true
+  protocol_vector: VCC-START_CHAMBER-001
+  deprecated: false
+- keyword: Stop Chamber
+  canonical_keyword: Stop Chamber
+  python_method: stop_chamber
+  arguments:
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: None
+  device_facing: true
+  protocol_vector: VCC-STOP_CHAMBER-001
+  deprecated: false
+- keyword: Temperature Setpoint Should Be
+  canonical_keyword: Temperature Setpoint Should Be
+  python_method: temperature_setpoint_should_be
+  arguments:
+  - name: expected_c
+    kind: positional_or_keyword
+    required: true
+    default: null
+    annotation: float
+  - name: tolerance_c
+    kind: positional_or_keyword
+    required: false
+    default: 0.05
+    annotation: float
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: None
+  device_facing: true
+  protocol_vector: VCC-TEMPERATURE_SETPOINT_SHOULD_BE-001
+  deprecated: false
+- keyword: Temperature Should Be
+  canonical_keyword: Temperature Should Be
+  python_method: temperature_should_be
+  arguments:
+  - name: expected_c
+    kind: positional_or_keyword
+    required: true
+    default: null
+    annotation: float
+  - name: tolerance_c
+    kind: positional_or_keyword
+    required: false
+    default: 0.1
+    annotation: float
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: None
+  device_facing: true
+  protocol_vector: VCC-TEMPERATURE_SHOULD_BE-001
+  deprecated: false
+- keyword: Temperature Should Be Within
+  canonical_keyword: Temperature Should Be Within
+  python_method: temperature_should_be_within
+  arguments:
+  - name: minimum_c
+    kind: positional_or_keyword
+    required: true
+    default: null
+    annotation: float
+  - name: maximum_c
+    kind: positional_or_keyword
+    required: true
+    default: null
+    annotation: float
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: None
+  device_facing: true
+  protocol_vector: VCC-TEMPERATURE_SHOULD_BE_WITHIN-001
+  deprecated: false
+- keyword: Validate Driver Configuration
+  canonical_keyword: Validate Driver Configuration
+  python_method: validate_driver_configuration
+  arguments:
+  - name: configuration
+    kind: positional_or_keyword
+    required: true
+    default: null
+    annotation: Any
+  - name: mode
+    kind: positional_or_keyword
+    required: false
+    default: REPLACE
+    annotation: str
+  - name: strict
+    kind: positional_or_keyword
+    required: false
+    default: true
+    annotation: bool | str
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: dict[str, Any]
+  device_facing: false
+  protocol_vector: null
+  deprecated: false
+- keyword: Wait For Dwell
+  canonical_keyword: Wait For Dwell
+  python_method: wait_for_dwell
+  arguments:
+  - name: duration_s
+    kind: positional_or_keyword
+    required: true
+    default: null
+    annotation: float | str
+  - name: poll_interval_s
+    kind: positional_or_keyword
+    required: false
+    default: 60.0
+    annotation: float | str
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: float
+  device_facing: true
+  protocol_vector: VCC-WAIT_FOR_DWELL-001
+  deprecated: false
+- keyword: Wait For Temperature Stability
+  canonical_keyword: Wait For Temperature Stability
+  python_method: wait_for_temperature_stability
+  arguments:
+  - name: target_c
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: float | None
+  - name: tolerance_c
+    kind: positional_or_keyword
+    required: false
+    default: 0.8
+    annotation: float
+  - name: stable_samples
+    kind: positional_or_keyword
+    required: false
+    default: 3
+    annotation: int
+  - name: poll_interval_s
+    kind: positional_or_keyword
+    required: false
+    default: 10.0
+    annotation: float | str
+  - name: settle_timeout_s
+    kind: positional_or_keyword
+    required: false
+    default: 14400.0
+    annotation: float | str
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: float
+  device_facing: true
+  protocol_vector: VCC-WAIT_FOR_TEMPERATURE_STABILITY-001
+  deprecated: false

@@ -1,0 +1,63 @@
+{
+  "schema_version": "1.0",
+  "plugin_api_version": "1.0",
+  "plugin_id": "votsch.climate_chamber",
+  "driver_name": "rf_votsch_climate_chamber",
+  "display_name": "Vötsch Climate Chamber Driver",
+  "description": "RFDS Robot Framework driver for Vötsch and SimServ-compatible TCP climate chambers.",
+  "distribution_name": "rf-votsch-climate-chamber",
+  "distribution_version": "26.8",
+  "provider": "rf_votsch_climate_chamber.plugin:VotschClimateChamberPlugin",
+  "robot_library_import": "rf_votsch_climate_chamber.library",
+  "robot_library_class": "VotschClimateChamberLibrary",
+  "supported_device_families": [
+    "votsch_simserv_climate_chamber"
+  ],
+  "supported_models": [
+    "UNKNOWN - qualification pending real-device evidence"
+  ],
+  "supported_transports": [
+    "tcp",
+    "simulator"
+  ],
+  "capability_descriptor": {
+    "kind": "python_object",
+    "value": "rf_votsch_climate_chamber.capabilities:get_capability_model"
+  },
+  "configuration_schema": {
+    "kind": "package_resource",
+    "package": "rf_votsch_climate_chamber",
+    "path": "resources/config.schema.json",
+    "canonical_source": "config/schema.json",
+    "sha256": "3bb44da579f51f3c1338dc49dd3c54689167b982cf4c16b9e288ae8c8eb5c878"
+  },
+  "ai_contract": {
+    "kind": "package_resource",
+    "package": "rf_votsch_climate_chamber",
+    "path": "resources/ai_contract.yaml",
+    "canonical_source": "ai/ai_contract.yaml",
+    "sha256": "6b506f250d080f28984a982165b415fc8afba5dde05367c10a94d4bddc5b41a4"
+  },
+  "documentation": {
+    "kind": "repository_path",
+    "path": "docs/index.md"
+  },
+  "minimum_python": ">=3.11",
+  "robot_framework_version": ">=7,<9",
+  "rfds_platform_version": ">=1,<2",
+  "optional_dependency_groups": [
+    "dev",
+    "docs"
+  ],
+  "multi_instance": true,
+  "thread_safe": false,
+  "simulation_supported": true,
+  "hardware_discovery_supported": false,
+  "load_policy": "explicit",
+  "deprecation": {
+    "deprecated": false,
+    "replacement_plugin_id": null,
+    "removal_version": null
+  },
+  "manifest_hash_algorithm": "sha256"
+}

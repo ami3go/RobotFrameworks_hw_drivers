@@ -1,0 +1,4 @@
+simserv_response:
+  terminator: CR
+  separator: '0xB6'
+  success_status: 1

@@ -1,0 +1,32 @@
+schema_version: 1.0.0
+driver:
+  name: rf_votsch_climate_chamber
+  api_version: 3.0.0
+profile:
+  name: default
+  description: Safe default configuration; no hardware resource is selected.
+settings:
+  connection:
+    resource: null
+    timeout_s: 5.0
+    response_timeout_s: 5.0
+    query_retries: 1
+    retry_delay_s: 0.25
+    tcp_keepalive: true
+  safety:
+    temperature_min_c: -40.0
+    temperature_max_c: 180.0
+    safe_shutdown_on_disconnect: true
+  operation:
+    verify_writes: true
+    setpoint_verify_tolerance_c: 0.05
+    setpoint_verify_timeout_s: 15.0
+    setpoint_verify_poll_interval_s: 0.25
+    state_change_timeout_s: 15.0
+    progress_log_interval_s: 30.0
+  auxiliary_outputs:
+    dryer_output_channel: null
+    compressed_air_output_channel: null
+extensions: {}
+metadata:
+  created_by: rf_votsch_climate_chamber

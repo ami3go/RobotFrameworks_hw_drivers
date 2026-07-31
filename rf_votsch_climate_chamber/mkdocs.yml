@@ -1,59 +1,23 @@
-site_name: Robot Framework Vötsch Climate Chamber Library
-site_description: Production-oriented Robot Framework driver for Vötsch/SimServ climate chambers
-repo_name: rf_votsch_climate_chamber
-use_directory_urls: true
-strict: true
-
+site_name: RFDS Vötsch Climate Chamber Driver
+site_description: RFDS Robot Framework driver documentation
+site_dir: site
 theme:
   name: material
-  features:
-    - navigation.sections
-    - navigation.top
-    - content.code.copy
-
 nav:
   - Home: index.md
-  - Setup Guides:
-      - Guide Index: guide/README.md
-      - Quick Start: guide/QUICK_START.md
-      - Installation: guide/INSTALLATION.md
-      - PyCharm and Robot Framework: guide/PYCHARM_ROBOT_FRAMEWORK_SETUP.md
-      - Real Chamber Setup: guide/REAL_CHAMBER_SETUP.md
-      - Release Procedure: guide/RELEASE_PROCEDURE.md
-      - AI Contract Usage: guide/AI_CONTRACT_USAGE.md
-  - Library:
-      - Architecture: ARCHITECTURE.md
-      - AI Driver Contract: AI_CONTRACT.md
-      - Test-Bench Contract: SYSTEM_AI_CONTRACT.md
-      - Keywords: KEYWORDS.md
-      - Examples: EXAMPLES.md
-      - Generated Keyword Reference: VotschClimateChamberLibrary.html
-  - Quality and Safety:
-      - Safety: SAFETY.md
-      - Testing: TESTING.md
-      - Troubleshooting: TROUBLESHOOTING.md
-      - Driver Review: DRIVER_REVIEW.md
-      - Implementation Task: IMPLEMENTATION_TASK_v26.01.md
-      - Production Readiness: PRODUCTION_READINESS_REVIEW.md
-      - Validation Report v26.02: VALIDATION_REPORT_v26.02.md
-      - Validation Report v26.01: VALIDATION_REPORT_v26.01.md
-  - Release:
-      - Release Notes v26.02: RELEASE_NOTES_v26.02.md
-      - Release Notes v26.01: RELEASE_NOTES_v26.01.md
-      - History Index: history/README.md
-      - History v26.02: history/v26.02.md
-      - History v26.01: history/v26.01.md
-      - Review Index: review/README.md
-      - Code Review v26.02: review/v26.02_code_review.md
-      - Code Review v26.01: review/v26.01_code_review.md
-      - Requirements Compliance v26.02: review/v26.02_requirements_compliance.md
-      - Requirements Compliance v26.01: review/v26.01_requirements_compliance.md
-      - Original Design Task: ORIGINAL_TASK.md
-
-markdown_extensions:
-  - admonition
-  - tables
-  - toc:
-      permalink: true
-  - pymdownx.highlight
-  - pymdownx.superfences
+  - Installation: installation.md
+  - Quick Start: quick_start.md
+  - Keywords: keywords.md
+  - Architecture: architecture.md
+  - Configuration: configuration.md
+  - Compatibility: compatibility.md
+  - Migration: migration.md
+  - Examples: examples.md
+  - Safety: safety.md
+  - RFDS-019 Conformance: call_protocol_conformance.md
+  - Hardware Validation: hardware_validation.md
+  - Troubleshooting: troubleshooting.md
+  - Support Policy: support_policy.md
+  - Release Notes: release_notes.md
+  - Validation Report: validation_report.md
+strict: true

@@ -1,17 +1,28 @@
-"""Deterministic fake TCP chamber used by unit and Robot acceptance tests."""
+"""Deterministic TCP climate-chamber simulator used by automated tests.
+
+The simulator operates at the same TCP protocol boundary as a real chamber.
+It intentionally records every connection event, outbound driver frame, and
+inbound simulator response so RFDS-019 can prove protocol conformance rather
+than only verifying internal Python method calls.
+"""
 
 from __future__ import annotations
 
+import contextlib
 import socket
 import socketserver
 import threading
+import time
 from dataclasses import dataclass, field
+from typing import Any
 
 SEPARATOR = "¶"
 
 
 @dataclass
 class FakeChamberState:
+    """Mutable simulator state shared by all client handler threads."""
+
     setpoint: float = 25.0
     temperature: float = 25.0
     running: bool = False
@@ -24,10 +35,19 @@ class FakeChamberState:
     serial: str = "FAKE-2601"
     year: str = "2026"
     temperature_step: float = 20.0
+
+    # One-shot fault injection controls used by protocol error tests.
     close_next_request: bool = False
     malformed_next_response: bool = False
+    suppress_next_response: bool = False
+    response_delay_seconds: float = 0.0
     split_responses: bool = False
-    lock: threading.Lock = field(default_factory=threading.Lock)
+
+    # RFDS-019 trace state. Each item is JSON-serializable.
+    trace: list[dict[str, Any]] = field(default_factory=list)
+    next_connection_id: int = 1
+    next_exchange_id: int = 1
+    lock: threading.RLock = field(default_factory=threading.RLock)
 
 
 class _ThreadingServer(socketserver.ThreadingTCPServer):
@@ -36,34 +56,124 @@ class _ThreadingServer(socketserver.ThreadingTCPServer):
 
 
 class _Handler(socketserver.BaseRequestHandler):
+    """Handle one TCP connection and record all protocol-boundary evidence."""
+
     def handle(self) -> None:
+        state: FakeChamberState = self.server.state  # type: ignore[attr-defined]
+        with state.lock:
+            connection_id = state.next_connection_id
+            state.next_connection_id += 1
+            state.trace.append(
+                {
+                    "direction": "event",
+                    "event": "connection_open",
+                    "connection_id": connection_id,
+                    "peer": f"{self.client_address[0]}:{self.client_address[1]}",
+                    "timestamp_monotonic": time.monotonic(),
+                }
+            )
+
         buffer = bytearray()
-        while True:
-            data = self.request.recv(512)
-            if not data:
+        try:
+            while True:
+                data = self.request.recv(512)
+                if not data:
+                    return
+                buffer.extend(data)
+                while b"\r" in buffer:
+                    index = buffer.index(b"\r")
+                    frame_without_terminator = bytes(buffer[:index])
+                    del buffer[: index + 1]
+                    self._handle_frame(connection_id, frame_without_terminator, state)
+        finally:
+            with state.lock:
+                state.trace.append(
+                    {
+                        "direction": "event",
+                        "event": "connection_close",
+                        "connection_id": connection_id,
+                        "timestamp_monotonic": time.monotonic(),
+                    }
+                )
+
+    def _handle_frame(
+        self,
+        connection_id: int,
+        frame_without_terminator: bytes,
+        state: FakeChamberState,
+    ) -> None:
+        full_frame = frame_without_terminator + b"\r"
+        with state.lock:
+            exchange_id = state.next_exchange_id
+            state.next_exchange_id += 1
+            state.trace.append(
+                {
+                    "direction": "outbound",
+                    "connection_id": connection_id,
+                    "exchange_id": exchange_id,
+                    "raw_text": full_frame.decode("latin-1", errors="backslashreplace"),
+                    "raw_hex": full_frame.hex(),
+                    "timestamp_monotonic": time.monotonic(),
+                }
+            )
+
+            if state.close_next_request:
+                state.close_next_request = False
+                state.trace.append(
+                    {
+                        "direction": "event",
+                        "event": "forced_connection_close",
+                        "connection_id": connection_id,
+                        "exchange_id": exchange_id,
+                        "timestamp_monotonic": time.monotonic(),
+                    }
+                )
+                with contextlib.suppress(OSError):
+                    self.request.shutdown(socket.SHUT_RDWR)
                 return
-            buffer.extend(data)
-            while b"\r" in buffer:
-                index = buffer.index(b"\r")
-                frame = bytes(buffer[:index])
-                del buffer[: index + 1]
-                state: FakeChamberState = self.server.state  # type: ignore[attr-defined]
-                with state.lock:
-                    if state.close_next_request:
-                        state.close_next_request = False
-                        self.request.shutdown(socket.SHUT_RDWR)
-                        return
-                    response = self._process(frame, state)
-                    if state.malformed_next_response:
-                        state.malformed_next_response = False
-                        response = b"BROKEN\r"
-                    split = state.split_responses and len(response) > 2
-                if split:
-                    midpoint = len(response) // 2
-                    self.request.sendall(response[:midpoint])
-                    self.request.sendall(response[midpoint:])
-                else:
-                    self.request.sendall(response)
+
+            if state.suppress_next_response:
+                state.suppress_next_response = False
+                state.trace.append(
+                    {
+                        "direction": "event",
+                        "event": "response_suppressed",
+                        "connection_id": connection_id,
+                        "exchange_id": exchange_id,
+                        "timestamp_monotonic": time.monotonic(),
+                    }
+                )
+                return
+
+            response = self._process(frame_without_terminator, state)
+            if state.malformed_next_response:
+                state.malformed_next_response = False
+                response = b"BROKEN\r"
+            split = state.split_responses and len(response) > 2
+            delay = state.response_delay_seconds
+            state.response_delay_seconds = 0.0
+
+        if delay > 0:
+            time.sleep(delay)
+
+        if split:
+            midpoint = len(response) // 2
+            self.request.sendall(response[:midpoint])
+            self.request.sendall(response[midpoint:])
+        else:
+            self.request.sendall(response)
+
+        with state.lock:
+            state.trace.append(
+                {
+                    "direction": "inbound",
+                    "connection_id": connection_id,
+                    "exchange_id": exchange_id,
+                    "raw_text": response.decode("latin-1", errors="backslashreplace"),
+                    "raw_hex": response.hex(),
+                    "timestamp_monotonic": time.monotonic(),
+                }
+            )
 
     @staticmethod
     def _response(value: object | None = None) -> bytes:
@@ -79,7 +189,9 @@ class _Handler(socketserver.BaseRequestHandler):
 
         if command == "99997":
             item = args[0] if args else "1"
-            return self._response({"1": state.model, "2": state.year, "3": state.serial}.get(item, "UNKNOWN"))
+            return self._response(
+                {"1": state.model, "2": state.year, "3": state.serial}.get(item, "UNKNOWN")
+            )
         if command == "10012":
             return self._response(state.status)
         if command == "11001":
@@ -105,7 +217,11 @@ class _Handler(socketserver.BaseRequestHandler):
             return self._response()
         if command == "14003":
             channel = int(args[0])
-            values: dict[int, bool] = {1: state.running, 7: state.compressed_air, 8: state.dryer}
+            values: dict[int, bool] = {
+                1: state.running,
+                7: state.compressed_air,
+                8: state.dryer,
+            }
             return self._response(1 if values.get(channel, False) else 0)
         if command == "11066":
             return self._response(f"{state.gradient_up:.2f}")
@@ -141,6 +257,14 @@ class FakeChamberServer:
         self._server.shutdown()
         self._server.server_close()
         self._thread.join(timeout=2)
+
+    def clear_trace(self) -> None:
+        with self.state.lock:
+            self.state.trace.clear()
+
+    def get_trace(self) -> list[dict[str, Any]]:
+        with self.state.lock:
+            return [dict(item) for item in self.state.trace]
 
     def __enter__(self) -> FakeChamberServer:
         return self.start()

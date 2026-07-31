@@ -1,0 +1,8 @@
+unknowns:
+- id: UNK-26.04-001
+  item: Qualified chamber model and firmware matrix
+  resolution: Real-device D2/P1 evidence required
+- id: UNK-26.04-002
+  item: Digital output 7/8 mapping across chamber models
+  resolution: Verify against device documentation and hardware before enabling auxiliary
+    outputs

@@ -1,0 +1,558 @@
+schema_version: '1.1'
+transport: votsch_simserv_tcp
+vectors:
+- id: VCC-CHAMBER_SHOULD_BE_RUNNING-001
+  keyword: Chamber Should Be Running
+  transport: tcp_or_simulator
+  expected_outbound:
+  - 14003¶1¶1\r
+  expected_inbound:
+    response_required: true
+    terminator: \r
+    status_code: '1'
+  expected_return:
+    type: see public_api.yaml
+  timeout_s: 20
+  oracles:
+  - outbound_structured
+  - raw_response
+  - parsed_value
+- id: VCC-CHAMBER_SHOULD_BE_STOPPED-001
+  keyword: Chamber Should Be Stopped
+  transport: tcp_or_simulator
+  expected_outbound:
+  - 14003¶1¶1\r
+  expected_inbound:
+    response_required: true
+    terminator: \r
+    status_code: '1'
+  expected_return:
+    type: see public_api.yaml
+  timeout_s: 20
+  oracles:
+  - outbound_structured
+  - raw_response
+  - parsed_value
+- id: VCC-CHECK_COMMUNICATION-001
+  keyword: Check Communication
+  transport: tcp_or_simulator
+  expected_outbound:
+  - 10012¶1\r
+  expected_inbound:
+    response_required: true
+    terminator: \r
+    status_code: '1'
+  expected_return:
+    type: see public_api.yaml
+  timeout_s: 20
+  oracles:
+  - outbound_structured
+  - raw_response
+  - parsed_value
+- id: VCC-CONNECT-001
+  keyword: Connect
+  transport: tcp_or_simulator
+  expected_outbound:
+  - TCP OPEN
+  - 99997¶1¶1\r
+  - 99997¶1¶2\r
+  - 99997¶1¶3\r
+  expected_inbound:
+    response_required: true
+    terminator: \r
+    status_code: '1'
+  expected_return:
+    type: see public_api.yaml
+  timeout_s: 20
+  oracles:
+  - outbound_structured
+  - raw_response
+  - parsed_value
+- id: VCC-CONNECTION_SHOULD_BE_AVAILABLE-001
+  keyword: Connection Should Be Available
+  transport: tcp_or_simulator
+  expected_outbound:
+  - 10012¶1\r
+  expected_inbound:
+    response_required: true
+    terminator: \r
+    status_code: '1'
+  expected_return:
+    type: see public_api.yaml
+  timeout_s: 20
+  oracles:
+  - outbound_structured
+  - raw_response
+  - parsed_value
+- id: VCC-DISCONNECT-001
+  keyword: Disconnect
+  transport: tcp_or_simulator
+  expected_outbound:
+  - 14001¶1¶7¶0\r
+  - 14003¶1¶7\r
+  - 14001¶1¶8¶0\r
+  - 14003¶1¶8\r
+  - 14003¶1¶1\r
+  - 14001¶1¶1¶0\r
+  - 14003¶1¶1\r
+  - TCP CLOSE
+  expected_inbound:
+    response_required: true
+    terminator: \r
+    status_code: '1'
+  expected_return:
+    type: see public_api.yaml
+  timeout_s: 20
+  oracles:
+  - outbound_structured
+  - raw_response
+  - parsed_value
+- id: VCC-DISCONNECT_ALL-001
+  keyword: Disconnect All
+  transport: tcp_or_simulator
+  expected_outbound:
+  - 14001¶1¶7¶0\r
+  - 14003¶1¶7\r
+  - 14001¶1¶8¶0\r
+  - 14003¶1¶8\r
+  - 14003¶1¶1\r
+  - 14001¶1¶1¶0\r
+  - 14003¶1¶1\r
+  - TCP CLOSE
+  expected_inbound:
+    response_required: true
+    terminator: \r
+    status_code: '1'
+  expected_return:
+    type: see public_api.yaml
+  timeout_s: 20
+  oracles:
+  - outbound_structured
+  - raw_response
+  - parsed_value
+- id: VCC-GET_CHAMBER_RUNNING_STATE-001
+  keyword: Get Chamber Running State
+  transport: tcp_or_simulator
+  expected_outbound:
+  - 14003¶1¶1\r
+  expected_inbound:
+    response_required: true
+    terminator: \r
+    status_code: '1'
+  expected_return:
+    type: see public_api.yaml
+  timeout_s: 20
+  oracles:
+  - outbound_structured
+  - raw_response
+  - parsed_value
+- id: VCC-GET_CHAMBER_STATUS-001
+  keyword: Get Chamber Status
+  transport: tcp_or_simulator
+  expected_outbound:
+  - 10012¶1\r
+  expected_inbound:
+    response_required: true
+    terminator: \r
+    status_code: '1'
+  expected_return:
+    type: see public_api.yaml
+  timeout_s: 20
+  oracles:
+  - outbound_structured
+  - raw_response
+  - parsed_value
+- id: VCC-GET_COMPRESSED_AIR-001
+  keyword: Get Compressed Air
+  transport: tcp_or_simulator
+  expected_outbound:
+  - 14003¶1¶7\r
+  expected_inbound:
+    response_required: true
+    terminator: \r
+    status_code: '1'
+  expected_return:
+    type: see public_api.yaml
+  timeout_s: 20
+  oracles:
+  - outbound_structured
+  - raw_response
+  - parsed_value
+- id: VCC-GET_CONNECTION_STATE-001
+  keyword: Get Connection State
+  transport: tcp_or_simulator
+  expected_outbound:
+  - 10012¶1\r when refresh=true
+  expected_inbound:
+    response_required: true
+    terminator: \r
+    status_code: '1'
+  expected_return:
+    type: see public_api.yaml
+  timeout_s: 20
+  oracles:
+  - outbound_structured
+  - raw_response
+  - parsed_value
+- id: VCC-GET_COOLING_GRADIENT-001
+  keyword: Get Cooling Gradient
+  transport: tcp_or_simulator
+  expected_outbound:
+  - 11070¶1¶1\r
+  expected_inbound:
+    response_required: true
+    terminator: \r
+    status_code: '1'
+  expected_return:
+    type: see public_api.yaml
+  timeout_s: 20
+  oracles:
+  - outbound_structured
+  - raw_response
+  - parsed_value
+- id: VCC-GET_DRYER-001
+  keyword: Get Dryer
+  transport: tcp_or_simulator
+  expected_outbound:
+  - 14003¶1¶8\r
+  expected_inbound:
+    response_required: true
+    terminator: \r
+    status_code: '1'
+  expected_return:
+    type: see public_api.yaml
+  timeout_s: 20
+  oracles:
+  - outbound_structured
+  - raw_response
+  - parsed_value
+- id: VCC-GET_HEATING_GRADIENT-001
+  keyword: Get Heating Gradient
+  transport: tcp_or_simulator
+  expected_outbound:
+  - 11066¶1¶1\r
+  expected_inbound:
+    response_required: true
+    terminator: \r
+    status_code: '1'
+  expected_return:
+    type: see public_api.yaml
+  timeout_s: 20
+  oracles:
+  - outbound_structured
+  - raw_response
+  - parsed_value
+- id: VCC-GET_IDENTITY-001
+  keyword: Get Identity
+  transport: tcp_or_simulator
+  expected_outbound:
+  - 99997¶1¶1\r
+  - 99997¶1¶2\r
+  - 99997¶1¶3\r when refresh=true
+  expected_inbound:
+    response_required: true
+    terminator: \r
+    status_code: '1'
+  expected_return:
+    type: see public_api.yaml
+  timeout_s: 20
+  oracles:
+  - outbound_structured
+  - raw_response
+  - parsed_value
+- id: VCC-GET_TEMPERATURE_SETPOINT-001
+  keyword: Get Temperature Setpoint
+  transport: tcp_or_simulator
+  expected_outbound:
+  - 11002¶1¶1\r
+  expected_inbound:
+    response_required: true
+    terminator: \r
+    status_code: '1'
+  expected_return:
+    type: see public_api.yaml
+  timeout_s: 20
+  oracles:
+  - outbound_structured
+  - raw_response
+  - parsed_value
+- id: VCC-MEASURE_TEMPERATURE-001
+  keyword: Measure Temperature
+  transport: tcp_or_simulator
+  expected_outbound:
+  - 11004¶1¶1\r
+  expected_inbound:
+    response_required: true
+    terminator: \r
+    status_code: '1'
+  expected_return:
+    type: see public_api.yaml
+  timeout_s: 20
+  oracles:
+  - outbound_structured
+  - raw_response
+  - parsed_value
+- id: VCC-RECONNECT-001
+  keyword: Reconnect
+  transport: tcp_or_simulator
+  expected_outbound:
+  - TCP CLOSE
+  - TCP OPEN
+  - 99997¶1¶1\r
+  - 99997¶1¶2\r
+  - 99997¶1¶3\r
+  expected_inbound:
+    response_required: true
+    terminator: \r
+    status_code: '1'
+  expected_return:
+    type: see public_api.yaml
+  timeout_s: 20
+  oracles:
+  - outbound_structured
+  - raw_response
+  - parsed_value
+- id: VCC-SAFE_SHUTDOWN-001
+  keyword: Safe Shutdown
+  transport: tcp_or_simulator
+  expected_outbound:
+  - 14001¶1¶7¶0\r
+  - 14003¶1¶7\r
+  - 14001¶1¶8¶0\r
+  - 14003¶1¶8\r
+  - 14003¶1¶1\r
+  - 14001¶1¶1¶0\r
+  - 14003¶1¶1\r
+  expected_inbound:
+    response_required: true
+    terminator: \r
+    status_code: '1'
+  expected_return:
+    type: see public_api.yaml
+  timeout_s: 20
+  oracles:
+  - outbound_structured
+  - raw_response
+  - parsed_value
+- id: VCC-SET_COMPRESSED_AIR-001
+  keyword: Set Compressed Air
+  transport: tcp_or_simulator
+  expected_outbound:
+  - 14001¶1¶7¶<0|1>\r
+  - 14003¶1¶7\r
+  expected_inbound:
+    response_required: true
+    terminator: \r
+    status_code: '1'
+  expected_return:
+    type: see public_api.yaml
+  timeout_s: 20
+  oracles:
+  - outbound_structured
+  - raw_response
+  - parsed_value
+- id: VCC-SET_COOLING_GRADIENT-001
+  keyword: Set Cooling Gradient
+  transport: tcp_or_simulator
+  expected_outbound:
+  - 11072¶1¶1¶<value>\r
+  - 11070¶1¶1\r
+  expected_inbound:
+    response_required: true
+    terminator: \r
+    status_code: '1'
+  expected_return:
+    type: see public_api.yaml
+  timeout_s: 20
+  oracles:
+  - outbound_structured
+  - raw_response
+  - parsed_value
+- id: VCC-SET_DRYER-001
+  keyword: Set Dryer
+  transport: tcp_or_simulator
+  expected_outbound:
+  - 14001¶1¶8¶<0|1>\r
+  - 14003¶1¶8\r
+  expected_inbound:
+    response_required: true
+    terminator: \r
+    status_code: '1'
+  expected_return:
+    type: see public_api.yaml
+  timeout_s: 20
+  oracles:
+  - outbound_structured
+  - raw_response
+  - parsed_value
+- id: VCC-SET_HEATING_GRADIENT-001
+  keyword: Set Heating Gradient
+  transport: tcp_or_simulator
+  expected_outbound:
+  - 11068¶1¶1¶<value>\r
+  - 11066¶1¶1\r
+  expected_inbound:
+    response_required: true
+    terminator: \r
+    status_code: '1'
+  expected_return:
+    type: see public_api.yaml
+  timeout_s: 20
+  oracles:
+  - outbound_structured
+  - raw_response
+  - parsed_value
+- id: VCC-SET_TEMPERATURE-001
+  keyword: Set Temperature
+  transport: tcp_or_simulator
+  expected_outbound:
+  - 11001¶1¶1¶<value_c>\r
+  - 11002¶1¶1\r
+  expected_inbound:
+    response_required: true
+    terminator: \r
+    status_code: '1'
+  expected_return:
+    type: see public_api.yaml
+  timeout_s: 20
+  oracles:
+  - outbound_structured
+  - raw_response
+  - parsed_value
+- id: VCC-SET_TEMPERATURE_AND_WAIT-001
+  keyword: Set Temperature And Wait
+  transport: tcp_or_simulator
+  expected_outbound:
+  - 11001¶1¶1¶<value_c>\r
+  - 11002¶1¶1\r
+  - 14003¶1¶1\r
+  - 14001¶1¶1¶1\r
+  - 11004¶1¶1\r repeated
+  expected_inbound:
+    response_required: true
+    terminator: \r
+    status_code: '1'
+  expected_return:
+    type: see public_api.yaml
+  timeout_s: 20
+  oracles:
+  - outbound_structured
+  - raw_response
+  - parsed_value
+- id: VCC-START_CHAMBER-001
+  keyword: Start Chamber
+  transport: tcp_or_simulator
+  expected_outbound:
+  - 14003¶1¶1\r
+  - 14001¶1¶1¶1\r
+  - 14003¶1¶1\r
+  expected_inbound:
+    response_required: true
+    terminator: \r
+    status_code: '1'
+  expected_return:
+    type: see public_api.yaml
+  timeout_s: 20
+  oracles:
+  - outbound_structured
+  - raw_response
+  - parsed_value
+- id: VCC-STOP_CHAMBER-001
+  keyword: Stop Chamber
+  transport: tcp_or_simulator
+  expected_outbound:
+  - 14003¶1¶1\r
+  - 14001¶1¶1¶0\r
+  - 14003¶1¶1\r
+  expected_inbound:
+    response_required: true
+    terminator: \r
+    status_code: '1'
+  expected_return:
+    type: see public_api.yaml
+  timeout_s: 20
+  oracles:
+  - outbound_structured
+  - raw_response
+  - parsed_value
+- id: VCC-TEMPERATURE_SETPOINT_SHOULD_BE-001
+  keyword: Temperature Setpoint Should Be
+  transport: tcp_or_simulator
+  expected_outbound:
+  - 11002¶1¶1\r
+  expected_inbound:
+    response_required: true
+    terminator: \r
+    status_code: '1'
+  expected_return:
+    type: see public_api.yaml
+  timeout_s: 20
+  oracles:
+  - outbound_structured
+  - raw_response
+  - parsed_value
+- id: VCC-TEMPERATURE_SHOULD_BE-001
+  keyword: Temperature Should Be
+  transport: tcp_or_simulator
+  expected_outbound:
+  - 11004¶1¶1\r
+  expected_inbound:
+    response_required: true
+    terminator: \r
+    status_code: '1'
+  expected_return:
+    type: see public_api.yaml
+  timeout_s: 20
+  oracles:
+  - outbound_structured
+  - raw_response
+  - parsed_value
+- id: VCC-TEMPERATURE_SHOULD_BE_WITHIN-001
+  keyword: Temperature Should Be Within
+  transport: tcp_or_simulator
+  expected_outbound:
+  - 11004¶1¶1\r
+  expected_inbound:
+    response_required: true
+    terminator: \r
+    status_code: '1'
+  expected_return:
+    type: see public_api.yaml
+  timeout_s: 20
+  oracles:
+  - outbound_structured
+  - raw_response
+  - parsed_value
+- id: VCC-WAIT_FOR_DWELL-001
+  keyword: Wait For Dwell
+  transport: tcp_or_simulator
+  expected_outbound:
+  - 11004¶1¶1\r repeated
+  expected_inbound:
+    response_required: true
+    terminator: \r
+    status_code: '1'
+  expected_return:
+    type: see public_api.yaml
+  timeout_s: 20
+  oracles:
+  - outbound_structured
+  - raw_response
+  - parsed_value
+- id: VCC-WAIT_FOR_TEMPERATURE_STABILITY-001
+  keyword: Wait For Temperature Stability
+  transport: tcp_or_simulator
+  expected_outbound:
+  - 11002¶1¶1\r when target omitted
+  - 11004¶1¶1\r repeated
+  expected_inbound:
+    response_required: true
+    terminator: \r
+    status_code: '1'
+  expected_return:
+    type: see public_api.yaml
+  timeout_s: 20
+  oracles:
+  - outbound_structured
+  - raw_response
+  - parsed_value

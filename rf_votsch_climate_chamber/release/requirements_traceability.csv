@@ -1,0 +1,5 @@
+requirement_id,applicability,implementation,verification,result,evidence,deviation_id
+RFDS-002,APPLICABLE,rf_votsch_climate_chamber/library.py,tests/api/test_metadata_consistency.py,PASS,review/v26.08_file_by_file_review.md,DEV-26.07-001
+RFDS-003,APPLICABLE,rf_votsch_climate_chamber/lifecycle.py,tests/unit/test_converters_errors_transport.py,DEVIATION,review/known_risks.md,DEV-26.04-001
+RFDS-004,APPLICABLE,rf_votsch_climate_chamber/transports,tests/integration/test_tcp_fake_server.py,PASS,review/v26.08_code_review.md,
+RFDS-019,APPLICABLE,tests/conformance,tests/unit/test_rfds_conformance_harness.py,PASS_SIMULATOR,review/v26.08_code_review.md,

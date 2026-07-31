@@ -1,0 +1,12 @@
+{
+  "release": "26.08",
+  "status": "D0_ACCEPTED_D1_CANDIDATE",
+  "tests": 54,
+  "coverage_percent": 81.43,
+  "static_keyword_inventory": "57/57",
+  "protocol_vectors": 32,
+  "robot_runtime": "NOT_RUN",
+  "hardware": "NOT_RUN",
+  "clean_install": "PASS",
+  "wheel_install": "PASS"
+}

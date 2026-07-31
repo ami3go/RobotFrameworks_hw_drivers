@@ -1,0 +1,43 @@
+schema_version: '1.0'
+release: '26.08'
+previous_release: '26.07'
+classification: behavioral_hardening
+previous_api_version: 3.0.0
+api_version: 3.0.0
+removed_legacy_aliases:
+  Connect Climate Chamber: Connect
+  Disconnect Climate Chamber: Disconnect
+  Reconnect Climate Chamber: Reconnect
+  Get Climate Chamber Identification: Get Identity
+  Get Climate Chamber Model: Get Identity
+  Get Climate Chamber Serial Number: Get Identity
+  Get Climate Chamber Manufacturing Year: Get Identity
+  Get Climate Chamber Library Version: Get Driver Information
+  Get Climate Chamber Connection Statistics: Get Diagnostics
+  Get Climate Chamber Health: Get Diagnostics
+  Get Climate Chamber Status: Get Chamber Status
+  Get Climate Chamber Temperature: Measure Temperature
+  Get Climate Chamber Setpoint: Get Temperature Setpoint
+  Set Climate Chamber Temperature: Set Temperature
+  Set Climate Chamber Temperature Limits: Set Temperature Limits
+  Get Climate Chamber Temperature Limits: Get Temperature Limits
+  Start Climate Chamber: Start Chamber
+  Stop Climate Chamber: Stop Chamber
+  Stop And Disconnect Climate Chamber: Disconnect
+  Set Climate Chamber Heating Gradient: Set Heating Gradient
+  Get Climate Chamber Heating Gradient: Get Heating Gradient
+  Set Climate Chamber Cooling Gradient: Set Cooling Gradient
+  Get Climate Chamber Cooling Gradient: Get Cooling Gradient
+  Set Climate Chamber Dryer: Set Dryer
+  Get Climate Chamber Dryer: Get Dryer
+  Set Climate Chamber Compressed Air: Set Compressed Air
+  Get Climate Chamber Compressed Air: Get Compressed Air
+  Wait Until Climate Chamber Is Stable: Wait For Temperature Stability
+  Wait For Climate Chamber Dwell: Wait For Dwell
+  Climate Chamber Temperature Should Be: Temperature Should Be
+  Climate Chamber Temperature Should Be Within: Temperature Should Be Within
+  Climate Chamber Setpoint Should Be: Temperature Setpoint Should Be
+  Climate Chamber Should Be Connected: Connection Should Be Available
+  Climate Chamber Should Be Running: Chamber Should Be Running
+  Climate Chamber Should Be Stopped: Chamber Should Be Stopped
+authorization: Explicit user request to remove all legacy code and functions on 2026-07-31.

@@ -1,0 +1,44 @@
+{
+  "connect": {
+    "alias": "default",
+    "resource": "SIM::release-smoke",
+    "connected": true,
+    "state": "connected",
+    "communication_ok": true,
+    "identity": "V\u00f6tsch climate chamber, VT4002EMC-SIM, serial SIM-2604, manufactured 2026",
+    "timeout_s": 5.0,
+    "connected_at": "2026-07-31T14:27:45.890Z",
+    "last_communication_at": "2026-07-31T14:27:45.890Z",
+    "generation": 1,
+    "last_error": null
+  },
+  "identity": "V\u00f6tsch climate chamber, VT4002EMC-SIM, serial SIM-2604, manufactured 2026",
+  "temperature_initial_c": 25.0,
+  "temperature_final_c": 30.0,
+  "safe_shutdown": {
+    "safe": true,
+    "actions": [
+      {
+        "action": "compressed_air_off",
+        "status": "PASS"
+      },
+      {
+        "action": "dryer_off",
+        "status": "PASS"
+      },
+      {
+        "action": "chamber_stop",
+        "status": "PASS"
+      }
+    ],
+    "failures": [],
+    "elapsed_s": 0.00026341500000626183,
+    "confirmed": true
+  },
+  "status": "PASS",
+  "environment": {
+    "python": "3.13.5",
+    "platform": "Linux-6.12.13-x86_64-with-glibc2.41",
+    "duration_s": 0.012566566467285156
+  }
+}
