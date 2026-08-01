@@ -400,17 +400,17 @@ def main() -> int:
                 "errors": "RFDS-007 DriverError hierarchy",
             }
         )
-    write_yaml(ROOT / "ai/ai_contract.yaml", contract)
-    contract_bytes = (ROOT / "ai/ai_contract.yaml").read_bytes()
+    write_yaml(ROOT / "ai/votsch_climate_chamber_ai_contract.yaml", contract)
+    contract_bytes = (ROOT / "ai/votsch_climate_chamber_ai_contract.yaml").read_bytes()
     lock = {
         "schema_version": "1.0",
-        "contract": "ai/ai_contract.yaml",
+        "contract": "ai/votsch_climate_chamber_ai_contract.yaml",
         "sha256": hashlib.sha256(contract_bytes).hexdigest(),
         "release": RELEASE_VERSION,
         "keyword_count": len(entries),
         "public_api_sha256": hashlib.sha256((ROOT / "api/public_api.yaml").read_bytes()).hexdigest(),
     }
-    write_yaml(ROOT / "ai/ai_contract.lock", lock)
+    write_yaml(ROOT / "ai/votsch_climate_chamber_ai_contract.lock", lock)
 
     conformance = ROOT / "tests/conformance"
     inventory = {
@@ -485,8 +485,8 @@ def main() -> int:
         "ai_contract": {
             "kind": "package_resource",
             "package": "rf_votsch_climate_chamber",
-            "path": "resources/ai_contract.yaml",
-            "canonical_source": "ai/ai_contract.yaml",
+            "path": "resources/votsch_climate_chamber_ai_contract.yaml",
+            "canonical_source": "ai/votsch_climate_chamber_ai_contract.yaml",
             "sha256": lock["sha256"],
         },
         "documentation": {"kind": "repository_path", "path": "docs/index.md"},

@@ -25,7 +25,7 @@ A failed check exits non-zero and identifies the missing or inconsistent require
 
 The package also requires:
 
-- `ai/ai_contract.yaml` and `ai/ai_contract.lock` for RFDS-017 v3.0;
+- `ai/keysight_n6700_ai_contract.yaml` and `ai/keysight_n6700_ai_contract.lock` for RFDS-017 v3.0;
 - `system_ai_contract.yaml` for RFDS-018 v1.0;
 - exact capability coverage of every public Robot keyword;
 - deterministic lock hashes and CI drift checking;

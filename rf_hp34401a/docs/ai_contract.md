@@ -5,8 +5,8 @@
 The canonical contract is stored in:
 
 ```text
-ai/ai_contract.yaml
-ai/ai_contract.lock
+ai/hp34401a_ai_contract.yaml
+ai/hp34401a_ai_contract.lock
 ```
 
 The YAML contract is a machine-first description of the HP34401A Robot library. It lists all public keywords using their exact Robot names and signatures and describes the state machine, resources, physical connection points, errors, recovery, safety, timing, verification oracles, and setup/teardown.

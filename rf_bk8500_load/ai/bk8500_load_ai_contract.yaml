@@ -1499,7 +1499,7 @@ conformance:
       rule: The contract version equals the package version.
       verified_by: tests/test_contract_conformance.py::test_version_matches_package
     - id: CR-6
-      rule: ai_contract.lock holds the SHA-256 of ai_contract.yaml, so a silent edit is detectable.
+      rule: bk8500_load_ai_contract.lock holds the SHA-256 of bk8500_load_ai_contract.yaml, so a silent edit is detectable.
       verified_by: tests/test_contract_conformance.py::test_lock_file_matches_contract
     - id: CR-7
       rule: Every verification objective id appears as a documented test in atest/.

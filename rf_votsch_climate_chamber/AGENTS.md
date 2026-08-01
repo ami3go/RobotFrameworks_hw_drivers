@@ -1,6 +1,6 @@
 # Agent Instructions
 
-Treat `api/public_api.yaml` as the public API authority, `ai/ai_contract.yaml` as
+Treat `api/public_api.yaml` as the public API authority, `ai/votsch_climate_chamber_ai_contract.yaml` as
 the AI semantics authority, and `tests/conformance/data/protocol_vectors.yaml`
 as the protocol-call authority. Any public keyword change must update all three,
 the examples, history, review, and release artifacts in the same revision.

@@ -1,7 +1,0 @@
-{
-  "contract_file": "ai_contract.yaml",
-  "sha256": "bf594a8e553255414ed8723e87a4919c1ea12dfe032aa536ee8d1bd1059cb402",
-  "capability_count": 41,
-  "driver_contract_version": "26.02",
-  "specification": "RFDS-017 v3.0"
-}

@@ -46,8 +46,8 @@ def test_flat_source_layout_has_no_src_directory():
 def test_root_ai_delivery_is_complete():
     required = {
         "README.md",
-        "ai_contract.yaml",
-        "ai_contract.lock",
+        "bk8500_load_ai_contract.yaml",
+        "bk8500_load_ai_contract.lock",
         "system_ai_contract.example.yaml",
         "RFDS-017_AI_Driver_Contract_v3.0.md",
         "RFDS-018_AI_Test_Bench_Contract_v1.0.md",
@@ -215,7 +215,7 @@ def test_automatic_baud_detection_delivery_is_documented_and_runnable():
     assert (ROOT / "examples" / "13_automatic_baud_detection.robot").is_file()
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     release = (ROOT / "RELEASE_NOTES.md").read_text(encoding="utf-8")
-    contract = (ROOT / "ai" / "ai_contract.yaml").read_text(encoding="utf-8")
+    contract = (ROOT / "ai" / "bk8500_load_ai_contract.yaml").read_text(encoding="utf-8")
     assert "baudrate=AUTO" in readme
     assert "auto_detect_baudrate" in release
     assert "confirm_baudrate_identity" in contract

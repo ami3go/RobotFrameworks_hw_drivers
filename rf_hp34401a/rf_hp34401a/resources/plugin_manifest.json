@@ -10,7 +10,7 @@
   "supported_transports": ["VISA_GPIB", "SERIAL_RS232", "FAKE"],
   "capability_model": "capability/capability_model.yaml",
   "configuration_schema": "config/schema.json",
-  "ai_contract": "ai/ai_contract.yaml",
+  "ai_contract": "ai/hp34401a_ai_contract.yaml",
   "protocol_vectors": "tests/conformance/data/protocol_vectors.yaml",
   "hardware_discovery": false,
   "creates_connected_instance": false

@@ -58,7 +58,7 @@ def _resolve_ai_contract_dir() -> Path:
         ]
     )
     for candidate in candidates:
-        if (candidate / "ai_contract.yaml").is_file():
+        if (candidate / "bk8500_load_ai_contract.yaml").is_file():
             return candidate
     # Return the source-layout location to make missing-file errors explicit.
     return candidates[0] if candidates else Path(__file__).resolve().parent.parent / "ai"
@@ -68,13 +68,13 @@ AI_CONTRACT_DIR = _resolve_ai_contract_dir()
 
 
 def contract_path() -> Path:
-    """Absolute path to the RFDS-017 ``ai_contract.yaml`` file."""
-    return AI_CONTRACT_DIR / "ai_contract.yaml"
+    """Absolute path to the RFDS-017 ``bk8500_load_ai_contract.yaml`` file."""
+    return AI_CONTRACT_DIR / "bk8500_load_ai_contract.yaml"
 
 
 def lock_path() -> Path:
-    """Absolute path to the RFDS-017 ``ai_contract.lock`` file."""
-    return AI_CONTRACT_DIR / "ai_contract.lock"
+    """Absolute path to the RFDS-017 ``bk8500_load_ai_contract.lock`` file."""
+    return AI_CONTRACT_DIR / "bk8500_load_ai_contract.lock"
 
 
 __version__ = VERSION

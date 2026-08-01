@@ -11,7 +11,7 @@ available_drivers:
   - name: bk8500_load
     robot_library: BK8500Library
     version: "26.16.0"
-    contract: drivers/bk8500_load/ai/ai_contract.yaml
+    contract: drivers/bk8500_load/ai/bk8500_load_ai_contract.yaml
     instrument: B&K Precision 8500 DC electronic load
     instance_id: LOAD_1
     role: sink

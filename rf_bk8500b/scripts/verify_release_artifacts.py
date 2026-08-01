@@ -53,8 +53,8 @@ def verify_metadata(wheel: Path, sdist: Path) -> None:
         if not any(name.endswith(".dist-info/licenses/LICENSE") for name in names):
             raise RuntimeError("Wheel does not contain the license")
         required_data_files = (
-            "/share/rf_bk8500b/ai/ai_contract.yaml",
-            "/share/rf_bk8500b/ai/ai_contract.lock",
+            "/share/rf_bk8500b/ai/bk8500b_ai_contract.yaml",
+            "/share/rf_bk8500b/ai/bk8500b_ai_contract.lock",
             "/share/rf_bk8500b/ai/rfds017.schema.json",
             "/share/rf_bk8500b/bench/system_ai_contract.yaml",
         )
@@ -77,8 +77,8 @@ def verify_metadata(wheel: Path, sdist: Path) -> None:
             "/examples/10_diagnostics_and_raw_scpi.robot",
             "/scripts/build_release.py",
             "/scripts/verify_ai_contract.py",
-            "/ai/ai_contract.yaml",
-            "/ai/ai_contract.lock",
+            "/ai/bk8500b_ai_contract.yaml",
+            "/ai/bk8500b_ai_contract.lock",
             "/ai/rfds017.schema.json",
             "/bench/system_ai_contract.yaml",
             "/docs/AI_CONTRACT.md",

@@ -93,7 +93,7 @@ def _ordered_baud_rates(
     return tuple(ordered)
 
 #: Per-operation settling times, in seconds, matching the
-#: ``stabilization_delay_s`` field of each capability in ai/ai_contract.yaml.
+#: ``stabilization_delay_s`` field of each capability in ai/bk8500_load_ai_contract.yaml.
 #: Applied by the driver so the contract describes behaviour rather than advice.
 STABILIZATION_DELAYS_S: dict[str, float] = {
     "input_state": 0.1,

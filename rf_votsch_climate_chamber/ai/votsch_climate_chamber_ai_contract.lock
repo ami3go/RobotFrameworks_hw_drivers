@@ -1,5 +1,5 @@
 schema_version: '1.0'
-contract: ai/ai_contract.yaml
+contract: ai/votsch_climate_chamber_ai_contract.yaml
 sha256: 6b506f250d080f28984a982165b415fc8afba5dde05367c10a94d4bddc5b41a4
 release: '26.08'
 keyword_count: 57

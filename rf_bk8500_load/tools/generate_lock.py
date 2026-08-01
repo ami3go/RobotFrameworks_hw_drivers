@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Generate ``ai/ai_contract.lock`` from the contract and the live library.
+"""Generate ``ai/bk8500_load_ai_contract.lock`` from the contract and the live library.
 
 The lock file pins three things:
 
-* the SHA-256 of ``ai_contract.yaml``, so an edit without a re-generation is
+* the SHA-256 of ``bk8500_load_ai_contract.yaml``, so an edit without a re-generation is
   detectable;
 * the SHA-256 of the library's keyword surface (names plus argument names), so
   a signature change without a contract update is detectable;
@@ -30,8 +30,8 @@ from bk8500_load.library import BK8500Library  # noqa: E402
 from bk8500_load.version import VERSION  # noqa: E402
 
 AI_DIR = ROOT / "ai"
-CONTRACT = AI_DIR / "ai_contract.yaml"
-LOCK = AI_DIR / "ai_contract.lock"
+CONTRACT = AI_DIR / "bk8500_load_ai_contract.yaml"
+LOCK = AI_DIR / "bk8500_load_ai_contract.lock"
 
 
 def keyword_surface() -> list[str]:
@@ -68,7 +68,7 @@ def main() -> int:
         "rfds": "RFDS-017",
         "specification_version": "3.0",
         "driver_version": VERSION,
-        "contract_file": "ai_contract.yaml",
+        "contract_file": "bk8500_load_ai_contract.yaml",
         "contract_sha256": sha256_of(contract_bytes),
         "contract_bytes": len(contract_bytes),
         "keyword_count": len(surface),

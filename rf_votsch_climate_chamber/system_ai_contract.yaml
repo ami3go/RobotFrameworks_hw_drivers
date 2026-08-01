@@ -11,7 +11,7 @@ available_drivers:
   - plugin_id: votsch.climate_chamber
     version: "26.08"
     robot_library: rf_votsch_climate_chamber.library.VotschClimateChamberLibrary
-    ai_contract: ai/ai_contract.yaml
+    ai_contract: ai/votsch_climate_chamber_ai_contract.yaml
     role: environmental_temperature_control
     required: true
 physical_topology:

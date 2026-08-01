@@ -31,7 +31,7 @@ def test_rfds018_bench_template_has_all_required_sections() -> None:
 def test_contract_covers_exact_public_keyword_surface() -> None:
     validator = load_validator()
     surface = validator.public_keyword_surface()
-    contract = yaml.safe_load((ROOT / "ai" / "ai_contract.yaml").read_text(encoding="utf-8"))
+    contract = yaml.safe_load((ROOT / "ai" / "bk8500b_ai_contract.yaml").read_text(encoding="utf-8"))
     capabilities = contract["capabilities"]
     assert len(surface) == 80
     assert [(item["keyword"], item["signature"]) for item in capabilities] == surface
@@ -39,12 +39,12 @@ def test_contract_covers_exact_public_keyword_surface() -> None:
 
 def test_interface_lock_matches_current_public_surface() -> None:
     validator = load_validator()
-    actual = (ROOT / "ai" / "ai_contract.lock").read_text(encoding="utf-8").strip()
+    actual = (ROOT / "ai" / "bk8500b_ai_contract.lock").read_text(encoding="utf-8").strip()
     assert actual == validator.surface_hash()
 
 
 def test_contract_never_uses_unknown_for_core_safety_classifications() -> None:
-    contract = yaml.safe_load((ROOT / "ai" / "ai_contract.yaml").read_text(encoding="utf-8"))
+    contract = yaml.safe_load((ROOT / "ai" / "bk8500b_ai_contract.yaml").read_text(encoding="utf-8"))
     for capability in contract["capabilities"]:
         assert capability["risk_level"] != "UNKNOWN"
         assert capability["blocking"] != "UNKNOWN"

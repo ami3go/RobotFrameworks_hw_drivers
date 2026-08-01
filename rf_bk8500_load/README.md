@@ -139,7 +139,7 @@ ownership, protection, CC/CV/CW/CR regulation, transient/list/battery
 functions, triggering, settings storage, measurement, stability polling,
 and pass/fail oracles.
 
-The machine contract is `ai/ai_contract.yaml` and can also be located through:
+The machine contract is `ai/bk8500_load_ai_contract.yaml` and can also be located through:
 
 ```python
 import bk8500_load

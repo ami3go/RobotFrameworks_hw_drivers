@@ -41,4 +41,4 @@ The generated complete keyword reference is included as `KeysightN6700Library.ht
 
 ## AI planning interface
 
-Use `ai/ai_contract.yaml` for single-driver planning and `system_ai_contract.yaml` for bench-level planning. The bench template blocks energization until all physical UNKNOWN values are resolved and approved.
+Use `ai/keysight_n6700_ai_contract.yaml` for single-driver planning and `system_ai_contract.yaml` for bench-level planning. The bench template blocks energization until all physical UNKNOWN values are resolved and approved.

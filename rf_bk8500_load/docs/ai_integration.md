@@ -9,14 +9,14 @@ tests plus one list persistence workflow, all passed on model 8500 firmware
 coverage as separate from this callability evidence.
 
 The canonical AI-facing files are delivered at the project root under `ai/`.
-An AI test planner should use `ai/ai_contract.yaml` as its primary machine-readable
+An AI test planner should use `ai/bk8500_load_ai_contract.yaml` as its primary machine-readable
 source of truth.
 
 ## Delivered AI files
 
 - `ai/README.md` — agent consumption order and integrity-check instructions.
-- `ai/ai_contract.yaml` — RFDS-017 v3.0 driver contract.
-- `ai/ai_contract.lock` — contract and keyword-surface integrity lock.
+- `ai/bk8500_load_ai_contract.yaml` — RFDS-017 v3.0 driver contract.
+- `ai/bk8500_load_ai_contract.lock` — contract and keyword-surface integrity lock.
 - `ai/system_ai_contract.example.yaml` — RFDS-018 bench composition example.
 - `ai/RFDS-017_AI_Driver_Contract_v3.0.md` — driver-contract specification.
 - `ai/RFDS-018_AI_Test_Bench_Contract_v1.0.md` — system bench specification.

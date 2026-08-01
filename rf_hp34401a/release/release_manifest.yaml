@@ -43,7 +43,7 @@ paths:
   public_api: api/public_api.yaml
   capability_model: capability/capability_model.yaml
   configuration_schema: config/schema.json
-  ai_contract: ai/ai_contract.yaml
+  ai_contract: ai/hp34401a_ai_contract.yaml
   bench_template: examples/bench/system_ai_contract.template.yaml
   tests: tests
   hil_all_api: tests/hil/verify_all_public_api_real_hardware.robot

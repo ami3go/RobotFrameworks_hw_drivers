@@ -18,8 +18,8 @@ from typing import Any
 
 ROOT_NAME = "rf_keysight_n6700"
 LIBRARY_SOURCE = Path("KeysightN6700Library/library.py")
-AI_CONTRACT = Path("ai/ai_contract.yaml")
-AI_LOCK = Path("ai/ai_contract.lock")
+AI_CONTRACT = Path("ai/keysight_n6700_ai_contract.yaml")
+AI_LOCK = Path("ai/keysight_n6700_ai_contract.lock")
 SYSTEM_CONTRACT = Path("system_ai_contract.yaml")
 N6775A_USB_RESOURCE = "USB0::0x0957::0x0907::MY43014421::INSTR"
 VERSION_RE = re.compile(r'^version\s*=\s*"(?P<version>\d+\.\d+\.\d+)"\s*$', re.MULTILINE)
@@ -622,7 +622,7 @@ def build_ai_contract(version: str, release: str, keywords: list[KeywordSpec]) -
         "conformance_rules": {
             "keyword_coverage": "Exactly one capability entry must exist for every @keyword in KeysightN6700Library/library.py.",
             "required_capability_fields": ["signature", "purpose", "inputs", "outputs", "preconditions", "postconditions", "side_effects", "risk_level", "timing", "retry_policy", "errors", "exclusive_resources"],
-            "lock_rule": "ai/ai_contract.lock hashes the driver contract, system contract, library source, generator, and exact ordered keyword list.",
+            "lock_rule": "ai/keysight_n6700_ai_contract.lock hashes the driver contract, system contract, library source, generator, and exact ordered keyword list.",
             "generation_rule": "Run python scripts/generate_ai_contract.py after any public keyword, signature, documentation, version, safety, or bench-template change.",
             "verification_rule": "CI and package verification must run python scripts/generate_ai_contract.py --check.",
         },
@@ -645,7 +645,7 @@ def build_system_contract(version: str, release: str) -> dict[str, Any]:
                 "driver_id": "keysight_n6700",
                 "version": version,
                 "robot_library": "KeysightN6700Library",
-                "contract": "ai/ai_contract.yaml",
+                "contract": "ai/keysight_n6700_ai_contract.yaml",
                 "role": ["programmable_dc_source", "smu", "internal_voltage_current_power_measurement", "verified_module_dependent_electronic_load"],
             }
         ],

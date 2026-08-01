@@ -2,8 +2,8 @@
 
 Release v26.04 adds the canonical RFDS-017 machine contract:
 
-- `ai/ai_contract.yaml` — one entry for every public Robot Framework keyword.
-- `ai/ai_contract.lock` — SHA-256 of the public keyword names and exact signatures.
+- `ai/bk8500b_ai_contract.yaml` — one entry for every public Robot Framework keyword.
+- `ai/bk8500b_ai_contract.lock` — SHA-256 of the public keyword names and exact signatures.
 - `ai/rfds017.schema.json` — project-local validation schema for the RFDS-017 v3 structure.
 
 The contract describes the instrument mental model, state machine, resources,

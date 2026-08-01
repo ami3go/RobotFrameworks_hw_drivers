@@ -17,7 +17,7 @@
       "driver_id": "keysight_n6700",
       "version": "26.9.0",
       "robot_library": "KeysightN6700Library",
-      "contract": "ai/ai_contract.yaml",
+      "contract": "ai/keysight_n6700_ai_contract.yaml",
       "role": [
         "programmable_dc_source",
         "smu",

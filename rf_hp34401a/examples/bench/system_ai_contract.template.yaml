@@ -8,7 +8,7 @@ bench_identity:
 available_drivers:
   - driver_name: "rf_hp34401a.Hp34401ALibrary"
     driver_version: "26.3.0"
-    ai_contract: "ai/ai_contract.yaml"
+    ai_contract: "ai/hp34401a_ai_contract.yaml"
     aliases: ["dmm"]
     qualification: ["UNIT_TESTED", "SIMULATOR_VALIDATED"]
 physical_topology:
@@ -60,10 +60,10 @@ preferred_measurement_sources:
     precondition: "Series current path and current-limited source verified by operator or fixture interlock."
 requirement_coverage:
   - requirement_id: "UNKNOWN_DUT_DCV_REQUIREMENT"
-    driver_contract: "ai/ai_contract.yaml"
+    driver_contract: "ai/hp34401a_ai_contract.yaml"
     verification_objective: "VO-DMM-002"
   - requirement_id: "UNKNOWN_DUT_RESISTANCE_REQUIREMENT"
-    driver_contract: "ai/ai_contract.yaml"
+    driver_contract: "ai/hp34401a_ai_contract.yaml"
     verification_objective: "VO-DMM-003"
 test_templates:
   - name: "DUT DC Voltage Verification"

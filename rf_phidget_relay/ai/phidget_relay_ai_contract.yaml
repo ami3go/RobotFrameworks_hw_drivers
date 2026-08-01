@@ -234,4 +234,4 @@ unknown_handling:
 conformance:
   capability_per_public_robot_keyword: true
   source_required_for_planning: false
-  contract_integrity_file: ai/ai_contract.lock
+  contract_integrity_file: ai/phidget_relay_ai_contract.lock

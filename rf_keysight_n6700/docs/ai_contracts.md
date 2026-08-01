@@ -2,12 +2,12 @@
 
 Release v26.09 implements the project source specifications:
 
-- **RFDS-017 v3.0**: `ai/ai_contract.yaml` and `ai/ai_contract.lock`
+- **RFDS-017 v3.0**: `ai/keysight_n6700_ai_contract.yaml` and `ai/keysight_n6700_ai_contract.lock`
 - **RFDS-018 v1.0**: `system_ai_contract.yaml`
 
 ## Driver contract
 
-`ai/ai_contract.yaml` describes the Keysight N6700 library without requiring an AI agent to inspect Python source. It includes:
+`ai/keysight_n6700_ai_contract.yaml` describes the Keysight N6700 library without requiring an AI agent to inspect Python source. It includes:
 
 - identity and mental model;
 - session/channel state machine;

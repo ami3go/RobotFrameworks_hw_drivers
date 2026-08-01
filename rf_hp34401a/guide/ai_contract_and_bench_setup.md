@@ -8,7 +8,7 @@ From the project root:
 python scripts/validate_ai_contract.py
 ```
 
-The command compares `ai/ai_contract.yaml` and `ai/ai_contract.lock` against the live Robot keyword names and signatures. Do not edit the lock manually after a keyword change; regenerate the contract and lock together and review the semantic changes.
+The command compares `ai/hp34401a_ai_contract.yaml` and `ai/hp34401a_ai_contract.lock` against the live Robot keyword names and signatures. Do not edit the lock manually after a keyword change; regenerate the contract and lock together and review the semantic changes.
 
 ## Add the driver to a test bench
 

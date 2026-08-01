@@ -22,9 +22,9 @@ def _implemented_keywords():
 
 
 def test_contract_lock_and_keyword_coverage():
-    raw = (ROOT / "ai" / "ai_contract.yaml").read_bytes()
+    raw = (ROOT / "ai" / "eresistor_ai_contract.yaml").read_bytes()
     contract = json.loads(raw)
-    lock = json.loads((ROOT / "ai" / "ai_contract.lock").read_text(encoding="utf-8"))
+    lock = json.loads((ROOT / "ai" / "eresistor_ai_contract.lock").read_text(encoding="utf-8"))
     documented = [item["keyword"] for item in contract["capabilities"]]
     implemented = _implemented_keywords()
     assert hashlib.sha256(raw).hexdigest() == lock["sha256"]
@@ -34,7 +34,7 @@ def test_contract_lock_and_keyword_coverage():
 
 
 def test_every_capability_has_rfds_semantics():
-    contract = json.loads((ROOT / "ai" / "ai_contract.yaml").read_text(encoding="utf-8"))
+    contract = json.loads((ROOT / "ai" / "eresistor_ai_contract.yaml").read_text(encoding="utf-8"))
     required = {"signature", "purpose", "inputs", "output", "preconditions",
                 "postconditions", "side_effects", "risk_level", "timing",
                 "stabilization_delay", "retry_policy", "errors", "exclusive_resources"}
@@ -43,7 +43,7 @@ def test_every_capability_has_rfds_semantics():
 
 
 def test_mandatory_top_level_sections_exist():
-    contract = json.loads((ROOT / "ai" / "ai_contract.yaml").read_text(encoding="utf-8"))
+    contract = json.loads((ROOT / "ai" / "eresistor_ai_contract.yaml").read_text(encoding="utf-8"))
     required = {"identity", "mental_model", "state_machine", "resources", "dependencies",
                 "capabilities", "error_catalogue", "safety_rules", "verification_objectives",
                 "setup_teardown_contract", "limitations", "planning_hints", "unknown_handling",

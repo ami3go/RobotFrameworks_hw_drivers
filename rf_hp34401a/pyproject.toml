@@ -31,7 +31,7 @@ hp34401a_dmm = ["py.typed"]
 rf_hp34401a = ["resources/plugin_manifest.json", "resources/configuration/*.json", "resources/configuration/*.lock"]
 
 [tool.setuptools.data-files]
-"share/rf_hp34401a/ai" = ["ai/ai_contract.yaml", "ai/ai_contract.lock"]
+"share/rf_hp34401a/ai" = ["ai/hp34401a_ai_contract.yaml", "ai/hp34401a_ai_contract.lock"]
 "share/rf_hp34401a/bench" = ["examples/bench/system_ai_contract.template.yaml"]
 
 [tool.pytest.ini_options]

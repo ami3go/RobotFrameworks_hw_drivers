@@ -32,8 +32,8 @@ exclude = ["tests*", "atest*", "examples*", "tools*"]
 [tool.setuptools.data-files]
 "share/rf_bk8500_load/ai" = [
   "ai/README.md",
-  "ai/ai_contract.yaml",
-  "ai/ai_contract.lock",
+  "ai/bk8500_load_ai_contract.yaml",
+  "ai/bk8500_load_ai_contract.lock",
   "ai/system_ai_contract.example.yaml",
   "ai/RFDS-017_AI_Driver_Contract_v3.0.md",
   "ai/RFDS-018_AI_Test_Bench_Contract_v1.0.md",

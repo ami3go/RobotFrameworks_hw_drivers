@@ -1,6 +1,6 @@
 *** Settings ***
 Documentation     Driver conformance suite for the B&K 8500 series DC load.
-...               Each test maps to a verification objective in ai/ai_contract.yaml.
+...               Each test maps to a verification objective in ai/bk8500_load_ai_contract.yaml.
 Resource          resources/bk8500_common.resource
 Suite Setup       Connect To DC Load
 Suite Teardown    Disconnect From DC Load

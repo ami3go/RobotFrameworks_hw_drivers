@@ -8,7 +8,7 @@ available_drivers:
 - driver_name: BK8500BLibrary
   driver_version: 26.4.0
   instrument_class: LOAD
-  ai_contract: ai/ai_contract.yaml
+  ai_contract: ai/bk8500b_ai_contract.yaml
   required: true
 - driver_name: ProgrammablePowerSupplyLibrary
   driver_version: UNKNOWN

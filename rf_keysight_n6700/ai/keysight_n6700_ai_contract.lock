@@ -76,10 +76,10 @@
     "Configure N6700 Load CC"
   ],
   "hashes": {
-    "ai_contract_sha256": "6eb93ab6acf4e55cb6169e37e053a8f01a103092aa7996f5ed692838baa2b5a5",
-    "system_ai_contract_sha256": "ea7e0150a002068d21c626e951a6607a09df0d1ff68f9459fb7adb29b466559c",
+    "ai_contract_sha256": "17726bdf200c24700d36f164781cf1c1e9e7b557f41019c9932beb5e78eae3c1",
+    "system_ai_contract_sha256": "5f30ecc0842eec49b6cc5094852c251c709bf66a69cefad35ec1c05bd0ac2843",
     "library_source_sha256": "942c036de18d5f8183aab6d5c074b6669dd3c4974adb246ad5b4f4ed2f144681",
-    "generator_sha256": "07562c558023c3ffcace0bfeaf6a642f2ec6342675a6e0fe6aa7d30cff4a6063"
+    "generator_sha256": "38881fe431c9aeff7176ae1a1b3d54a7681dd9f2e40b9a5329ca6044e937ef37"
   },
   "generation": {
     "command": "python scripts/generate_ai_contract.py",

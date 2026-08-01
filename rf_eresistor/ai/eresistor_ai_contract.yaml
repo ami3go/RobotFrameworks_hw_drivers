@@ -1338,8 +1338,8 @@
   },
   "conformance": {
     "required_files": [
-      "ai/ai_contract.yaml",
-      "ai/ai_contract.lock"
+      "ai/eresistor_ai_contract.yaml",
+      "ai/eresistor_ai_contract.lock"
     ],
     "keyword_coverage": "Every @keyword in rf_eresistor/library.py appears exactly once.",
     "machine_readable": "JSON text, which is valid YAML 1.2.",

@@ -34,8 +34,8 @@
   "ai_contract": {
     "kind": "package_resource",
     "package": "rf_votsch_climate_chamber",
-    "path": "resources/ai_contract.yaml",
-    "canonical_source": "ai/ai_contract.yaml",
+    "path": "resources/votsch_climate_chamber_ai_contract.yaml",
+    "canonical_source": "ai/votsch_climate_chamber_ai_contract.yaml",
     "sha256": "6b506f250d080f28984a982165b415fc8afba5dde05367c10a94d4bddc5b41a4"
   },
   "documentation": {

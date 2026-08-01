@@ -1,6 +1,6 @@
 """RFDS-017 conformance tests.
 
-These enforce the ``conformance.rules`` section of ``ai/ai_contract.yaml``:
+These enforce the ``conformance.rules`` section of ``ai/bk8500_load_ai_contract.yaml``:
 the contract and the code must not drift apart silently.
 """
 
@@ -21,8 +21,8 @@ from bk8500_load.version import VERSION
 
 ROOT = Path(__file__).resolve().parent.parent
 AI_DIR = ROOT / "ai"
-CONTRACT_PATH = AI_DIR / "ai_contract.yaml"
-LOCK_PATH = AI_DIR / "ai_contract.lock"
+CONTRACT_PATH = AI_DIR / "bk8500_load_ai_contract.yaml"
+LOCK_PATH = AI_DIR / "bk8500_load_ai_contract.lock"
 ATEST_DIR = ROOT / "atest"
 
 
@@ -149,7 +149,7 @@ def test_lock_file_matches_contract():
     lock = json.loads(LOCK_PATH.read_text(encoding="utf-8"))
     digest = hashlib.sha256(CONTRACT_PATH.read_bytes()).hexdigest()
     assert lock["contract_sha256"] == digest, (
-        "ai_contract.yaml changed without regenerating the lock: run tools/generate_lock.py"
+        "bk8500_load_ai_contract.yaml changed without regenerating the lock: run tools/generate_lock.py"
     )
     assert lock["driver_version"] == VERSION
 

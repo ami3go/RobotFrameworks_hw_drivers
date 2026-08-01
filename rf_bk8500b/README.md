@@ -97,8 +97,8 @@ summary is in [`docs/KEYWORDS.md`](docs/KEYWORDS.md).
 
 The package includes a canonical RFDS-017 contract for automatic test planning:
 
-- [`ai/ai_contract.yaml`](ai/ai_contract.yaml) describes all 74 public Robot keywords, exact signatures, states, resources, risks, errors, safety constraints, recovery sequences, verification oracles, and setup/teardown behavior.
-- [`ai/ai_contract.lock`](ai/ai_contract.lock) is the SHA-256 lock for the public keyword surface.
+- [`ai/bk8500b_ai_contract.yaml`](ai/bk8500b_ai_contract.yaml) describes all 74 public Robot keywords, exact signatures, states, resources, risks, errors, safety constraints, recovery sequences, verification oracles, and setup/teardown behavior.
+- [`ai/bk8500b_ai_contract.lock`](ai/bk8500b_ai_contract.lock) is the SHA-256 lock for the public keyword surface.
 - [`ai/rfds017.schema.json`](ai/rfds017.schema.json) is the project-local validation schema.
 - [`bench/system_ai_contract.yaml`](bench/system_ai_contract.yaml) is an RFDS-018 bench-integration template. It remains `TEMPLATE_INCOMPLETE` until actual wiring, resources, DUT limits, and emergency procedures are reviewed for a specific bench.
 

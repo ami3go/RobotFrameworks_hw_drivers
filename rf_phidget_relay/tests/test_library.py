@@ -132,7 +132,7 @@ def test_failed_attachment_closes_handle_that_failed_during_open():
 
 def test_rfds_contract_covers_every_robot_keyword():
     root = Path(__file__).parents[1]
-    contract = yaml.safe_load((root / "ai" / "ai_contract.yaml").read_text(encoding="utf-8"))
+    contract = yaml.safe_load((root / "ai" / "phidget_relay_ai_contract.yaml").read_text(encoding="utf-8"))
     contracted = {item["name"] for item in contract["capabilities"]}
     implemented = {
         value.robot_name

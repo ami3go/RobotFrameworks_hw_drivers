@@ -80,8 +80,8 @@ def load_yaml(path: Path) -> dict[str, Any]:
 
 def validate(contract_path: Path | None = None, lock_path: Path | None = None) -> list[str]:
     errors: list[str] = []
-    contract_file = contract_path or (ROOT / "ai" / "ai_contract.yaml")
-    lock_file = lock_path or (ROOT / "ai" / "ai_contract.lock")
+    contract_file = contract_path or (ROOT / "ai" / "hp34401a_ai_contract.yaml")
+    lock_file = lock_path or (ROOT / "ai" / "hp34401a_ai_contract.lock")
     contract = load_yaml(contract_file)
     lock = load_yaml(lock_file)
     public_api = json.loads((ROOT / "api" / "public_api.yaml").read_text(encoding="utf-8"))
@@ -110,12 +110,12 @@ def validate(contract_path: Path | None = None, lock_path: Path | None = None) -
         )
     expected_hash = surface_hash(live)
     if lock.get("algorithm") != "SHA-256" or lock.get("sha256") != expected_hash:
-        errors.append("ai_contract.lock source-surface hash mismatch")
+        errors.append("hp34401a_ai_contract.lock source-surface hash mismatch")
     if lock.get("keyword_count") != len(live) or lock.get("surface") != live:
-        errors.append("ai_contract.lock keyword surface/count mismatch")
+        errors.append("hp34401a_ai_contract.lock keyword surface/count mismatch")
     expected_api_hash = hashlib.sha256((ROOT / "api" / "public_api.yaml").read_bytes()).hexdigest()
     if lock.get("public_api_sha256") != expected_api_hash:
-        errors.append("ai_contract.lock public_api hash mismatch")
+        errors.append("hp34401a_ai_contract.lock public_api hash mismatch")
     if str(contract.get("identity", {}).get("driver_version")) != "26.6.0":
         errors.append("AI contract driver version must be 26.6.0")
     if public_api.get("library", {}).get("package_version") != "26.06":

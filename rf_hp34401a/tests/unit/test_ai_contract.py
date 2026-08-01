@@ -19,9 +19,9 @@ def _validator_module():
 
 def test_rfds017_contract_matches_all_public_keywords():
     module = _validator_module()
-    errors = module.validate(ROOT / "ai" / "ai_contract.yaml", ROOT / "ai" / "ai_contract.lock")
+    errors = module.validate(ROOT / "ai" / "hp34401a_ai_contract.yaml", ROOT / "ai" / "hp34401a_ai_contract.lock")
     assert errors == []
-    contract = yaml.safe_load((ROOT / "ai" / "ai_contract.yaml").read_text(encoding="utf-8"))
+    contract = yaml.safe_load((ROOT / "ai" / "hp34401a_ai_contract.yaml").read_text(encoding="utf-8"))
     assert contract["rfds017_version"] == "3.0"
     assert contract["identity"]["driver_version"] == "26.6.0"
     assert len(contract["capabilities"]) == 108
@@ -30,11 +30,11 @@ def test_rfds017_contract_matches_all_public_keywords():
 
 def test_lock_detects_stale_interface(tmp_path):
     module = _validator_module()
-    lock = yaml.safe_load((ROOT / "ai" / "ai_contract.lock").read_text(encoding="utf-8"))
+    lock = yaml.safe_load((ROOT / "ai" / "hp34401a_ai_contract.lock").read_text(encoding="utf-8"))
     lock["sha256"] = "0" * 64
-    stale_lock = tmp_path / "ai_contract.lock"
+    stale_lock = tmp_path / "hp34401a_ai_contract.lock"
     stale_lock.write_text(yaml.safe_dump(lock, sort_keys=False), encoding="utf-8")
-    errors = module.validate(ROOT / "ai" / "ai_contract.yaml", stale_lock)
+    errors = module.validate(ROOT / "ai" / "hp34401a_ai_contract.yaml", stale_lock)
     assert any("hash mismatch" in error for error in errors)
 
 

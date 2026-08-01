@@ -211,8 +211,8 @@ Software controls do not replace current limiting, interlocks, fixture protectio
 
 The package includes deterministic, machine-verifiable contracts based on the supplied project source standards:
 
-- `ai/ai_contract.yaml` implements RFDS-017 v3.0 and contains one capability record for each of the 63 Robot Framework keywords.
-- `ai/ai_contract.lock` binds the contract to the exact keyword list, library source, generator, driver version, and RFDS-018 contract.
+- `ai/keysight_n6700_ai_contract.yaml` implements RFDS-017 v3.0 and contains one capability record for each of the 63 Robot Framework keywords.
+- `ai/keysight_n6700_ai_contract.lock` binds the contract to the exact keyword list, library source, generator, driver version, and RFDS-018 contract.
 - `system_ai_contract.yaml` implements RFDS-018 v1.0 as a safe standalone bench template. It blocks energization until site-specific module map, topology, polarity, DUT limits, safety zones, interlock, and stabilization values are configured.
 
 Regenerate or check the contracts:
@@ -235,7 +235,7 @@ An AI agent should use the driver contract directly, but it must merge it into a
 - [Examples index](examples/README.md)
 - [Project package requirements](PROJECT_REQUIREMENTS.md)
 - [AI driver and bench contracts](docs/ai_contracts.md)
-- RFDS-017 contract: `ai/ai_contract.yaml`
+- RFDS-017 contract: `ai/keysight_n6700_ai_contract.yaml`
 - RFDS-018 bench template: `system_ai_contract.yaml`
 - [Release history](history/v26.09.md)
 - [Release code review](review/v26.09_code_review.md)

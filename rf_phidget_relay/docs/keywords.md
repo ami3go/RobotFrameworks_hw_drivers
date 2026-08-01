@@ -1,7 +1,7 @@
 # Keyword reference
 
 The machine-readable risks, preconditions, timing, errors, and resource locks
-are authoritative in `ai/ai_contract.yaml`.
+are authoritative in `ai/phidget_relay_ai_contract.yaml`.
 
 | Keyword | Purpose |
 |---|---|

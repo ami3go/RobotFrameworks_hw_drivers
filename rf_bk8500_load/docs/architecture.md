@@ -127,8 +127,8 @@ desynchronises the link until the port is reopened.
 | `bk8500_load/enums.py` | Modes, functions, triggers, state registers, model limits, data models |
 | `bk8500_load/exceptions.py` | Error catalogue |
 | `BK8500Library.py` | Import shim so suites can write `Library    BK8500Library` |
-| `ai/ai_contract.yaml` | Root-level RFDS-017 v3.0 machine contract; installed as wheel data under `share/rf_bk8500_load/ai` |
-| `ai/ai_contract.lock` | SHA-256 of the contract and of the keyword surface |
+| `ai/bk8500_load_ai_contract.yaml` | Root-level RFDS-017 v3.0 machine contract; installed as wheel data under `share/rf_bk8500_load/ai` |
+| `ai/bk8500_load_ai_contract.lock` | SHA-256 of the contract and of the keyword surface |
 | `atest/` | Robot Framework conformance suite and shared resource file |
 | `tests/` | pytest unit and contract-conformance tests |
 | `tools/generate_lock.py` | Regenerates the lock file |

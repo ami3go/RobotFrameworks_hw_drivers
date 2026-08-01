@@ -16,7 +16,7 @@
 | RFDS-013 capability artifacts | `capability/`, `capabilities.py` | unit tests and binding validation | PASS |
 | RFDS-014 configuration artifacts | `config/`, runtime resources, `configuration.py` | schema/lock/unit/profile tests | PASS |
 | RFDS-015 plugin artifacts | provider, manifest, entry point | plugin unit tests | PASS with shared-core deviation |
-| RFDS-017 AI contract | `ai/ai_contract.yaml` and lock | `validate_ai_contract.py` | PASS, 108 keywords |
+| RFDS-017 AI contract | `ai/hp34401a_ai_contract.yaml` and lock | `validate_ai_contract.py` | PASS, 108 keywords |
 | RFDS-018 integration | bench template | template review | TEMPLATE; deployed bench pending |
 | RFDS-019 inventory/vector coverage | conformance data and harness | static validator | PASS, 108/108 defined |
 | RFDS-019 official Robot evidence | conformance runner | release-site execution | PENDING |

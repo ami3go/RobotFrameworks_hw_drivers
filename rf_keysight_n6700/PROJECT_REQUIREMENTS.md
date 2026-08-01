@@ -22,7 +22,7 @@ This repository follows the common Robot Framework Driver package standard and t
 
 | Requirement | Implementation |
 |---|---|
-| Required files | `ai/ai_contract.yaml`, `ai/ai_contract.lock` |
+| Required files | `ai/keysight_n6700_ai_contract.yaml`, `ai/keysight_n6700_ai_contract.lock` |
 | Identity and mental model | Top-level contract sections |
 | State machine | Session/channel states and transitions |
 | Resources and dependencies | Consumed/provided resources and runtime/external dependencies |

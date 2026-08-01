@@ -12,7 +12,7 @@ Release 26.06 adds project-standard Robot keywords without removing or renaming 
 
 ## AI-contract layer
 
-`ai/ai_contract.yaml` is the canonical machine-readable semantic description of one driver. It includes:
+`ai/hp34401a_ai_contract.yaml` is the canonical machine-readable semantic description of one driver. It includes:
 
 - exact public keyword signatures;
 - state machine and valid transitions;
@@ -22,6 +22,6 @@ Release 26.06 adds project-standard Robot keywords without removing or renaming 
 - verification objectives with pass/fail oracles;
 - timing, blocking, idempotency, retry, and planning metadata.
 
-`ai/ai_contract.lock` contains a SHA-256 hash of the normalized live keyword surface. `scripts/validate_ai_contract.py` compares the library, contract, and lock so stale contracts fail CI.
+`ai/hp34401a_ai_contract.lock` contains a SHA-256 hash of the normalized live keyword surface. `scripts/validate_ai_contract.py` compares the library, contract, and lock so stale contracts fail CI.
 
 RFDS-018 describes the complete bench and is intentionally not embedded as an asserted bench configuration. The included template must be completed in the bench repository using verified wiring, shared resources, safety zones, and driver aliases.

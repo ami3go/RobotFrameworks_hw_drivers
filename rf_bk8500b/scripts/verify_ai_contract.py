@@ -14,8 +14,8 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 LIBRARY_SOURCE = ROOT / "BK8500BLibrary" / "library.py"
-CONTRACT_PATH = ROOT / "ai" / "ai_contract.yaml"
-LOCK_PATH = ROOT / "ai" / "ai_contract.lock"
+CONTRACT_PATH = ROOT / "ai" / "bk8500b_ai_contract.yaml"
+LOCK_PATH = ROOT / "ai" / "bk8500b_ai_contract.lock"
 SCHEMA_PATH = ROOT / "ai" / "rfds017.schema.json"
 BENCH_PATH = ROOT / "bench" / "system_ai_contract.yaml"
 
@@ -141,7 +141,7 @@ def validate_contract() -> list[str]:
     actual_lock = LOCK_PATH.read_text(encoding="utf-8").strip() if LOCK_PATH.exists() else ""
     if actual_lock != expected_lock:
         errors.append(
-            f"ai_contract.lock mismatch: expected {expected_lock}, found {actual_lock or '<missing>'}"
+            f"bk8500b_ai_contract.lock mismatch: expected {expected_lock}, found {actual_lock or '<missing>'}"
         )
 
     pyproject = ROOT / "pyproject.toml"
@@ -191,7 +191,7 @@ def main() -> int:
     parser.add_argument(
         "--update-lock",
         action="store_true",
-        help="Write the current public-keyword SHA-256 to ai/ai_contract.lock before validation.",
+        help="Write the current public-keyword SHA-256 to ai/bk8500b_ai_contract.lock before validation.",
     )
     args = parser.parse_args()
     if args.update_lock:

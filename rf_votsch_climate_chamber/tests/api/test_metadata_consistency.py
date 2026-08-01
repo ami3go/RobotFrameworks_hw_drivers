@@ -15,8 +15,8 @@ def test_public_api_matches_runtime():
     assert sorted(x['keyword'] for x in data['keywords']) == runtime_names()
 
 def test_ai_contract_lock():
-    lock=yaml.safe_load((ROOT/'ai/ai_contract.lock').read_text())
-    assert lock['sha256'] == hashlib.sha256((ROOT/'ai/ai_contract.yaml').read_bytes()).hexdigest()
+    lock=yaml.safe_load((ROOT/'ai/votsch_climate_chamber_ai_contract.lock').read_text())
+    assert lock['sha256'] == hashlib.sha256((ROOT/'ai/votsch_climate_chamber_ai_contract.yaml').read_bytes()).hexdigest()
     assert lock['keyword_count'] == len(runtime_names())
 
 def test_conformance_inventory_matches_runtime():

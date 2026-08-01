@@ -2,8 +2,8 @@
 
 Read these files in order:
 
-1. `ai_contract.lock` — verify integrity and keyword count.
-2. `ai_contract.yaml` — machine-readable driver semantics.
+1. `bk8500_load_ai_contract.lock` — verify integrity and keyword count.
+2. `bk8500_load_ai_contract.yaml` — machine-readable driver semantics.
 3. `system_ai_contract.example.yaml` — example bench composition.
 4. RFDS-017, RFDS-018, RFDS-019, and lifecycle specifications.
 

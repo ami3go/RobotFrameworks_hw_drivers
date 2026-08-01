@@ -7,5 +7,5 @@ RFDS-009-HIL,PENDING,tests/hil/verify_all_public_api_real_hardware.robot,release
 RFDS-013-CAP,PASS,capability/; rf_hp34401a/capabilities.py,tests/unit/test_rfds_v2604.py,capability/examples/capability_snapshot.json,
 RFDS-014-CFG,PASS,config/; rf_hp34401a/configuration.py,tests/unit/test_rfds_v2604.py,config/schema.lock,
 RFDS-015-PLUGIN,PASS_WITH_DEVIATION,rf_hp34401a/plugin.py; plugin_manifest.json,tests/unit/test_rfds_v2604.py,release/compatibility_report.json,HP34401A-DEV-001
-RFDS-017-AI,PASS,ai/ai_contract.yaml,scripts/validate_ai_contract.py,ai/ai_contract.lock,
+RFDS-017-AI,PASS,ai/hp34401a_ai_contract.yaml,scripts/validate_ai_contract.py,ai/hp34401a_ai_contract.lock,
 RFDS-019-CONFORMANCE,STATIC_PASS_RUNTIME_PENDING,tests/conformance/,scripts/validate_call_protocol_conformance.py,tests/conformance/data/protocol_vectors.yaml,HP34401A-DEV-004

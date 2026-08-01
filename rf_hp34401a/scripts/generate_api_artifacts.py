@@ -316,7 +316,7 @@ def generate_support_files(items: list[dict[str, Any]]) -> None:
 
 
 def generate_ai_contract(items: list[dict[str, Any]]) -> None:
-    contract = yaml.safe_load((AI / "ai_contract.yaml").read_text(encoding="utf-8"))
+    contract = yaml.safe_load((AI / "hp34401a_ai_contract.yaml").read_text(encoding="utf-8"))
     contract["identity"]["driver_version"] = "26.6.0"
     contract["identity"]["api_version"] = "1.1.0"
     contract["implementation_status"]["maturity"] = "D0_DEVELOPMENT_CANDIDATE"
@@ -367,12 +367,12 @@ def generate_ai_contract(items: list[dict[str, Any]]) -> None:
     contract["conformance"]["protocol_vectors"] = "tests/conformance/data/protocol_vectors.yaml"
     contract["conformance"]["exported_keyword_count"] = len(items)
     contract["conformance"]["real_device_status"] = "HIL_ALL_API_SUITE_INCLUDED_EXECUTION_PENDING"
-    (AI / "ai_contract.yaml").write_text(yaml.safe_dump(contract, sort_keys=False, width=120), encoding="utf-8")
+    (AI / "hp34401a_ai_contract.yaml").write_text(yaml.safe_dump(contract, sort_keys=False, width=120), encoding="utf-8")
     surface_lines = [item["signature"] for item in items]
     surface_hash = hashlib.sha256("\n".join(surface_lines).encode("utf-8")).hexdigest()
     api_hash = hashlib.sha256((API / "public_api.yaml").read_bytes()).hexdigest()
     lock = {"algorithm": "SHA-256", "sha256": surface_hash, "public_api_sha256": api_hash, "keyword_count": len(items), "surface": surface_lines}
-    (AI / "ai_contract.lock").write_text(yaml.safe_dump(lock, sort_keys=False, width=160), encoding="utf-8")
+    (AI / "hp34401a_ai_contract.lock").write_text(yaml.safe_dump(lock, sort_keys=False, width=160), encoding="utf-8")
 
 
 def main() -> None:

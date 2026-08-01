@@ -93,8 +93,8 @@ files:
   size: 137
   sha256: 7ca5e649ae2ffff0fb64759e8892df522dfce1edae788c72e9bf5aeeb7749d2c
 - path: AGENTS.md
-  size: 641
-  sha256: e96458417472e4ce3269b357bcfbf4c1d1eac93d3fddb29810f26f30e657a5a9
+  size: 664
+  sha256: 37aae96fae4d50ae46695d6dc23c9980356922e993bf7a10b09cc3a3958da5ae
 - path: CHANGELOG.md
   size: 2771
   sha256: ae77c379fe7b4a9ccf1c3ddcdbaf76bf536f95b6ec71c91f68782afddfdc7a17
@@ -129,17 +129,17 @@ files:
   size: 410
   sha256: 5864b0e5ff90aa03b0c4778ef856f7c456716da52cf10e11b2fff3b0f0a3c9b8
 - path: ai/README.md
-  size: 673
-  sha256: 96de3e24cc921164f57e620acef88d054216038200967f651ba7134155bf7609
-- path: ai/ai_contract.lock
-  size: 244
-  sha256: e4ed8508270a1de703fa68dd8ad1d1c6376f4a630fec967d111211e1ebde199d
-- path: ai/ai_contract.yaml
+  size: 719
+  sha256: b0f739639bc1c2e43daf82c88d5d075b1ee0c624deef495a5bdbaecc26f82c45
+- path: ai/system_ai_contract.template.yaml
+  size: 1380
+  sha256: 9b1b9a306ea6bc90bac225ba8da1275178882ca1e95e21e463455e2c0342e64d
+- path: ai/votsch_climate_chamber_ai_contract.lock
+  size: 267
+  sha256: 1eb7063ebb0da184baac64b8d1b564dd82b42d406a7b2ad7b2b020055b634485
+- path: ai/votsch_climate_chamber_ai_contract.yaml
   size: 30202
   sha256: 6b506f250d080f28984a982165b415fc8afba5dde05367c10a94d4bddc5b41a4
-- path: ai/system_ai_contract.template.yaml
-  size: 1357
-  sha256: 17362d17c28411e1b95fb6786de8575294644ee2da0b67f045d59e6bd5621ba4
 - path: api/compatibility.yaml
   size: 2176
   sha256: 2c821bef5aba3063343e474f330297641a8c314a02a470a0dcda1e9cd5409bd2
@@ -470,12 +470,6 @@ files:
 - path: rf_votsch_climate_chamber/py.typed
   size: 0
   sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-- path: rf_votsch_climate_chamber/resources/ai_contract.lock
-  size: 244
-  sha256: e4ed8508270a1de703fa68dd8ad1d1c6376f4a630fec967d111211e1ebde199d
-- path: rf_votsch_climate_chamber/resources/ai_contract.yaml
-  size: 30202
-  sha256: 6b506f250d080f28984a982165b415fc8afba5dde05367c10a94d4bddc5b41a4
 - path: rf_votsch_climate_chamber/resources/config.schema.json
   size: 5378
   sha256: 3bb44da579f51f3c1338dc49dd3c54689167b982cf4c16b9e288ae8c8eb5c878
@@ -483,8 +477,14 @@ files:
   size: 1052
   sha256: 8f39d3f4db4f50f8e41f0ff779560b9904a7984d66d6845139c0b2393be1234e
 - path: rf_votsch_climate_chamber/resources/plugin_manifest.json
-  size: 2053
-  sha256: f219b11436d7c462df132a9905f85f14cb76060632446014845a834d543422d4
+  size: 2099
+  sha256: aaf9771a0e8735622a81d7f45f6ba88c919f82b4801b508713eb1277de2cd94c
+- path: rf_votsch_climate_chamber/resources/votsch_climate_chamber_ai_contract.lock
+  size: 267
+  sha256: 1eb7063ebb0da184baac64b8d1b564dd82b42d406a7b2ad7b2b020055b634485
+- path: rf_votsch_climate_chamber/resources/votsch_climate_chamber_ai_contract.yaml
+  size: 30202
+  sha256: 6b506f250d080f28984a982165b415fc8afba5dde05367c10a94d4bddc5b41a4
 - path: rf_votsch_climate_chamber/robot_compat.py
   size: 2014
   sha256: 5240d78be01cad0dc966c554f895d8a90f0a0323dd7d204c00772dd0fe55c79f
@@ -522,8 +522,8 @@ files:
   size: 127
   sha256: 00c3829ef8b9f3167f1d210cb9e7b9261dec22a21893e1fb73d6160db055e160
 - path: scripts/build_release.py
-  size: 12523
-  sha256: a99c52031306ef732e1828ada750c851da322971b03afa688a5e6ad3a3588e96
+  size: 12615
+  sha256: 95298fb4e49769a75048477cb1f73f76454624cbde731d9d67f9550537bf4a9f
 - path: scripts/build_release.sh
   size: 82
   sha256: 568ac6b9ed8a825ff0e15f3687ca7541f6d5fac994d23d529bea8e2a2f743886
@@ -543,8 +543,8 @@ files:
   size: 96
   sha256: 6d1a0c9c491aa3815b1e45794664fc87d1d7b8aff55c9b4ddb2cf2cbd6d0001b
 - path: scripts/generate_rfds_metadata.py
-  size: 22543
-  sha256: f14c959cd17a3b2d6840243163bbd4fa43b1614ec1866392d628f1ece4530b8c
+  size: 22681
+  sha256: 210b120778bb65b4ea6c776e2ff02c8cb62cdf7e0bb786f8ec9191d2639708f0
 - path: scripts/release_check.py
   size: 821
   sha256: 24e97187b74322ce7f22d6e14ffc6ba1ec513369c4de3b43d0a00721aec19018
@@ -633,23 +633,23 @@ files:
   size: 182
   sha256: 4bf17b73ea4ec5df542d5bbd7f8f5da5dda685bd55012dbed1729ea7a7cbf681
 - path: scripts/validate_ai_contract.py
-  size: 1181
-  sha256: 71dbb9a87932b0858a2a61fbe2ad34459ce56c50fb793bf3a86245aaf01aca40
+  size: 1250
+  sha256: 2940280b5e93afb2ae6a911f5fa7e526e278c1184a26f46129977a4de73d3c86
 - path: scripts/validate_call_protocol_conformance.py
   size: 1300
   sha256: 920beba85940f40e288ec7530f047ac52763c3516caaadf34bdc43afb9e31b9e
 - path: scripts/validate_structure.py
-  size: 2107
-  sha256: 2fbd5330f7eca80c57cb2975aeb9792eb5fcfb3f71b7135033fd62702c90fa74
+  size: 2153
+  sha256: d3561a0b62ffe5c420539cfb151784d20560f519b0fdd9ef4d9c8de33550171d
 - path: system_ai_contract.yaml
-  size: 1357
-  sha256: 17362d17c28411e1b95fb6786de8575294644ee2da0b67f045d59e6bd5621ba4
+  size: 1380
+  sha256: 9b1b9a306ea6bc90bac225ba8da1275178882ca1e95e21e463455e2c0342e64d
 - path: tests/__init__.py
   size: 0
   sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 - path: tests/api/test_metadata_consistency.py
-  size: 1377
-  sha256: 34dc18a89416367fd3cd7cb9fe88e886ea29728e94b2b1e8b047ec6eaabe812a
+  size: 1423
+  sha256: 9187096e12cf6f121722345a5b576908c6676009c124eb53f924b0980b478a6f
 - path: tests/compatibility/test_api_v3_cleanup.py
   size: 1502
   sha256: 7122562cac11591a96913b874ee7e19d5dcbb2e9d8bb3f9c419fa6ed0c6c8c78

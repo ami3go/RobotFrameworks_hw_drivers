@@ -6,8 +6,8 @@ import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-OUT = ROOT / "ai" / "ai_contract.yaml"
-LOCK = ROOT / "ai" / "ai_contract.lock"
+OUT = ROOT / "ai" / "eresistor_ai_contract.yaml"
+LOCK = ROOT / "ai" / "eresistor_ai_contract.lock"
 
 
 def cap(name, signature, purpose, *, inputs=None, output="None", pre=None,
@@ -90,7 +90,7 @@ CONTRACT = {
     "limitations": ["No real-hardware qualification is encoded as complete in this package.", "Driver resistance is calculated from calibration, not independently measured.", "Identify duration may be ignored by current firmware.", "Solver cache generation can be slow.", "Network loss prevents guaranteed ALL:OFF.", "RFDS-018 v1.0 source supplied during release was empty, so bench topology and inter-driver orchestration remain UNKNOWN."],
     "planning_hints": ["Plan read-only identity and safe-state checks before writes.", "Load/download calibration before resistance operations and temperature table before temperature operations.", "Serialize all keywords sharing eresistor.scpi_session.", "Treat outputs as exclusive with any DMM multiplexer switching sequence: open all relays, select one route, settle, measure, open route.", "Use returned dictionaries for requested/calculated/error/mask evidence and use an independent instrument for physical pass/fail."],
     "unknown_handling": {"token":"UNKNOWN", "rules":["Never invent an argument, firmware command, resource owner, tolerance, stabilization time, or safe state.", "Ask for the bench contract or preserve UNKNOWN when a missing value affects safety or pass/fail.", "UNKNOWN cannot satisfy a PASS oracle.", "On unclassified exceptions, stop state-changing steps and execute safe teardown."]},
-    "conformance": {"required_files":["ai/ai_contract.yaml","ai/ai_contract.lock"], "keyword_coverage":"Every @keyword in rf_eresistor/library.py appears exactly once.", "machine_readable":"JSON text, which is valid YAML 1.2.", "lock_rule":"SHA-256 and capability count must match generated contract.", "source_of_truth":"Keyword implementation governs execution; contract mismatch is a release-blocking defect."},
+    "conformance": {"required_files":["ai/eresistor_ai_contract.yaml","ai/eresistor_ai_contract.lock"], "keyword_coverage":"Every @keyword in rf_eresistor/library.py appears exactly once.", "machine_readable":"JSON text, which is valid YAML 1.2.", "lock_rule":"SHA-256 and capability count must match generated contract.", "source_of_truth":"Keyword implementation governs execution; contract mismatch is a release-blocking defect."},
 }
 
 
@@ -99,7 +99,7 @@ def main():
     payload = json.dumps(CONTRACT, indent=2, ensure_ascii=False) + "\n"
     OUT.write_text(payload, encoding="utf-8")
     digest = hashlib.sha256(payload.encode()).hexdigest()
-    lock = {"contract_file":"ai_contract.yaml", "sha256":digest, "capability_count":len(CAPABILITIES), "driver_contract_version":"26.02", "specification":"RFDS-017 v3.0"}
+    lock = {"contract_file":"eresistor_ai_contract.yaml", "sha256":digest, "capability_count":len(CAPABILITIES), "driver_contract_version":"26.02", "specification":"RFDS-017 v3.0"}
     LOCK.write_text(json.dumps(lock, indent=2) + "\n", encoding="utf-8")
 
 

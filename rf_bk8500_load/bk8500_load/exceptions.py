@@ -2,7 +2,7 @@
 
 Every exception raised by the driver or the Robot Framework library derives
 from :class:`BK8500Error`, so a test can catch the whole family. The class
-names are stable API and are referenced by ``ai/ai_contract.yaml``.
+names are stable API and are referenced by ``ai/bk8500_load_ai_contract.yaml``.
 """
 
 from __future__ import annotations

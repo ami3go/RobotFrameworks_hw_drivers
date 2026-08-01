@@ -1,8 +1,8 @@
 # AI contract
 
-`ai_contract.yaml` is the canonical RFDS-017 v3.0 machine-readable contract for this driver. It is JSON-formatted YAML 1.2 so both JSON-only and YAML-aware agents can parse it without ambiguity.
+`eresistor_ai_contract.yaml` is the canonical RFDS-017 v3.0 machine-readable contract for this driver. It is JSON-formatted YAML 1.2 so both JSON-only and YAML-aware agents can parse it without ambiguity.
 
-Before using the contract, verify its SHA-256 and capability count against `ai_contract.lock`. Regenerate both files after any public Robot keyword or semantic change:
+Before using the contract, verify its SHA-256 and capability count against `eresistor_ai_contract.lock`. Regenerate both files after any public Robot keyword or semantic change:
 
 ```bash
 python tools/generate_ai_contract.py

@@ -4145,7 +4145,7 @@ unknown_handling:
 conformance:
   schema: ai/rfds017.schema.json
   keyword_surface_source: BK8500BLibrary/library.py explicit @keyword decorators
-  lock_file: ai/ai_contract.lock
+  lock_file: ai/bk8500b_ai_contract.lock
   validator: scripts/verify_ai_contract.py
   required_checks:
   - SCHEMA_VALID

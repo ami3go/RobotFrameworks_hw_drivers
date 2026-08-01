@@ -2,8 +2,8 @@
 
 This directory contains the RFDS-017 contract for the Keysight N6700 Robot Framework driver.
 
-- `ai_contract.yaml` — complete AI-readable driver semantics, including one capability entry for every Robot keyword.
-- `ai_contract.lock` — deterministic lock containing the exact keyword list and SHA-256 hashes of the contracts, generator, and authoritative library source.
+- `keysight_n6700_ai_contract.yaml` — complete AI-readable driver semantics, including one capability entry for every Robot keyword.
+- `keysight_n6700_ai_contract.lock` — deterministic lock containing the exact keyword list and SHA-256 hashes of the contracts, generator, and authoritative library source.
 
 The repository root also contains `system_ai_contract.yaml`, an RFDS-018 bench-level contract template. It deliberately fails closed: site-specific resource addresses, module map, physical wiring, polarity, DUT limits, safety-zone limits, interlock details, and stabilization requirements remain `UNKNOWN` until configured by the bench owner.
 

@@ -130,8 +130,8 @@
     },
     {
       "path": "AGENTS.md",
-      "size": 641,
-      "sha256": "e96458417472e4ce3269b357bcfbf4c1d1eac93d3fddb29810f26f30e657a5a9"
+      "size": 664,
+      "sha256": "37aae96fae4d50ae46695d6dc23c9980356922e993bf7a10b09cc3a3958da5ae"
     },
     {
       "path": "CHANGELOG.md",
@@ -190,23 +190,23 @@
     },
     {
       "path": "ai/README.md",
-      "size": 673,
-      "sha256": "96de3e24cc921164f57e620acef88d054216038200967f651ba7134155bf7609"
-    },
-    {
-      "path": "ai/ai_contract.lock",
-      "size": 244,
-      "sha256": "e4ed8508270a1de703fa68dd8ad1d1c6376f4a630fec967d111211e1ebde199d"
-    },
-    {
-      "path": "ai/ai_contract.yaml",
-      "size": 30202,
-      "sha256": "6b506f250d080f28984a982165b415fc8afba5dde05367c10a94d4bddc5b41a4"
+      "size": 719,
+      "sha256": "b0f739639bc1c2e43daf82c88d5d075b1ee0c624deef495a5bdbaecc26f82c45"
     },
     {
       "path": "ai/system_ai_contract.template.yaml",
-      "size": 1357,
-      "sha256": "17362d17c28411e1b95fb6786de8575294644ee2da0b67f045d59e6bd5621ba4"
+      "size": 1380,
+      "sha256": "9b1b9a306ea6bc90bac225ba8da1275178882ca1e95e21e463455e2c0342e64d"
+    },
+    {
+      "path": "ai/votsch_climate_chamber_ai_contract.lock",
+      "size": 267,
+      "sha256": "1eb7063ebb0da184baac64b8d1b564dd82b42d406a7b2ad7b2b020055b634485"
+    },
+    {
+      "path": "ai/votsch_climate_chamber_ai_contract.yaml",
+      "size": 30202,
+      "sha256": "6b506f250d080f28984a982165b415fc8afba5dde05367c10a94d4bddc5b41a4"
     },
     {
       "path": "api/compatibility.yaml",
@@ -759,16 +759,6 @@
       "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     },
     {
-      "path": "rf_votsch_climate_chamber/resources/ai_contract.lock",
-      "size": 244,
-      "sha256": "e4ed8508270a1de703fa68dd8ad1d1c6376f4a630fec967d111211e1ebde199d"
-    },
-    {
-      "path": "rf_votsch_climate_chamber/resources/ai_contract.yaml",
-      "size": 30202,
-      "sha256": "6b506f250d080f28984a982165b415fc8afba5dde05367c10a94d4bddc5b41a4"
-    },
-    {
       "path": "rf_votsch_climate_chamber/resources/config.schema.json",
       "size": 5378,
       "sha256": "3bb44da579f51f3c1338dc49dd3c54689167b982cf4c16b9e288ae8c8eb5c878"
@@ -780,8 +770,18 @@
     },
     {
       "path": "rf_votsch_climate_chamber/resources/plugin_manifest.json",
-      "size": 2053,
-      "sha256": "f219b11436d7c462df132a9905f85f14cb76060632446014845a834d543422d4"
+      "size": 2099,
+      "sha256": "aaf9771a0e8735622a81d7f45f6ba88c919f82b4801b508713eb1277de2cd94c"
+    },
+    {
+      "path": "rf_votsch_climate_chamber/resources/votsch_climate_chamber_ai_contract.lock",
+      "size": 267,
+      "sha256": "1eb7063ebb0da184baac64b8d1b564dd82b42d406a7b2ad7b2b020055b634485"
+    },
+    {
+      "path": "rf_votsch_climate_chamber/resources/votsch_climate_chamber_ai_contract.yaml",
+      "size": 30202,
+      "sha256": "6b506f250d080f28984a982165b415fc8afba5dde05367c10a94d4bddc5b41a4"
     },
     {
       "path": "rf_votsch_climate_chamber/robot_compat.py",
@@ -845,8 +845,8 @@
     },
     {
       "path": "scripts/build_release.py",
-      "size": 12523,
-      "sha256": "a99c52031306ef732e1828ada750c851da322971b03afa688a5e6ad3a3588e96"
+      "size": 12615,
+      "sha256": "95298fb4e49769a75048477cb1f73f76454624cbde731d9d67f9550537bf4a9f"
     },
     {
       "path": "scripts/build_release.sh",
@@ -880,8 +880,8 @@
     },
     {
       "path": "scripts/generate_rfds_metadata.py",
-      "size": 22543,
-      "sha256": "f14c959cd17a3b2d6840243163bbd4fa43b1614ec1866392d628f1ece4530b8c"
+      "size": 22681,
+      "sha256": "210b120778bb65b4ea6c776e2ff02c8cb62cdf7e0bb786f8ec9191d2639708f0"
     },
     {
       "path": "scripts/release_check.py",
@@ -1030,8 +1030,8 @@
     },
     {
       "path": "scripts/validate_ai_contract.py",
-      "size": 1181,
-      "sha256": "71dbb9a87932b0858a2a61fbe2ad34459ce56c50fb793bf3a86245aaf01aca40"
+      "size": 1250,
+      "sha256": "2940280b5e93afb2ae6a911f5fa7e526e278c1184a26f46129977a4de73d3c86"
     },
     {
       "path": "scripts/validate_call_protocol_conformance.py",
@@ -1040,13 +1040,13 @@
     },
     {
       "path": "scripts/validate_structure.py",
-      "size": 2107,
-      "sha256": "2fbd5330f7eca80c57cb2975aeb9792eb5fcfb3f71b7135033fd62702c90fa74"
+      "size": 2153,
+      "sha256": "d3561a0b62ffe5c420539cfb151784d20560f519b0fdd9ef4d9c8de33550171d"
     },
     {
       "path": "system_ai_contract.yaml",
-      "size": 1357,
-      "sha256": "17362d17c28411e1b95fb6786de8575294644ee2da0b67f045d59e6bd5621ba4"
+      "size": 1380,
+      "sha256": "9b1b9a306ea6bc90bac225ba8da1275178882ca1e95e21e463455e2c0342e64d"
     },
     {
       "path": "tests/__init__.py",
@@ -1055,8 +1055,8 @@
     },
     {
       "path": "tests/api/test_metadata_consistency.py",
-      "size": 1377,
-      "sha256": "34dc18a89416367fd3cd7cb9fe88e886ea29728e94b2b1e8b047ec6eaabe812a"
+      "size": 1423,
+      "sha256": "9187096e12cf6f121722345a5b576908c6676009c124eb53f924b0980b478a6f"
     },
     {
       "path": "tests/compatibility/test_api_v3_cleanup.py",

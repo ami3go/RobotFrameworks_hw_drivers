@@ -59,8 +59,8 @@ guarantee relay state after host power loss.
 - `Relay Should Be Open`, `Relay Should Be Closed`
 - `Get Connection Status`, `Get Driver Information`, `Emergency Open All Relays`
 
-The RFDS-017 v3.0 machine-readable contract is in `ai/ai_contract.yaml`; its
-integrity record is `ai/ai_contract.lock`. RFDS-018 bench composition guidance
+The RFDS-017 v3.0 machine-readable contract is in `ai/phidget_relay_ai_contract.yaml`; its
+integrity record is `ai/phidget_relay_ai_contract.lock`. RFDS-018 bench composition guidance
 and a conservative template are in `ai/bench_integration.yaml` and
 `system_ai_contract.yaml`. Unknown bench wiring remains explicitly `UNKNOWN`
 until a bench owner resolves it.

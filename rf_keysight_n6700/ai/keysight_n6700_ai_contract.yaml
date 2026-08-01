@@ -5957,7 +5957,7 @@
       "errors",
       "exclusive_resources"
     ],
-    "lock_rule": "ai/ai_contract.lock hashes the driver contract, system contract, library source, generator, and exact ordered keyword list.",
+    "lock_rule": "ai/keysight_n6700_ai_contract.lock hashes the driver contract, system contract, library source, generator, and exact ordered keyword list.",
     "generation_rule": "Run python scripts/generate_ai_contract.py after any public keyword, signature, documentation, version, safety, or bench-template change.",
     "verification_rule": "CI and package verification must run python scripts/generate_ai_contract.py --check."
   }

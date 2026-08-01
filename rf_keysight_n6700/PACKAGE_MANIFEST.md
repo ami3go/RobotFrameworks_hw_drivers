@@ -7,8 +7,8 @@
 - Robot keywords: 63
 - Robot examples: 14
 - Python examples: 17 executable examples plus CLI notes
-- RFDS-017 driver contract: `ai/ai_contract.yaml`
-- RFDS-017 deterministic lock: `ai/ai_contract.lock`
+- RFDS-017 driver contract: `ai/keysight_n6700_ai_contract.yaml`
+- RFDS-017 deterministic lock: `ai/keysight_n6700_ai_contract.lock`
 - RFDS-018 bench contract template: `system_ai_contract.yaml`
 - Contract generator: `scripts/generate_ai_contract.py`
 - Project verifier: `scripts/verify_project_package.py`

@@ -60,8 +60,8 @@ exclude = ["tests*"]
 
 [tool.setuptools.data-files]
 "share/rf_bk8500b/ai" = [
-  "ai/ai_contract.yaml",
-  "ai/ai_contract.lock",
+  "ai/bk8500b_ai_contract.yaml",
+  "ai/bk8500b_ai_contract.lock",
   "ai/rfds017.schema.json",
 ]
 "share/rf_bk8500b/bench" = [

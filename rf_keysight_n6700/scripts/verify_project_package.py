@@ -60,8 +60,8 @@ def required_paths(release: str) -> tuple[str, ...]:
     return (
         "README.md",
         "ai/README.md",
-        "ai/ai_contract.yaml",
-        "ai/ai_contract.lock",
+        "ai/keysight_n6700_ai_contract.yaml",
+        "ai/keysight_n6700_ai_contract.lock",
         "system_ai_contract.yaml",
         "standards/RFDS-017_AI_Driver_Contract_v3.0.md",
         "standards/RFDS-018_AI_Test_Bench_Contract_v1.0.md",
@@ -145,8 +145,8 @@ def validate_ai_contracts(
     result: ValidationResult,
 ) -> None:
     required = {
-        "ai/ai_contract.yaml",
-        "ai/ai_contract.lock",
+        "ai/keysight_n6700_ai_contract.yaml",
+        "ai/keysight_n6700_ai_contract.lock",
         "system_ai_contract.yaml",
         "scripts/generate_ai_contract.py",
         "scripts/validate_call_protocol_conformance.py",
@@ -167,8 +167,8 @@ def validate_ai_contracts(
         return
 
     try:
-        contract = json.loads(read_text("ai/ai_contract.yaml"))
-        lock = json.loads(read_text("ai/ai_contract.lock"))
+        contract = json.loads(read_text("ai/keysight_n6700_ai_contract.yaml"))
+        lock = json.loads(read_text("ai/keysight_n6700_ai_contract.lock"))
         system_contract = json.loads(read_text("system_ai_contract.yaml"))
     except json.JSONDecodeError as exc:
         result.errors.append(f"AI contract is not valid JSON-compatible YAML: {exc}")
@@ -244,7 +244,7 @@ def validate_ai_contracts(
 
     hashes = lock.get("hashes", {})
     expected_hashes = {
-        "ai_contract_sha256": sha256_text(read_text("ai/ai_contract.yaml")),
+        "ai_contract_sha256": sha256_text(read_text("ai/keysight_n6700_ai_contract.yaml")),
         "system_ai_contract_sha256": sha256_text(read_text("system_ai_contract.yaml")),
         "library_source_sha256": sha256_text(source),
         "generator_sha256": sha256_text(read_text("scripts/generate_ai_contract.py")),
@@ -289,7 +289,7 @@ def validate_ai_contracts(
         isinstance(item, dict)
         and item.get("driver_id") == DRIVER_NAME
         and item.get("version") == version
-        and item.get("contract") == "ai/ai_contract.yaml"
+        and item.get("contract") == "ai/keysight_n6700_ai_contract.yaml"
         for item in drivers
     )
     result.check(
@@ -419,7 +419,7 @@ def validate_common(
         "archive": expected_archive_name(release),
         "internal_root": ROOT_NAME,
         "robot_library": "KeysightN6700Library",
-        "ai_driver_contract": "ai/ai_contract.yaml",
+        "ai_driver_contract": "ai/keysight_n6700_ai_contract.yaml",
         "ai_test_bench_contract": "system_ai_contract.yaml",
         "rfds_017": "3.0",
         "rfds_018": "1.0",

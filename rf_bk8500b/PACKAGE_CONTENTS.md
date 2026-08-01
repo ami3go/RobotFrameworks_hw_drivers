@@ -21,8 +21,8 @@ Temporary environments, caches, IDE metadata, build work directories, and Robot 
 - `ROBOT_LIBRARY_IMPLEMENTATION_REPORT.md`
 - `SECURITY.md`
 - `VERSION`
-- `ai/ai_contract.lock`
-- `ai/ai_contract.yaml`
+- `ai/bk8500b_ai_contract.lock`
+- `ai/bk8500b_ai_contract.yaml`
 - `ai/rfds017.schema.json`
 - `bench/README.md`
 - `bench/system_ai_contract.yaml`

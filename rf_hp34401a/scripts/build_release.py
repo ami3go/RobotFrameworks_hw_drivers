@@ -42,7 +42,7 @@ def validate_layout(root: Path) -> None:
     required = [
         "rf_hp34401a/library.py", "hp34401a_dmm", "api/public_api.yaml",
         "capability/capability_model.yaml", "config/schema.json", "config/schema.lock",
-        "ai/ai_contract.yaml", "ai/ai_contract.lock", "history/v26.06.md",
+        "ai/hp34401a_ai_contract.yaml", "ai/hp34401a_ai_contract.lock", "history/v26.06.md",
         "review/v26.06_code_review.md", "review/v26.06_release_readiness.md",
         "examples/index.yaml", "scripts", "guide", "docs", "README.md", "pyproject.toml",
         "release/release_manifest.yaml", "release/sbom.json",
@@ -80,7 +80,7 @@ def validate_zip(output: Path) -> None:
             f"{ROOT_NAME}/api/public_api.yaml",
             f"{ROOT_NAME}/capability/capability_model.yaml",
             f"{ROOT_NAME}/config/schema.json",
-            f"{ROOT_NAME}/ai/ai_contract.yaml",
+            f"{ROOT_NAME}/ai/hp34401a_ai_contract.yaml",
             f"{ROOT_NAME}/tests/conformance/data/keyword_inventory.yaml",
             f"{ROOT_NAME}/tests/hil/verify_all_public_api_real_hardware.robot",
             f"{ROOT_NAME}/release/release_manifest.yaml",
