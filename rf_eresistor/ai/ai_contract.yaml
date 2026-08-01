@@ -1080,6 +1080,171 @@
       "exclusive_resources": [
         "network.discovery"
       ]
+    },
+    {
+      "keyword": "Connect",
+      "signature": "resource=None, alias=default, timeout_s=None",
+      "purpose": "RFDS-002 generic connect. Idempotent wrapper over Connect To EResistor; resource is the host/IP.",
+      "inputs": {
+        "resource": "IPv4/hostname or None",
+        "alias": "accepted for interface compatibility; this driver supports a single connection",
+        "timeout_s": "optional transport timeout override, seconds"
+      },
+      "output": "RFDS-002 Section 12.1 connection-state dictionary",
+      "preconditions": [],
+      "postconditions": [
+        "state == CONNECTED, or state unchanged when already connected to the requested resource"
+      ],
+      "side_effects": [
+        "As Connect To EResistor, unless already connected to the requested resource"
+      ],
+      "risk_level": "medium",
+      "timing": "<3 s typical; bounded by configured transport timeout and retries",
+      "stabilization_delay": "none",
+      "retry_policy": "transport retries only; do not retry state changes at test level unless state is read back",
+      "errors": [
+        "CONNECTION_ERROR",
+        "IDENTITY_ERROR",
+        "FIRMWARE_INCOMPATIBLE"
+      ],
+      "exclusive_resources": [
+        "eresistor.scpi_session",
+        "network"
+      ]
+    },
+    {
+      "keyword": "Disconnect",
+      "signature": "alias=None",
+      "purpose": "RFDS-002 generic disconnect. Idempotent wrapper over Disconnect From EResistor; succeeds even if already disconnected.",
+      "inputs": {
+        "alias": "accepted for interface compatibility; unused"
+      },
+      "output": "None",
+      "preconditions": [],
+      "postconditions": [
+        "state is disconnected/closed, if it was open"
+      ],
+      "side_effects": [
+        "As Disconnect From EResistor when connected; no effect otherwise"
+      ],
+      "risk_level": "low",
+      "timing": "<3 s typical; bounded by configured transport timeout and retries",
+      "stabilization_delay": "none",
+      "retry_policy": "transport retries only; do not retry state changes at test level unless state is read back",
+      "errors": [
+        "SAFE_SHUTDOWN_UNCONFIRMED"
+      ],
+      "exclusive_resources": [
+        "eresistor.scpi_session"
+      ]
+    },
+    {
+      "keyword": "Is Connected",
+      "signature": "alias=None",
+      "purpose": "RFDS-002 generic connection query. Returns a boolean rather than raising when not connected.",
+      "inputs": {
+        "alias": "accepted for interface compatibility; unused"
+      },
+      "output": "Boolean",
+      "preconditions": [],
+      "postconditions": [
+        "No state change."
+      ],
+      "side_effects": [],
+      "risk_level": "none",
+      "timing": "<3 s typical; bounded by configured transport timeout and retries",
+      "stabilization_delay": "none",
+      "retry_policy": "safe to retry",
+      "errors": [
+        "NOT_CONNECTED",
+        "TRANSPORT_ERROR",
+        "DEVICE_ERROR"
+      ],
+      "exclusive_resources": [
+        "eresistor.scpi_session"
+      ]
+    },
+    {
+      "keyword": "Get Connection State",
+      "signature": "alias=None, refresh=False",
+      "purpose": "Return the RFDS-002 Section 12.1 normalized connection-state dictionary.",
+      "inputs": {
+        "alias": "accepted for interface compatibility; unused",
+        "refresh": "strict Boolean; probes reachability first when true and connected"
+      },
+      "output": "RFDS-002 Section 12.1 connection-state dictionary",
+      "preconditions": [],
+      "postconditions": [
+        "No state change."
+      ],
+      "side_effects": [
+        "Optional reachability probe when refresh is true"
+      ],
+      "risk_level": "none",
+      "timing": "<3 s typical; bounded by configured transport timeout and retries",
+      "stabilization_delay": "none",
+      "retry_policy": "safe to retry",
+      "errors": [
+        "NOT_CONNECTED",
+        "TRANSPORT_ERROR",
+        "DEVICE_ERROR"
+      ],
+      "exclusive_resources": [
+        "eresistor.scpi_session"
+      ]
+    },
+    {
+      "keyword": "Check Communication",
+      "signature": "alias=None",
+      "purpose": "Perform a bounded, non-destructive communication check (reads identity). Raises on failure rather than returning False.",
+      "inputs": {
+        "alias": "accepted for interface compatibility; unused"
+      },
+      "output": "Boolean",
+      "preconditions": [
+        "state == CONNECTED"
+      ],
+      "postconditions": [],
+      "side_effects": [],
+      "risk_level": "low",
+      "timing": "<3 s typical; bounded by configured transport timeout and retries",
+      "stabilization_delay": "none",
+      "retry_policy": "transport retries only; do not retry state changes at test level unless state is read back",
+      "errors": [
+        "NOT_CONNECTED",
+        "TRANSPORT_ERROR",
+        "DEVICE_ERROR"
+      ],
+      "exclusive_resources": [
+        "eresistor.scpi_session"
+      ]
+    },
+    {
+      "keyword": "Get Identity",
+      "signature": "alias=None, refresh=True",
+      "purpose": "RFDS-002 generic stable identity string. Equivalent to Get EResistor Identity.",
+      "inputs": {
+        "alias": "accepted for interface compatibility; unused",
+        "refresh": "accepted for interface compatibility; this driver always queries the device"
+      },
+      "output": "manufacturer,model,serial,firmware string",
+      "preconditions": [
+        "state == CONNECTED"
+      ],
+      "postconditions": [],
+      "side_effects": [],
+      "risk_level": "low",
+      "timing": "<3 s typical; bounded by configured transport timeout and retries",
+      "stabilization_delay": "none",
+      "retry_policy": "transport retries only; do not retry state changes at test level unless state is read back",
+      "errors": [
+        "NOT_CONNECTED",
+        "TRANSPORT_ERROR",
+        "DEVICE_ERROR"
+      ],
+      "exclusive_resources": [
+        "eresistor.scpi_session"
+      ]
     }
   ],
   "error_catalogue": {

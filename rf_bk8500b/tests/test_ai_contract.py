@@ -33,7 +33,7 @@ def test_contract_covers_exact_public_keyword_surface() -> None:
     surface = validator.public_keyword_surface()
     contract = yaml.safe_load((ROOT / "ai" / "ai_contract.yaml").read_text(encoding="utf-8"))
     capabilities = contract["capabilities"]
-    assert len(surface) == 74
+    assert len(surface) == 80
     assert [(item["keyword"], item["signature"]) for item in capabilities] == surface
 
 

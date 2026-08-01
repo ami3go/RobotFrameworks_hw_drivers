@@ -337,6 +337,113 @@ class BK8500Library:
         for alias in list(self._connections):
             self.close_load_connection(alias, safe=safe)
 
+    # ------------------------------------------------------------------
+    # RFDS-002 mandatory universal keywords
+    #
+    # Thin, idempotent wrappers over the device-specific keywords above, kept
+    # for generic/cross-driver tooling that expects the RFDS canonical names.
+    # The device-specific keywords remain the primary, documented API.
+    # ------------------------------------------------------------------
+    def _connection_state(self, alias: str, driver: BK8500Driver) -> dict[str, Any]:
+        """Build the RFDS-002 Section 12.1 normalized connection-state dictionary."""
+        identity_str: str | None = None
+        try:
+            info = driver.get_product_info().as_dict()
+            parts = [str(info[key]) for key in ("model", "serial_number", "firmware_version") if info.get(key)]
+            identity_str = ", ".join(parts) if parts else None
+        except Exception:
+            identity_str = None
+        return {
+            "alias": alias,
+            "resource": getattr(driver.transport, "port", None) or driver.description,
+            "connected": True,
+            "communication_ok": identity_str is not None,
+            "transport": driver.description,
+            "identity": identity_str,
+            "timeout_s": getattr(driver.transport, "timeout", None),
+            "state": "connected",
+        }
+
+    @keyword("Connect")
+    def connect(
+        self,
+        resource: str | None = None,
+        alias: str = "default",
+        timeout_s: float | None = None,
+        **options: Any,
+    ) -> dict[str, Any]:
+        """RFDS-002 generic connect. ``resource`` is the serial port (see ``Open Load Connection``).
+
+        Idempotent when ``alias`` is already connected to the same ``resource``.
+        """
+        selected_alias = str(alias).strip() or "default"
+        if selected_alias in self._connections:
+            driver = self._connections[selected_alias]
+            existing_resource = getattr(driver.transport, "port", None) or driver.description
+            if resource and str(existing_resource) != str(resource):
+                raise BK8500ConnectionError(
+                    f"Alias '{selected_alias}' is already connected to {existing_resource!r}; "
+                    f"close it before connecting it to {resource!r}."
+                )
+            return self._connection_state(selected_alias, driver)
+        connect_kwargs: dict[str, Any] = dict(options)
+        if timeout_s is not None:
+            connect_kwargs.setdefault("timeout", timeout_s)
+        self.open_load_connection(port=resource, alias=selected_alias, **connect_kwargs)
+        return self._connection_state(selected_alias, self._connections[selected_alias])
+
+    @keyword("Disconnect")
+    def disconnect(self, alias: str | None = None) -> None:
+        """RFDS-002 generic disconnect. Idempotent: succeeds even if already disconnected."""
+        self.close_load_connection(alias)
+
+    @keyword("Is Connected")
+    def is_connected(self, alias: str | None = None) -> bool:
+        """Return whether ``alias`` (or the current connection) is open."""
+        target = alias if alias not in (None, "") else self._current
+        return target is not None and target in self._connections
+
+    @keyword("Get Connection State")
+    def get_connection_state(self, alias: str | None = None, refresh: bool = False) -> dict[str, Any]:
+        """Return the RFDS-002 Section 12.1 normalized connection-state dictionary."""
+        target = alias if alias not in (None, "") else self._current
+        if target is None or target not in self._connections:
+            return {
+                "alias": target or "default",
+                "resource": None,
+                "connected": False,
+                "communication_ok": False,
+                "transport": None,
+                "identity": None,
+                "timeout_s": None,
+                "state": "disconnected",
+            }
+        return self._connection_state(target, self._connections[target])
+
+    @keyword("Check Communication")
+    def check_communication(self, alias: str | None = None) -> bool:
+        """Perform a bounded, non-destructive communication check. Raises on failure."""
+        target = alias if alias not in (None, "") else self._current
+        if target is None or target not in self._connections:
+            raise BK8500ConnectionError(
+                f"No DC load connection is open for alias {target!r}. Call 'Connect' first."
+            )
+        self._connections[target].get_product_info()
+        return True
+
+    @keyword("Get Identity")
+    def get_identity(self, alias: str | None = None, refresh: bool = True) -> str:
+        """Return a stable human-readable identity string."""
+        del refresh
+        target = alias if alias not in (None, "") else self._current
+        if target is None or target not in self._connections:
+            raise BK8500ConnectionError(
+                f"No DC load connection is open for alias {target!r}. Call 'Connect' first."
+            )
+        info = self._connections[target].get_product_info().as_dict()
+        parts = [str(info[key]) for key in ("model", "serial_number", "firmware_version") if info.get(key)]
+        return ", ".join(parts) if parts else "BK8500"
+
     @keyword("Get Load Product Information")
     def get_load_product_information(self) -> dict:
         """Return ``{model, serial_number, firmware_version}`` from the instrument."""

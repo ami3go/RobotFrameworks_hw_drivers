@@ -584,6 +584,264 @@ capabilities:
   - NO_ACTIVE_SESSION
   - PROTOCOL_ERROR
   planning_priority: PRIMARY
+- keyword: Connect
+  signature: Connect(resource=None, alias='default', timeout_s=None)
+  purpose: RFDS-002 generic connect. Idempotent wrapper over Connect To Electronic Load.
+  risk_level: LOW
+  blocking: BLOCKING
+  idempotency: IDEMPOTENT
+  retry: RETRY_AFTER_RESET
+  typical_execution_time_s: 3.0
+  stabilization_time_s: 0.0
+  valid_in_states:
+  - DISCONNECTED
+  - CONNECTED_UNSYNCHRONIZED
+  - CONNECTED_READY_INPUT_OFF
+  - CONNECTED_READY_INPUT_ON
+  - DEGRADED
+  - RECONNECTING
+  - FAILED
+  resulting_state: CONNECTED_READY_INPUT_OFF
+  arguments:
+  - name: resource
+    kind: STRING
+    required: false
+    default: null
+  - name: alias
+    kind: STRING
+    required: false
+    default: default
+  - name: timeout_s
+    kind: DURATION
+    required: false
+    default: null
+    unit: S
+    range:
+    - 0.001
+    - 3600
+  returns:
+  - name: result
+    kind: STRING
+    format: ROBOT_DICTIONARY
+  preconditions:
+  - The serial or VISA-compatible port exists and is not owned by another process.
+  postconditions:
+  - A synchronized session is registered under the requested alias, or the existing
+    session for that alias and resource is returned unchanged.
+  coupling:
+  - 'MUTEX: Only one process may own the physical serial port at a time.'
+  side_effects:
+  - Opens an exclusive transport session unless the alias is already connected to
+    the same resource.
+  - Queries instrument identity and capabilities on first connect.
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - DUPLICATE_ALIAS
+  - INVALID_ARGUMENT
+  - PROTOCOL_ERROR
+  - UNSUPPORTED_MODEL
+  planning_priority: PRIMARY
+- keyword: Disconnect
+  signature: Disconnect(alias=None)
+  purpose: RFDS-002 generic disconnect. Idempotent even if already disconnected.
+  risk_level: MEDIUM
+  blocking: BLOCKING
+  idempotency: IDEMPOTENT
+  retry: NEVER_RETRY
+  typical_execution_time_s: 1.0
+  stabilization_time_s: 0.0
+  valid_in_states:
+  - DISCONNECTED
+  - CONNECTING
+  - CONNECTED_UNSYNCHRONIZED
+  - CONNECTED_READY_INPUT_OFF
+  - CONNECTED_READY_INPUT_ON
+  - DEGRADED
+  - RECONNECTING
+  - CLOSING
+  - FAILED
+  resulting_state: DISCONNECTED
+  arguments:
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns: []
+  preconditions: []
+  postconditions:
+  - The transport is closed and the session registry no longer contains the alias,
+    if it was present.
+  coupling: []
+  side_effects:
+  - Attempts to disable load input before closing when turn_input_off_on_close is
+    enabled.
+  - Releases the exclusive transport resource, if held.
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INDETERMINATE_OUTCOME
+  - INSTRUMENT_REJECTED
+  planning_priority: PRIMARY
+- keyword: Is Connected
+  signature: Is Connected(alias=None)
+  purpose: RFDS-002 generic connection query. Returns False rather than raising when
+    no session exists.
+  risk_level: NONE
+  blocking: BLOCKING
+  idempotency: IDEMPOTENT
+  retry: SAFE_TO_RETRY
+  typical_execution_time_s: 0.01
+  stabilization_time_s: 0.0
+  valid_in_states:
+  - DISCONNECTED
+  - CONNECTING
+  - CONNECTED_UNSYNCHRONIZED
+  - CONNECTED_READY_INPUT_OFF
+  - CONNECTED_READY_INPUT_ON
+  - DEGRADED
+  - RECONNECTING
+  - CLOSING
+  - FAILED
+  resulting_state: SAME
+  arguments:
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns:
+  - name: connected
+    kind: BOOLEAN
+  preconditions: []
+  postconditions:
+  - No instrument configuration is changed.
+  coupling: []
+  side_effects: []
+  exclusive_resources: []
+  raises: []
+  planning_priority: PRIMARY
+- keyword: Get Connection State
+  signature: Get Connection State(alias=None, refresh=False)
+  purpose: Return the RFDS-002 Section 12.1 normalized connection-state dictionary.
+  risk_level: NONE
+  blocking: BLOCKING
+  idempotency: IDEMPOTENT
+  retry: SAFE_TO_RETRY
+  typical_execution_time_s: 0.1
+  stabilization_time_s: 0.0
+  valid_in_states:
+  - DISCONNECTED
+  - CONNECTING
+  - CONNECTED_UNSYNCHRONIZED
+  - CONNECTED_READY_INPUT_OFF
+  - CONNECTED_READY_INPUT_ON
+  - DEGRADED
+  - RECONNECTING
+  - CLOSING
+  - FAILED
+  resulting_state: SAME
+  arguments:
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  - name: refresh
+    kind: BOOLEAN
+    required: false
+    default: false
+  returns:
+  - name: result
+    kind: STRING
+    format: ROBOT_DICTIONARY
+  preconditions: []
+  postconditions:
+  - No instrument configuration is changed.
+  coupling: []
+  side_effects:
+  - Performs a bounded health check when refresh is true and the session is connected.
+  exclusive_resources: []
+  raises: []
+  planning_priority: PRIMARY
+- keyword: Check Communication
+  signature: Check Communication(alias=None)
+  purpose: Perform a bounded, non-destructive communication check. Raises on failure.
+  risk_level: NONE
+  blocking: BLOCKING
+  idempotency: IDEMPOTENT
+  retry: SAFE_TO_RETRY
+  typical_execution_time_s: 0.1
+  stabilization_time_s: 0.0
+  valid_in_states:
+  - CONNECTED_READY_INPUT_OFF
+  - CONNECTED_READY_INPUT_ON
+  resulting_state: SAME
+  arguments:
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  returns:
+  - name: ok
+    kind: BOOLEAN
+  preconditions:
+  - A selected electronic-load session is connected and synchronized.
+  postconditions:
+  - The selected session remains connected unless a communication failure occurs.
+  coupling: []
+  side_effects: []
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INSTRUMENT_REJECTED
+  - NO_ACTIVE_SESSION
+  - PROTOCOL_ERROR
+  planning_priority: PRIMARY
+- keyword: Get Identity
+  signature: Get Identity(alias=None, refresh=True)
+  purpose: Return a stable human-readable identity string.
+  risk_level: NONE
+  blocking: BLOCKING
+  idempotency: IDEMPOTENT
+  retry: SAFE_TO_RETRY
+  typical_execution_time_s: 0.1
+  stabilization_time_s: 0.0
+  valid_in_states:
+  - CONNECTED_READY_INPUT_OFF
+  - CONNECTED_READY_INPUT_ON
+  resulting_state: SAME
+  arguments:
+  - name: alias
+    kind: STRING
+    required: false
+    default: null
+  - name: refresh
+    kind: BOOLEAN
+    required: false
+    default: true
+  returns:
+  - name: identity
+    kind: STRING
+  preconditions:
+  - A selected electronic-load session is connected and synchronized.
+  postconditions:
+  - The selected session remains connected unless a communication failure occurs.
+  coupling: []
+  side_effects: []
+  exclusive_resources:
+  - SERIAL_OR_VISA_SESSION
+  raises:
+  - COMM_TIMEOUT
+  - CONNECTION_LOST
+  - INSTRUMENT_REJECTED
+  - NO_ACTIVE_SESSION
+  - PROTOCOL_ERROR
+  planning_priority: PRIMARY
 - keyword: Identify Electronic Load
   signature: Identify Electronic Load(alias=None)
   purpose: Return manufacturer, model, serial number, and firmware revision.

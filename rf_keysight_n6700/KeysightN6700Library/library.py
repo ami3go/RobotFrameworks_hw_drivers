@@ -361,6 +361,123 @@ class KeysightN6700Library:
         """Return all open aliases."""
         return list(self._sessions)
 
+    # ------------------------------------------------------------------
+    # RFDS-002 mandatory universal keywords
+    #
+    # Thin, idempotent wrappers over the device-specific keywords above, kept
+    # for generic/cross-driver tooling that expects the RFDS canonical names.
+    # The device-specific keywords remain the primary, documented API.
+    # ------------------------------------------------------------------
+    @staticmethod
+    @not_keyword
+    def _resource_of(instrument: N6700) -> str:
+        transport = instrument.transport
+        if hasattr(transport, "resource"):
+            return str(transport.resource)
+        if hasattr(transport, "host"):
+            return f"{transport.host}:{getattr(transport, 'port', '')}"
+        return "simulated"
+
+    @not_keyword
+    def _connection_state(self, alias: str, instrument: N6700) -> dict[str, Any]:
+        """Build the RFDS-002 Section 12.1 normalized connection-state dictionary."""
+        identity_str: str | None = None
+        try:
+            identity = instrument.idn()
+            identity_str = f"{identity.manufacturer},{identity.model},{identity.serial},{identity.firmware}"
+        except Exception:
+            identity_str = None
+        return {
+            "alias": alias,
+            "resource": self._resource_of(instrument),
+            "connected": True,
+            "communication_ok": identity_str is not None,
+            "transport": type(instrument.transport).__name__,
+            "identity": identity_str,
+            "timeout_s": None,
+            "state": "connected",
+        }
+
+    @keyword("Connect")
+    def connect(
+        self,
+        resource: str = "",
+        alias: str = "default",
+        timeout_s: float | None = None,
+        **options: Any,
+    ) -> dict[str, Any]:
+        """RFDS-002 generic connect. ``resource`` is a VISA/USB resource string, host, or empty for simulated.
+
+        Idempotent when ``alias`` is already connected to the same ``resource``.
+        ``timeout_s`` is accepted for interface compatibility; this driver has no
+        per-connection timeout setting to apply it to.
+        """
+        del timeout_s
+        selected_alias = str(alias).strip() or "default"
+        if selected_alias in self._sessions:
+            instrument = self._sessions[selected_alias]
+            existing_resource = self._resource_of(instrument)
+            if resource and str(existing_resource) != str(resource):
+                raise RuntimeError(
+                    f"N6700 alias {selected_alias!r} is already connected to {existing_resource!r}; "
+                    f"disconnect it before connecting it to {resource!r}."
+                )
+            return self._connection_state(selected_alias, instrument)
+        connect_kwargs: dict[str, Any] = dict(options)
+        connect_kwargs.setdefault("connection_type", "simulated" if not resource else "visa")
+        self.connect_to_n6700(resource=resource, alias=selected_alias, **connect_kwargs)
+        return self._connection_state(selected_alias, self._sessions[selected_alias])
+
+    @keyword("Disconnect")
+    def disconnect(self, alias: str | None = None) -> None:
+        """RFDS-002 generic disconnect. Idempotent: succeeds even if already disconnected."""
+        selected = alias or self._current_alias
+        if selected is None or selected not in self._sessions:
+            return
+        self._close_one(selected, raise_on_error=True)
+
+    @keyword("Is Connected")
+    def is_connected(self, alias: str | None = None) -> bool:
+        """Return whether ``alias`` (or the current session) is connected."""
+        selected = alias or self._current_alias
+        return selected is not None and selected in self._sessions
+
+    @keyword("Get Connection State")
+    def get_connection_state(self, alias: str | None = None, refresh: bool = False) -> dict[str, Any]:
+        """Return the RFDS-002 Section 12.1 normalized connection-state dictionary."""
+        selected = alias or self._current_alias
+        if selected is None or selected not in self._sessions:
+            return {
+                "alias": selected or "default",
+                "resource": None,
+                "connected": False,
+                "communication_ok": False,
+                "transport": None,
+                "identity": None,
+                "timeout_s": None,
+                "state": "disconnected",
+            }
+        instrument = self._sessions[selected]
+        if _as_bool(refresh, name="refresh"):
+            try:
+                instrument.check_errors()
+            except Exception:
+                pass
+        return self._connection_state(selected, instrument)
+
+    @keyword("Check Communication")
+    def check_communication(self, alias: str | None = None) -> bool:
+        """Perform a bounded, non-destructive communication check. Raises on failure."""
+        self._instrument(alias).idn()
+        return True
+
+    @keyword("Get Identity")
+    def get_identity_generic(self, alias: str | None = None, refresh: bool = True) -> str:
+        """Return a stable human-readable identity string."""
+        del refresh
+        identity = self._instrument(alias).idn()
+        return f"{identity.manufacturer},{identity.model},{identity.serial},{identity.firmware}"
+
     @keyword("Disconnect N6700")
     def disconnect_n6700(self, alias: str | None = None) -> None:
         """Safely disconnect one connection."""

@@ -3,7 +3,7 @@
   "driver_id": "keysight_n6700",
   "driver_version": "26.9.0",
   "release": "26.09",
-  "keyword_count": 63,
+  "keyword_count": 69,
   "keyword_names": [
     "Connect To N6700",
     "Connect To Simulated N6700",
@@ -13,6 +13,12 @@
     "Select N6700",
     "Get Current N6700 Alias",
     "Get Connected N6700 Aliases",
+    "Connect",
+    "Disconnect",
+    "Is Connected",
+    "Get Connection State",
+    "Check Communication",
+    "Get Identity",
     "Disconnect N6700",
     "Disconnect All N6700",
     "Get N6700 Identity",
@@ -70,9 +76,9 @@
     "Configure N6700 Load CC"
   ],
   "hashes": {
-    "ai_contract_sha256": "8e99946d8580bf2a205bd8d8c74b08ed3cce875007b96cc0047259d450edeb11",
+    "ai_contract_sha256": "6eb93ab6acf4e55cb6169e37e053a8f01a103092aa7996f5ed692838baa2b5a5",
     "system_ai_contract_sha256": "ea7e0150a002068d21c626e951a6607a09df0d1ff68f9459fb7adb29b466559c",
-    "library_source_sha256": "9604c7de1d9de8dd303618f75f9bd4cab7d3d8fe406656de64c3fb535616f3c8",
+    "library_source_sha256": "942c036de18d5f8183aab6d5c074b6669dd3c4974adb246ad5b4f4ed2f144681",
     "generator_sha256": "07562c558023c3ffcace0bfeaf6a642f2ec6342675a6e0fe6aa7d30cff4a6063"
   },
   "generation": {

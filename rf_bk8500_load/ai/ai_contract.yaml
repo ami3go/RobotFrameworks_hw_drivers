@@ -299,6 +299,96 @@ capabilities:
     errors: []
     exclusive_resources: []
 
+  - keyword: Connect
+    signature: "Connect    resource=None    alias=default    timeout_s=None"
+    purpose: RFDS-002 generic connect. Idempotent wrapper over Open Load Connection; resource is the serial port.
+    inputs: {resource: {type: string, optional: true}, alias: {type: string, default: default}, timeout_s: {type: float, unit: s, optional: true}}
+    outputs: {type: dictionary, keys: [alias, resource, connected, communication_ok, transport, identity, timeout_s, state], note: "RFDS-002 Section 12.1 normalized connection-state dictionary."}
+    preconditions: [The port exists and is not held by another process, unless simulated is passed via extra options.]
+    postconditions: [State is LOCAL for a freshly opened alias; unchanged when the alias was already connected to the same resource.]
+    side_effects: [As Open Load Connection, unless the alias is already connected to the requested resource.]
+    risk_level: low
+    timing: {typical_ms: 120, worst_case_ms: 8000}
+    stabilization_delay_s: 0
+    retry_policy: *retry_transport
+    errors: [BK8500ConfigurationError, BK8500ConnectionError, BK8500TimeoutError, BK8500ProtocolError]
+    exclusive_resources: [serial_port, instrument]
+
+  - keyword: Disconnect
+    signature: "Disconnect    alias=None"
+    purpose: RFDS-002 generic disconnect. Idempotent wrapper over Close Load Connection; succeeds even if already disconnected.
+    inputs: {alias: {type: string, optional: true, default: current connection}}
+    outputs: {type: none}
+    preconditions: []
+    postconditions: [State is DISCONNECTED for that alias, if it was open.]
+    side_effects: [As Close Load Connection when the alias is open; no effect otherwise.]
+    risk_level: low
+    timing: {typical_ms: 250, worst_case_ms: 3000}
+    stabilization_delay_s: 0
+    retry_policy: *retry_transport
+    errors: []
+    exclusive_resources: []
+
+  - keyword: Is Connected
+    signature: "Is Connected    alias=None"
+    purpose: RFDS-002 generic connection query. Returns a boolean rather than raising when no session exists.
+    inputs: {alias: {type: string, optional: true, default: current connection}}
+    outputs: {type: boolean}
+    preconditions: []
+    postconditions: [No state change.]
+    side_effects: [No instrument traffic.]
+    risk_level: none
+    timing: {typical_ms: 0, worst_case_ms: 1}
+    stabilization_delay_s: 0
+    retry_policy: {attempts: 1, retry_on: []}
+    errors: []
+    exclusive_resources: []
+
+  - keyword: Get Connection State
+    signature: "Get Connection State    alias=None    refresh=False"
+    purpose: Return the RFDS-002 Section 12.1 normalized connection-state dictionary for one alias.
+    inputs: {alias: {type: string, optional: true, default: current connection}, refresh: {type: boolean, default: false}}
+    outputs: {type: dictionary, keys: [alias, resource, connected, communication_ok, transport, identity, timeout_s, state]}
+    preconditions: []
+    postconditions: [No state change.]
+    side_effects: [No instrument traffic.]
+    risk_level: none
+    timing: {typical_ms: 0, worst_case_ms: 1}
+    stabilization_delay_s: 0
+    retry_policy: {attempts: 1, retry_on: []}
+    errors: []
+    exclusive_resources: []
+
+  - keyword: Check Communication
+    signature: "Check Communication    alias=None"
+    purpose: Perform a bounded, non-destructive communication check (reads product information). Raises on failure.
+    inputs: {alias: {type: string, optional: true, default: current connection}}
+    outputs: {type: boolean}
+    preconditions: [A connection is open for the selected alias.]
+    postconditions: [No state change.]
+    side_effects: [One product-information transaction.]
+    risk_level: none
+    timing: {typical_ms: 60, worst_case_ms: 1000}
+    stabilization_delay_s: 0
+    retry_policy: *retry_transport
+    errors: [BK8500ConnectionError, BK8500TimeoutError, BK8500ProtocolError]
+    exclusive_resources: [serial_port]
+
+  - keyword: Get Identity
+    signature: "Get Identity    alias=None    refresh=True"
+    purpose: Return a stable human-readable identity string (model, serial number, firmware version).
+    inputs: {alias: {type: string, optional: true, default: current connection}, refresh: {type: boolean, default: true}}
+    outputs: {type: string}
+    preconditions: [A connection is open for the selected alias.]
+    postconditions: [No state change.]
+    side_effects: [One product-information transaction.]
+    risk_level: none
+    timing: {typical_ms: 60, worst_case_ms: 1000}
+    stabilization_delay_s: 0
+    retry_policy: *retry_transport
+    errors: [BK8500ConnectionError, BK8500TimeoutError, BK8500ProtocolError]
+    exclusive_resources: [serial_port]
+
   - keyword: Get Load Product Information
     signature: "Get Load Product Information"
     purpose: Read model, serial number and firmware version (command 0x6A).

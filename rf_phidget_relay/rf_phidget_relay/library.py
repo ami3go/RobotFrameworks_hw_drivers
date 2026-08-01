@@ -31,6 +31,17 @@ except ImportError:  # Allows lightweight unit testing without Robot Framework.
     def library(**_kwargs):
         return lambda cls: cls
 
+from rf_phidget_relay.exceptions import (
+    PhidgetRelayArgumentTypeError,
+    PhidgetRelayConfigurationError,
+    PhidgetRelayDependencyError,
+    PhidgetRelayError,
+    PhidgetRelayHardwareError,
+    PhidgetRelayStateError,
+    PhidgetRelayValidationError,
+    PhidgetRelayVerificationError,
+)
+
 
 def _to_bool(value: Any, name: str = "value") -> bool:
     """Convert common Robot scalar values to bool without Python's 'False' trap."""
@@ -44,7 +55,7 @@ def _to_bool(value: Any, name: str = "value") -> bool:
             return True
         if normalized in {"false", "0", "no", "off", "open", "de-energized", "deenergized"}:
             return False
-    raise ValueError(f"{name} must be a boolean or one of ON/OFF, OPEN/CLOSED, 1/0")
+    raise PhidgetRelayValidationError(f"{name} must be a boolean or one of ON/OFF, OPEN/CLOSED, 1/0")
 
 
 @library(scope="SUITE", version="26.2", auto_keywords=False)
@@ -80,7 +91,7 @@ class PhidgetRelayLibrary:
         try:
             from Phidget22.Devices.DigitalOutput import DigitalOutput
         except ImportError as exc:
-            raise RuntimeError(
+            raise PhidgetRelayDependencyError(
                 "Phidget22 is not installed. Run: python -m pip install Phidget22"
             ) from exc
         return DigitalOutput()
@@ -90,14 +101,14 @@ class PhidgetRelayLibrary:
         try:
             channel = int(value)
         except (TypeError, ValueError) as exc:
-            raise ValueError(f"Relay channel must be an integer from 1 to 8, got {value!r}") from exc
+            raise PhidgetRelayValidationError(f"Relay channel must be an integer from 1 to 8, got {value!r}") from exc
         if channel < 1 or channel > 8:
-            raise ValueError(f"Relay channel must be from 1 to 8, got {channel}")
+            raise PhidgetRelayValidationError(f"Relay channel must be from 1 to 8, got {channel}")
         return channel
 
     def _require_connected(self) -> None:
         if len(self._outputs) != self.CHANNEL_COUNT:
-            raise RuntimeError("Relay bank is not connected. Call 'Connect Relays' first.")
+            raise PhidgetRelayStateError("Relay bank is not connected. Call 'Connect Relays' first.")
 
     @staticmethod
     def _physical_address(logical_channel: int, serial_a: int, serial_b: int) -> Tuple[int, int]:
@@ -125,15 +136,15 @@ class PhidgetRelayLibrary:
         this keyword fails. ``timeout_ms`` applies to each output attachment.
         """
         if self._outputs:
-            raise RuntimeError("Relay bank is already connected; disconnect it first")
+            raise PhidgetRelayStateError("Relay bank is already connected; disconnect it first")
         serial_a, serial_b = int(device_a_serial), int(device_b_serial)
         timeout = int(timeout_ms)
         if serial_a <= 0 or serial_b <= 0:
-            raise ValueError("Both Phidget serial numbers must be positive integers")
+            raise PhidgetRelayConfigurationError("Both Phidget serial numbers must be positive integers")
         if serial_a == serial_b:
-            raise ValueError("Device A and device B must have different serial numbers")
+            raise PhidgetRelayConfigurationError("Device A and device B must have different serial numbers")
         if timeout <= 0:
-            raise ValueError("timeout_ms must be greater than zero")
+            raise PhidgetRelayConfigurationError("timeout_ms must be greater than zero")
         make_safe = _to_bool(open_all_on_connect, "open_all_on_connect")
 
         opened: Dict[int, Any] = {}
@@ -153,7 +164,7 @@ class PhidgetRelayLibrary:
             self._outputs = opened
             self._serials = (serial_a, serial_b)
             logger.info(f"Connected relay devices {serial_a} and {serial_b}")
-        except Exception:
+        except Exception as exc:
             for output in opened.values():
                 try:
                     output.close()
@@ -161,7 +172,9 @@ class PhidgetRelayLibrary:
                     pass
             self._outputs = {}
             self._serials = None
-            raise
+            if isinstance(exc, PhidgetRelayError):
+                raise
+            raise PhidgetRelayHardwareError(f"failed to attach relay outputs: {exc}") from exc
 
     @keyword("Disconnect Relays")
     def disconnect_relays(self, open_all_before_disconnect: Any = True) -> None:
@@ -180,7 +193,7 @@ class PhidgetRelayLibrary:
         self._outputs = {}
         self._serials = None
         if errors:
-            raise RuntimeError("; ".join(errors))
+            raise PhidgetRelayHardwareError("; ".join(errors))
 
     @keyword("Set Relay State")
     def set_relay_state(self, channel: Any, closed: Any) -> None:
@@ -213,14 +226,14 @@ class PhidgetRelayLibrary:
         """Fail unless the selected output reports OPEN."""
         actual = self.get_relay_state(channel)
         if actual != "OPEN":
-            raise AssertionError(f"Relay CH{self._channel(channel)} expected OPEN, got {actual}")
+            raise PhidgetRelayVerificationError(f"Relay CH{self._channel(channel)} expected OPEN, got {actual}")
 
     @keyword("Relay Should Be Closed")
     def relay_should_be_closed(self, channel: Any) -> None:
         """Fail unless the selected output reports CLOSED."""
         actual = self.get_relay_state(channel)
         if actual != "CLOSED":
-            raise AssertionError(f"Relay CH{self._channel(channel)} expected CLOSED, got {actual}")
+            raise PhidgetRelayVerificationError(f"Relay CH{self._channel(channel)} expected CLOSED, got {actual}")
 
     @keyword("Open All Relays")
     def open_all_relays(self) -> None:
@@ -241,7 +254,7 @@ class PhidgetRelayLibrary:
             except Exception as exc:
                 errors.append(f"CH{logical}: {exc}")
         if errors:
-            raise RuntimeError("Failed to set all relays: " + "; ".join(errors))
+            raise PhidgetRelayHardwareError("Failed to set all relays: " + "; ".join(errors))
 
     @keyword("Set Relay Pattern")
     def set_relay_pattern(self, pattern: Any) -> None:
@@ -253,7 +266,7 @@ class PhidgetRelayLibrary:
         self._require_connected()
         value = str(pattern).strip()
         if len(value) != 8 or any(char not in "01" for char in value):
-            raise ValueError("Relay pattern must contain exactly eight binary digits")
+            raise PhidgetRelayValidationError("Relay pattern must contain exactly eight binary digits")
         for logical, char in enumerate(value, start=1):
             self._write(logical, char == "1")
 
@@ -265,10 +278,10 @@ class PhidgetRelayLibrary:
         """
         self._require_connected()
         if not isinstance(states, Mapping):
-            raise TypeError("states must be a Robot/Python dictionary")
+            raise PhidgetRelayArgumentTypeError("states must be a Robot/Python dictionary")
         validated = [(self._channel(ch), _to_bool(state, f"state for CH{ch}")) for ch, state in states.items()]
         if len({channel for channel, _ in validated}) != len(validated):
-            raise ValueError("states contains duplicate logical channels")
+            raise PhidgetRelayValidationError("states contains duplicate logical channels")
         for channel, closed in validated:
             self._write(channel, closed)
 
@@ -284,7 +297,7 @@ class PhidgetRelayLibrary:
         logical = self._channel(channel)
         duration = float(duration_seconds)
         if duration < 0:
-            raise ValueError("duration_seconds must not be negative")
+            raise PhidgetRelayValidationError("duration_seconds must not be negative")
         self.close_relay(logical)
         try:
             self._sleep(duration)

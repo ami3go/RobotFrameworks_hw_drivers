@@ -111,6 +111,110 @@ class EResistorLibrary:
         if state != "CONNECTED":
             raise AssertionError(f"Expected CONNECTED state, got {state}")
 
+    # ------------------------------------------------------------------
+    # RFDS-002 mandatory universal keywords
+    #
+    # Thin, idempotent wrappers over the device-specific keywords above, kept
+    # for generic/cross-driver tooling that expects the RFDS canonical names.
+    # This driver supports a single connection, so ``alias`` is accepted for
+    # interface compatibility but otherwise unused.
+    # ------------------------------------------------------------------
+    _PUBLIC_STATE = {
+        "DISCONNECTED": "disconnected",
+        "CONNECTED": "connected",
+        "RECONNECTING": "recovering",
+        "LOST": "faulted",
+        "CLOSED": "disconnected",
+    }
+
+    def _connection_state(self) -> dict[str, Any]:
+        """Build the RFDS-002 Section 12.1 normalized connection-state dictionary."""
+        client = self._client
+        if client is None:
+            return {
+                "alias": "default", "resource": None, "connected": False,
+                "communication_ok": False, "transport": None, "identity": None,
+                "timeout_s": self._settings.get("timeout"), "state": "disconnected",
+            }
+        state_value = client.connection_state.value
+        identity_str: str | None = None
+        if state_value == "CONNECTED":
+            try:
+                identity_str = client.idn()
+            except Exception:
+                identity_str = None
+        return {
+            "alias": "default",
+            "resource": client.host,
+            "connected": state_value == "CONNECTED",
+            "communication_ok": identity_str is not None,
+            "transport": "scpi_tcp",
+            "identity": identity_str,
+            "timeout_s": self._settings.get("timeout"),
+            "state": self._PUBLIC_STATE.get(state_value, "faulted"),
+        }
+
+    @keyword("Connect")
+    def generic_connect(
+        self,
+        resource: str | None = None,
+        alias: str = "default",
+        timeout_s: float | None = None,
+        **options: Any,
+    ) -> dict[str, Any]:
+        """RFDS-002 generic connect. ``resource`` is the host/IP (see ``Connect To EResistor``).
+
+        Idempotent when already connected to the same ``resource``.
+        """
+        del alias
+        if self._client is not None and self._client.connection_state.value == "CONNECTED":
+            if resource and str(self._client.host) != str(resource):
+                raise RuntimeError(
+                    f"Already connected to {self._client.host!r}; disconnect before connecting to {resource!r}."
+                )
+            return self._connection_state()
+        if timeout_s is not None and not self._profile:
+            self._settings["timeout"] = float(timeout_s)
+        all_off_on_connect = options.pop("all_off_on_connect", False)
+        self.connect(host=resource, all_off_on_connect=all_off_on_connect)
+        return self._connection_state()
+
+    @keyword("Disconnect")
+    def generic_disconnect(self, alias: str | None = None) -> None:
+        """RFDS-002 generic disconnect. Idempotent: succeeds even if already disconnected."""
+        del alias
+        self.disconnect()
+
+    @keyword("Is Connected")
+    def is_connected(self, alias: str | None = None) -> bool:
+        """Return whether the driver is connected."""
+        del alias
+        return self._client is not None and self._client.connection_state.value == "CONNECTED"
+
+    @keyword("Get Connection State")
+    def get_connection_state(self, alias: str | None = None, refresh: bool = False) -> dict[str, Any]:
+        """Return the RFDS-002 Section 12.1 normalized connection-state dictionary."""
+        del alias
+        if _bool(refresh) and self._client is not None:
+            try:
+                self._client.ping()
+            except Exception:
+                pass
+        return self._connection_state()
+
+    @keyword("Check Communication")
+    def check_communication(self, alias: str | None = None) -> bool:
+        """Perform a bounded, non-destructive communication check. Raises on failure."""
+        del alias
+        self._device().idn()
+        return True
+
+    @keyword("Get Identity")
+    def get_identity_generic(self, alias: str | None = None, refresh: bool = True) -> str:
+        """Return a stable human-readable identity string."""
+        del alias, refresh
+        return self._device().idn()
+
     @keyword("Get EResistor Identity")
     def get_identity(self) -> str:
         return self._device().idn()

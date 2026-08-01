@@ -28,6 +28,10 @@ def test_every_public_keyword_executes_against_simulated_device():
         source_voltage=12.0,
         source_resistance=0.05,
     )
+    call("Is Connected", library.is_connected)
+    call("Get Connection State", library.get_connection_state)
+    call("Check Communication", library.check_communication)
+    call("Get Identity", library.get_identity)
     call("Get Load Product Information", library.get_load_product_information)
     call("Get Load Rated Limits", library.get_load_rated_limits)
     call("Claim Remote Control", library.claim_remote_control)
@@ -100,6 +104,8 @@ def test_every_public_keyword_executes_against_simulated_device():
     call("Release Remote Control", library.release_remote_control)
     call("Claim Remote Control", library.claim_remote_control)
     call("Reset Load To Safe State", library.reset_load_to_safe_state)
+    call("Connect", library.connect, alias="tertiary", simulated=True, model="8500")
+    call("Disconnect", library.disconnect, "tertiary")
     call("Close All Load Connections", library.close_all_load_connections)
 
     public = {

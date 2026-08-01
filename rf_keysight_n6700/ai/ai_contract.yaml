@@ -833,6 +833,446 @@
       "documentation": "Return all open aliases."
     },
     {
+      "id": "connect",
+      "robot_keyword": "Connect",
+      "python_method": "connect",
+      "category": "session_management",
+      "signature": "Connect(resource: str = '', alias: str = 'default', timeout_s: float | None = None) -> dict[str, Any]",
+      "purpose": "RFDS-002 generic connect. ``resource`` is a VISA/USB resource string, host, or empty for simulated.",
+      "inputs": [
+        {
+          "name": "resource",
+          "type": "str",
+          "required": false,
+          "description": "VISA resource string, hostname, IP address, or empty value for simulator/discovery according to connection_type.",
+          "default": ""
+        },
+        {
+          "name": "alias",
+          "type": "str",
+          "required": false,
+          "description": "Named session. Omit to use the currently selected session where allowed.",
+          "default": "default"
+        },
+        {
+          "name": "timeout_s",
+          "type": "float | None",
+          "required": false,
+          "description": "Input argument timeout_s.",
+          "default": null
+        }
+      ],
+      "outputs": {
+        "type": "dict[str, Any]",
+        "description": "Robot-compatible result from Connect. Dictionaries/lists contain Python primitives."
+      },
+      "preconditions": [
+        "Requested transport dependency is installed and the resource is reachable, unless simulated mode is selected.",
+        "Alias replacement is explicit when an alias already exists."
+      ],
+      "postconditions": [
+        "Session alias is registered and selected.",
+        "Instrument identity has been queried successfully."
+      ],
+      "side_effects": [
+        "Opens VISA or TCP resources.",
+        "Queries instrument identity.",
+        "May create an audit log file."
+      ],
+      "risk_level": "low",
+      "timing": {
+        "nominal_milliseconds": 1500,
+        "maximum_milliseconds": 15000,
+        "timeout_parameter": null,
+        "stabilization_delay": {
+          "minimum_seconds": 0.0,
+          "recommended_seconds": 0.0,
+          "source": "driver"
+        }
+      },
+      "retry_policy": {
+        "automatic_retry": false,
+        "maximum_attempts": 1,
+        "allowed_only_for": [],
+        "rule": "Do not retry a state-changing keyword blindly. Query actual state, make the bench safe, then decide explicitly."
+      },
+      "errors": [
+        "InvalidChannelError",
+        "N6700CommandError",
+        "N6700CommunicationError",
+        "N6700ConnectionError",
+        "N6700TimeoutError",
+        "RuntimeError",
+        "SafetyInterlockError",
+        "UnsupportedFeatureError",
+        "ValueError"
+      ],
+      "exclusive_resources": [
+        "transport_resource(resource/host, port)",
+        "session_alias(alias)"
+      ],
+      "module_requirement": "none",
+      "mutating": true,
+      "may_energize_or_sink_power": false,
+      "safe_default": "Connection is non-invasive: no reset and no error clearing by default.",
+      "documentation": "RFDS-002 generic connect. ``resource`` is a VISA/USB resource string, host, or empty for simulated.\n\nIdempotent when ``alias`` is already connected to the same ``resource``.\n``timeout_s`` is accepted for interface compatibility; this driver has no\nper-connection timeout setting to apply it to."
+    },
+    {
+      "id": "disconnect",
+      "robot_keyword": "Disconnect",
+      "python_method": "disconnect",
+      "category": "session_management",
+      "signature": "Disconnect(alias: str | None = None) -> None",
+      "purpose": "RFDS-002 generic disconnect. Idempotent: succeeds even if already disconnected.",
+      "inputs": [
+        {
+          "name": "alias",
+          "type": "str | None",
+          "required": false,
+          "description": "Named session. Omit to use the currently selected session where allowed.",
+          "default": null
+        }
+      ],
+      "outputs": {
+        "type": "None",
+        "description": "No value; success is represented by keyword completion."
+      },
+      "preconditions": [
+        "A named N6700 session is connected; alias exists or a current alias is selected."
+      ],
+      "postconditions": [
+        "Requested session(s) are closed.",
+        "When auto_shutdown is enabled, controllable outputs/load inputs were commanded off before close on a best-effort basis."
+      ],
+      "side_effects": [
+        "May command all outputs/load inputs off.",
+        "Closes transport resources."
+      ],
+      "risk_level": "low",
+      "timing": {
+        "nominal_milliseconds": 250,
+        "maximum_milliseconds": 5000,
+        "timeout_parameter": null,
+        "stabilization_delay": {
+          "minimum_seconds": 0.0,
+          "recommended_seconds": 0.0,
+          "source": "driver"
+        }
+      },
+      "retry_policy": {
+        "automatic_retry": false,
+        "maximum_attempts": 1,
+        "allowed_only_for": [],
+        "rule": "Do not retry a state-changing keyword blindly. Query actual state, make the bench safe, then decide explicitly."
+      },
+      "errors": [
+        "InvalidChannelError",
+        "N6700CommandError",
+        "N6700CommunicationError",
+        "N6700ConnectionError",
+        "N6700TimeoutError",
+        "RuntimeError",
+        "SafetyInterlockError",
+        "UnsupportedFeatureError",
+        "ValueError"
+      ],
+      "exclusive_resources": [
+        "n6700_session(alias_or_current)"
+      ],
+      "module_requirement": "none",
+      "mutating": true,
+      "may_energize_or_sink_power": false,
+      "safe_default": "auto_shutdown defaults true.",
+      "documentation": "RFDS-002 generic disconnect. Idempotent: succeeds even if already disconnected."
+    },
+    {
+      "id": "is_connected",
+      "robot_keyword": "Is Connected",
+      "python_method": "is_connected",
+      "category": "discovery",
+      "signature": "Is Connected(alias: str | None = None) -> bool",
+      "purpose": "Return whether ``alias`` (or the current session) is connected.",
+      "inputs": [
+        {
+          "name": "alias",
+          "type": "str | None",
+          "required": false,
+          "description": "Named session. Omit to use the currently selected session where allowed.",
+          "default": null
+        }
+      ],
+      "outputs": {
+        "type": "bool",
+        "description": "Robot-compatible result from Is Connected. Dictionaries/lists contain Python primitives."
+      },
+      "preconditions": [
+        "A named N6700 session is connected; alias exists or a current alias is selected."
+      ],
+      "postconditions": [
+        "Keyword completes or raises a categorized error."
+      ],
+      "side_effects": [
+        "Performs query/measurement traffic only."
+      ],
+      "risk_level": "low",
+      "timing": {
+        "nominal_milliseconds": 250,
+        "maximum_milliseconds": 5000,
+        "timeout_parameter": null,
+        "stabilization_delay": {
+          "minimum_seconds": 0.0,
+          "recommended_seconds": 0.0,
+          "source": "driver"
+        }
+      },
+      "retry_policy": {
+        "automatic_retry": false,
+        "maximum_attempts": 1,
+        "allowed_only_for": [],
+        "rule": "Do not retry a state-changing keyword blindly. Query actual state, make the bench safe, then decide explicitly."
+      },
+      "errors": [
+        "InvalidChannelError",
+        "N6700CommandError",
+        "N6700CommunicationError",
+        "N6700ConnectionError",
+        "N6700TimeoutError",
+        "RuntimeError",
+        "SafetyInterlockError",
+        "UnsupportedFeatureError",
+        "ValueError"
+      ],
+      "exclusive_resources": [
+        "n6700_session(alias_or_current)"
+      ],
+      "module_requirement": "none",
+      "mutating": true,
+      "may_energize_or_sink_power": false,
+      "safe_default": "No additional safe-default parameter beyond the typed keyword behavior.",
+      "documentation": "Return whether ``alias`` (or the current session) is connected."
+    },
+    {
+      "id": "get_connection_state",
+      "robot_keyword": "Get Connection State",
+      "python_method": "get_connection_state",
+      "category": "discovery",
+      "signature": "Get Connection State(alias: str | None = None, refresh: bool = False) -> dict[str, Any]",
+      "purpose": "Return the RFDS-002 Section 12.1 normalized connection-state dictionary.",
+      "inputs": [
+        {
+          "name": "alias",
+          "type": "str | None",
+          "required": false,
+          "description": "Named session. Omit to use the currently selected session where allowed.",
+          "default": null
+        },
+        {
+          "name": "refresh",
+          "type": "bool",
+          "required": false,
+          "description": "Input argument refresh.",
+          "default": false
+        }
+      ],
+      "outputs": {
+        "type": "dict[str, Any]",
+        "description": "Robot-compatible result from Get Connection State. Dictionaries/lists contain Python primitives."
+      },
+      "preconditions": [
+        "A named N6700 session is connected; alias exists or a current alias is selected."
+      ],
+      "postconditions": [
+        "Requested information or verification result is returned.",
+        "No intentional output configuration change is made, except instrument-internal effects of self-test or error-queue reads."
+      ],
+      "side_effects": [
+        "Performs query/measurement traffic only."
+      ],
+      "risk_level": "low",
+      "timing": {
+        "nominal_milliseconds": 250,
+        "maximum_milliseconds": 5000,
+        "timeout_parameter": null,
+        "stabilization_delay": {
+          "minimum_seconds": 0.0,
+          "recommended_seconds": 0.0,
+          "source": "driver"
+        }
+      },
+      "retry_policy": {
+        "automatic_retry": false,
+        "maximum_attempts": 2,
+        "allowed_only_for": [
+          "N6700TimeoutError",
+          "N6700CommunicationError"
+        ],
+        "rule": "Retry once only after confirming the session is still valid and no state-changing command is pending."
+      },
+      "errors": [
+        "InvalidChannelError",
+        "N6700CommandError",
+        "N6700CommunicationError",
+        "N6700ConnectionError",
+        "N6700TimeoutError",
+        "RuntimeError",
+        "SafetyInterlockError",
+        "UnsupportedFeatureError",
+        "ValueError"
+      ],
+      "exclusive_resources": [
+        "n6700_session(alias_or_current)"
+      ],
+      "module_requirement": "none",
+      "mutating": false,
+      "may_energize_or_sink_power": false,
+      "safe_default": "No additional safe-default parameter beyond the typed keyword behavior.",
+      "documentation": "Return the RFDS-002 Section 12.1 normalized connection-state dictionary."
+    },
+    {
+      "id": "check_communication",
+      "robot_keyword": "Check Communication",
+      "python_method": "check_communication",
+      "category": "discovery",
+      "signature": "Check Communication(alias: str | None = None) -> bool",
+      "purpose": "Perform a bounded, non-destructive communication check. Raises on failure.",
+      "inputs": [
+        {
+          "name": "alias",
+          "type": "str | None",
+          "required": false,
+          "description": "Named session. Omit to use the currently selected session where allowed.",
+          "default": null
+        }
+      ],
+      "outputs": {
+        "type": "bool",
+        "description": "Robot-compatible result from Check Communication. Dictionaries/lists contain Python primitives."
+      },
+      "preconditions": [
+        "A named N6700 session is connected; alias exists or a current alias is selected."
+      ],
+      "postconditions": [
+        "Requested information or verification result is returned.",
+        "No intentional output configuration change is made, except instrument-internal effects of self-test or error-queue reads."
+      ],
+      "side_effects": [
+        "Performs query/measurement traffic only."
+      ],
+      "risk_level": "low",
+      "timing": {
+        "nominal_milliseconds": 250,
+        "maximum_milliseconds": 5000,
+        "timeout_parameter": null,
+        "stabilization_delay": {
+          "minimum_seconds": 0.0,
+          "recommended_seconds": 0.0,
+          "source": "driver"
+        }
+      },
+      "retry_policy": {
+        "automatic_retry": false,
+        "maximum_attempts": 1,
+        "allowed_only_for": [],
+        "rule": "Do not retry a state-changing keyword blindly. Query actual state, make the bench safe, then decide explicitly."
+      },
+      "errors": [
+        "InvalidChannelError",
+        "N6700CommandError",
+        "N6700CommunicationError",
+        "N6700ConnectionError",
+        "N6700TimeoutError",
+        "RuntimeError",
+        "SafetyInterlockError",
+        "UnsupportedFeatureError",
+        "ValueError"
+      ],
+      "exclusive_resources": [
+        "n6700_session(alias_or_current)"
+      ],
+      "module_requirement": "none",
+      "mutating": true,
+      "may_energize_or_sink_power": false,
+      "safe_default": "No additional safe-default parameter beyond the typed keyword behavior.",
+      "documentation": "Perform a bounded, non-destructive communication check. Raises on failure."
+    },
+    {
+      "id": "get_identity",
+      "robot_keyword": "Get Identity",
+      "python_method": "get_identity_generic",
+      "category": "discovery",
+      "signature": "Get Identity(alias: str | None = None, refresh: bool = True) -> str",
+      "purpose": "Return a stable human-readable identity string.",
+      "inputs": [
+        {
+          "name": "alias",
+          "type": "str | None",
+          "required": false,
+          "description": "Named session. Omit to use the currently selected session where allowed.",
+          "default": null
+        },
+        {
+          "name": "refresh",
+          "type": "bool",
+          "required": false,
+          "description": "Input argument refresh.",
+          "default": true
+        }
+      ],
+      "outputs": {
+        "type": "str",
+        "description": "Robot-compatible result from Get Identity. Dictionaries/lists contain Python primitives."
+      },
+      "preconditions": [
+        "A named N6700 session is connected; alias exists or a current alias is selected."
+      ],
+      "postconditions": [
+        "Requested information or verification result is returned.",
+        "No intentional output configuration change is made, except instrument-internal effects of self-test or error-queue reads."
+      ],
+      "side_effects": [
+        "Performs query/measurement traffic only."
+      ],
+      "risk_level": "low",
+      "timing": {
+        "nominal_milliseconds": 250,
+        "maximum_milliseconds": 5000,
+        "timeout_parameter": null,
+        "stabilization_delay": {
+          "minimum_seconds": 0.0,
+          "recommended_seconds": 0.0,
+          "source": "driver"
+        }
+      },
+      "retry_policy": {
+        "automatic_retry": false,
+        "maximum_attempts": 2,
+        "allowed_only_for": [
+          "N6700TimeoutError",
+          "N6700CommunicationError"
+        ],
+        "rule": "Retry once only after confirming the session is still valid and no state-changing command is pending."
+      },
+      "errors": [
+        "InvalidChannelError",
+        "N6700CommandError",
+        "N6700CommunicationError",
+        "N6700ConnectionError",
+        "N6700TimeoutError",
+        "RuntimeError",
+        "SafetyInterlockError",
+        "UnsupportedFeatureError",
+        "ValueError"
+      ],
+      "exclusive_resources": [
+        "n6700_session(alias_or_current)"
+      ],
+      "module_requirement": "none",
+      "mutating": false,
+      "may_energize_or_sink_power": false,
+      "safe_default": "No additional safe-default parameter beyond the typed keyword behavior.",
+      "documentation": "Return a stable human-readable identity string."
+    },
+    {
       "id": "disconnect_n6700",
       "robot_keyword": "Disconnect N6700",
       "python_method": "disconnect_n6700",

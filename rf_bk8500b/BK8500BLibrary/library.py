@@ -23,6 +23,7 @@ from bk8500b import (
     SafeEnableConfig,
     SafetyPolicy,
     SafetyToken,
+    SessionState,
     TransientConfig,
 )
 
@@ -112,6 +113,38 @@ class BK8500BLibrary:
             raise BK8500BRobotError(
                 f"{action} failed: {type(exc).__name__}: {exc}{suffix}"
             ) from exc
+
+    _PUBLIC_STATE = {
+        SessionState.DISCONNECTED: "disconnected",
+        SessionState.CONNECTING: "connecting",
+        SessionState.IDENTIFYING: "connecting",
+        SessionState.CONNECTED_UNSYNCHRONIZED: "connected",
+        SessionState.CONNECTED_READY: "connected",
+        SessionState.DEGRADED: "degraded",
+        SessionState.RECONNECTING: "recovering",
+        SessionState.CLOSING: "disconnected",
+        SessionState.FAILED: "faulted",
+    }
+
+    @not_keyword
+    def _connection_state(self, alias: str, device: BK8500B) -> dict[str, Any]:
+        """Build the RFDS-002 Section 12.1 normalized connection-state dictionary."""
+        identity_str: str | None = None
+        if device.connected:
+            try:
+                identity_str = str(to_robot(device.identify()).get("raw") or None)
+            except Exception:
+                identity_str = None
+        return {
+            "alias": alias,
+            "resource": device.config.port,
+            "connected": bool(device.connected),
+            "communication_ok": bool(device.connected),
+            "transport": to_robot(device.config.protocol),
+            "identity": identity_str,
+            "timeout_s": device.config.query_timeout_s,
+            "state": self._PUBLIC_STATE.get(device.session_state, "faulted"),
+        }
 
     @not_keyword
     def _device(self, alias: str | None = None) -> BK8500B:
@@ -334,6 +367,105 @@ class BK8500BLibrary:
         device = self._device(alias)
         if not device.connected:
             raise AssertionError("Electronic load is not connected")
+
+    # ------------------------------------------------------------------
+    # RFDS-002 mandatory universal keywords
+    #
+    # These are thin, idempotent wrappers over the device-specific keywords
+    # above, kept for generic/cross-driver tooling that expects the RFDS
+    # canonical names. The device-specific keywords remain the primary,
+    # documented API for this driver.
+    # ------------------------------------------------------------------
+    @keyword("Connect")
+    def connect(
+        self,
+        resource: str | None = None,
+        alias: str = "default",
+        timeout_s: float | None = None,
+        **options: Any,
+    ) -> dict[str, Any]:
+        """RFDS-002 generic connect. ``resource`` is the serial port (see ``Connect To Electronic Load``).
+
+        Idempotent when ``alias`` is already connected to the same ``resource``.
+        """
+        selected_alias = str(alias).strip() or self.default_alias
+        port = resource or self.default_port
+        if selected_alias in self._devices:
+            existing = self._devices[selected_alias]
+            if port and str(existing.config.port) != str(port):
+                raise BK8500BRobotError(
+                    f"Alias {selected_alias!r} is already connected to {existing.config.port!r}; "
+                    f"disconnect it before connecting it to {port!r}."
+                )
+            return self._connection_state(selected_alias, existing)
+        connect_kwargs: dict[str, Any] = dict(options)
+        if timeout_s is not None:
+            for key in ("read_timeout", "write_timeout", "query_timeout"):
+                connect_kwargs.setdefault(key, timeout_s)
+        self.connect_to_electronic_load(port, alias=selected_alias, **connect_kwargs)
+        return self._connection_state(selected_alias, self._devices[selected_alias])
+
+    @keyword("Disconnect")
+    def disconnect(self, alias: str | None = None) -> None:
+        """RFDS-002 generic disconnect. Idempotent: succeeds even if already disconnected."""
+        selected = str(alias) if alias not in (None, "") else self._active_alias
+        if selected is None or selected not in self._devices:
+            return
+        self.disconnect_electronic_load(selected)
+
+    @keyword("Is Connected")
+    def is_connected(self, alias: str | None = None) -> bool:
+        """Return whether ``alias`` (or the active session) is connected."""
+        selected = str(alias) if alias not in (None, "") else self._active_alias
+        if selected is None or selected not in self._devices:
+            return False
+        return bool(self._devices[selected].connected)
+
+    @keyword("Get Connection State")
+    def get_connection_state(self, alias: str | None = None, refresh: bool = False) -> dict[str, Any]:
+        """Return the RFDS-002 Section 12.1 normalized connection-state dictionary."""
+        selected = str(alias) if alias not in (None, "") else self._active_alias
+        if selected is None or selected not in self._devices:
+            return {
+                "alias": selected or self.default_alias,
+                "resource": None,
+                "connected": False,
+                "communication_ok": False,
+                "transport": None,
+                "identity": None,
+                "timeout_s": None,
+                "state": "disconnected",
+            }
+        device = self._devices[selected]
+        if as_bool(refresh, name="refresh") and device.connected:
+            try:
+                self._translate("Health check", device.health_check)
+            except BK8500BRobotError:
+                pass
+        return self._connection_state(selected, device)
+
+    @keyword("Check Communication")
+    def check_communication(self, alias: str | None = None) -> bool:
+        """Perform a bounded, non-destructive communication check. Raises on failure."""
+        device = self._device(alias)
+        self._translate("Check communication", device.health_check)
+        return True
+
+    @keyword("Get Identity")
+    def get_identity(self, alias: str | None = None, refresh: bool = True) -> str:
+        """Return a stable human-readable identity string.
+
+        The underlying driver caches identity for the life of the session, so
+        ``refresh`` only forces the first query rather than repeating it.
+        """
+        del refresh
+        device = self._device(alias)
+        ident = to_robot(self._translate("Identify", device.identify))
+        raw = ident.get("raw")
+        if raw:
+            return str(raw)
+        parts = [str(ident[key]) for key in ("manufacturer", "model", "serial_number", "firmware_revision") if ident.get(key)]
+        return ", ".join(parts) if parts else "BK8500B"
 
     # ------------------------------------------------------------------
     # Identity, status, diagnostics

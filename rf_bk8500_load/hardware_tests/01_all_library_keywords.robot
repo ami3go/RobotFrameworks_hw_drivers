@@ -406,6 +406,43 @@ KW-055 Get Load Connection Info
     Should Contain    ${info}[open_aliases]    ${HARDWARE_ALIAS}
     Log Dictionary    ${info}
 
+KW-056 Is Connected
+    [Documentation]    RFDS-002 generic connection query, both for the active alias and an unknown one.
+    ${connected}=    Is Connected
+    Should Be Equal    ${connected}    ${TRUE}
+    ${unknown}=    Is Connected    does-not-exist
+    Should Be Equal    ${unknown}    ${FALSE}
+
+KW-057 Get Connection State
+    [Documentation]    RFDS-002 generic normalized connection-state dictionary.
+    ${state}=    Get Connection State
+    Should Be Equal    ${state}[alias]    ${HARDWARE_ALIAS}
+    Should Be Equal    ${state}[connected]    ${TRUE}
+    Should Be Equal    ${state}[state]    connected
+    Log Dictionary    ${state}
+
+KW-058 Check Communication
+    [Documentation]    RFDS-002 generic bounded, non-destructive communication check.
+    ${ok}=    Check Communication
+    Should Be Equal    ${ok}    ${TRUE}
+
+KW-059 Get Identity
+    [Documentation]    RFDS-002 generic stable identity string.
+    ${identity}=    Get Identity
+    Should Not Be Empty    ${identity}
+    Log    ${identity}
+
+KW-060 Connect And Disconnect
+    [Documentation]    RFDS-002 generic connect/disconnect, idempotent, exercised against a simulated secondary alias.
+    ${state}=    Connect    alias=${SECONDARY_ALIAS}    simulated=${TRUE}    model=${MODEL}
+    Should Be Equal    ${state}[alias]    ${SECONDARY_ALIAS}
+    Should Be Equal    ${state}[connected]    ${TRUE}
+    ${same_state}=    Connect    alias=${SECONDARY_ALIAS}    simulated=${TRUE}    model=${MODEL}
+    Should Be Equal    ${state}    ${same_state}
+    Disconnect    ${SECONDARY_ALIAS}
+    Disconnect    ${SECONDARY_ALIAS}
+    Switch Load Connection    ${HARDWARE_ALIAS}
+
 KW-004 Close All Load Connections
     [Documentation]    This final test closes every connection, verifies the disconnected state, then reopens hardware for suite teardown.
     Close All Load Connections

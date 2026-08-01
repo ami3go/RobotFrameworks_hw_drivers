@@ -329,6 +329,125 @@ class NGI_N83624:
         self._audit_for(session, "identify", response=value)
         return value
 
+    # ------------------------------------------------------------------
+    # RFDS-002 mandatory universal keywords
+    #
+    # Thin, idempotent wrappers over the device-specific keywords above, kept
+    # for generic/cross-driver tooling that expects the RFDS canonical names.
+    # ``Connect`` defaults to a TCP session; use the device-specific ``Open
+    # N83624 ...`` keywords for UDP, serial, or emulator sessions.
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _resource_host(driver: N83624CellSimulator) -> Any:
+        transport = driver.transport
+        return getattr(transport, "host", None) or getattr(transport, "port", None) or "emulator"
+
+    def _resource_of(self, driver: N83624CellSimulator) -> str:
+        transport = driver.transport
+        host = getattr(transport, "host", None)
+        port = getattr(transport, "port", None)
+        if host and port:
+            return f"{host}:{port}"
+        if port:
+            return str(port)
+        return "emulator"
+
+    def _connection_state(self, session: _Session) -> dict[str, Any]:
+        """Build the RFDS-002 Section 12.1 normalized connection-state dictionary."""
+        driver = session.driver
+        is_open = driver.transport.is_open()
+        identity_str = driver.idn if is_open else None
+        return {
+            "alias": session.alias,
+            "resource": self._resource_of(driver),
+            "connected": is_open,
+            "communication_ok": identity_str is not None,
+            "transport": type(driver.transport).__name__,
+            "identity": identity_str,
+            "timeout_s": getattr(driver.transport, "timeout", None),
+            "state": "connected" if is_open else "disconnected",
+        }
+
+    @keyword("Connect")
+    def connect(
+        self,
+        resource: str | None = None,
+        alias: str = "default",
+        timeout_s: float | None = None,
+        **options: Any,
+    ) -> dict[str, Any]:
+        """RFDS-002 generic connect. Defaults to a TCP session using ``resource`` as host
+        (see ``Open N83624 TCP Connection``).
+
+        Idempotent when ``alias`` is already connected to the same ``resource``.
+        """
+        normalized = self._normalize_alias(alias)
+        if normalized in self._sessions:
+            session = self._sessions[normalized]
+            existing_host = self._resource_host(session.driver)
+            if resource and str(existing_host) != str(resource):
+                raise SessionStateError(
+                    f"N83624 alias {normalized!r} is already connected to {existing_host!r}; "
+                    f"close it before connecting it to {resource!r}."
+                )
+            return self._connection_state(session)
+        connect_kwargs: dict[str, Any] = dict(options)
+        if timeout_s is not None:
+            connect_kwargs.setdefault("timeout", timeout_s)
+        self.open_n83624_tcp_connection(alias=alias, host=resource, **connect_kwargs)
+        return self._connection_state(self._sessions[normalized])
+
+    @keyword("Disconnect")
+    def disconnect(self, alias: str | None = None) -> None:
+        """RFDS-002 generic disconnect. Idempotent: succeeds even if already disconnected."""
+        normalized = self._active_alias if alias is None or str(alias).strip() == "" else self._normalize_alias(alias)
+        if normalized is None or normalized not in self._sessions:
+            return
+        self.close_n83624_connection(normalized)
+
+    @keyword("Is Connected")
+    def is_connected(self, alias: str | None = None) -> bool:
+        """Return whether ``alias`` (or the active session) is connected."""
+        normalized = self._active_alias if alias is None or str(alias).strip() == "" else self._normalize_alias(alias)
+        if normalized is None or normalized not in self._sessions:
+            return False
+        return self._sessions[normalized].driver.transport.is_open()
+
+    @keyword("Get Connection State")
+    def get_connection_state(self, alias: str | None = None, refresh: bool = False) -> dict[str, Any]:
+        """Return the RFDS-002 Section 12.1 normalized connection-state dictionary."""
+        normalized = self._active_alias if alias is None or str(alias).strip() == "" else self._normalize_alias(alias)
+        if normalized is None or normalized not in self._sessions:
+            return {
+                "alias": normalized or "default",
+                "resource": None,
+                "connected": False,
+                "communication_ok": False,
+                "transport": None,
+                "identity": None,
+                "timeout_s": None,
+                "state": "disconnected",
+            }
+        session = self._sessions[normalized]
+        if self._as_bool(refresh) and session.driver.transport.is_open():
+            try:
+                session.driver.identify()
+            except Exception:
+                pass
+        return self._connection_state(session)
+
+    @keyword("Check Communication")
+    def check_communication(self, alias: str | None = None) -> bool:
+        """Perform a bounded, non-destructive communication check. Raises on failure."""
+        self._session(alias).driver.identify()
+        return True
+
+    @keyword("Get Identity")
+    def get_identity_generic(self, alias: str | None = None, refresh: bool = True) -> str:
+        """Return a stable human-readable identity string."""
+        del refresh
+        return self.identify_n83624(alias)
+
     # Safety configuration -------------------------------------------------------
     @keyword("Set Channel Safety Limits")
     def set_channel_safety_limits(
