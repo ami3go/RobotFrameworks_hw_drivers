@@ -1,0 +1,103 @@
+"""Connection lifecycle, identity, and the mandatory remote-control acquisition.
+
+task §12.1 items 1, 2, 3, 12.
+"""
+
+from __future__ import annotations
+
+import pytest
+
+from ea_ps9000t.driver import EaPs9000T
+from ea_ps9000t.enums import RemoteControlOwner
+from ea_ps9000t.exceptions import EaPs9000TConnectionError
+from ea_ps9000t.simulator import SimEaPs9000TInstrument
+from rf_ea_ps9000t.library import EaPs9000TLibrary
+
+
+def test_simulator_connect_acquires_remote_control_and_identity():
+    driver = EaPs9000T.connect_simulated()
+    assert driver.connected is True
+    assert driver.get_remote_control_owner() == RemoteControlOwner.REMOTE
+
+    identity = driver.identify()
+    assert identity.manufacturer == "EA-Elektro-Automatik"
+    assert identity.model
+    assert identity.serial
+    assert identity.user_text == ""  # empty when never set (task §12.1 item 1)
+
+    assert driver.check_communication() is True
+    driver.close()
+    assert driver.connected is False
+
+
+def test_identity_five_field_parse_with_user_text():
+    driver = EaPs9000T.connect_simulated()
+    driver.set_user_text("bench 3")
+    identity = driver.identify(refresh=True)
+    assert identity.user_text == "bench 3"
+    assert identity.raw.count(",") == 4  # 5 fields
+    driver.close()
+
+
+def test_connect_raises_typed_error_when_remote_control_is_refused():
+    """task §12.1 item 2: the core safety-relevant behavior test for this driver."""
+
+    simulator = SimEaPs9000TInstrument()
+    simulator.force_lock_refusal = True
+    with pytest.raises(EaPs9000TConnectionError, match="refused"):
+        EaPs9000T.connect_simulated(simulator)
+    # The refused-lock owner must be named in the error, not just "refused".
+    assert simulator.lock_owner == "NONE"
+
+
+def test_disconnect_releases_remote_control_before_closing():
+    """task §12.1 item 3."""
+
+    simulator = SimEaPs9000TInstrument()
+    driver = EaPs9000T.connect_simulated(simulator)
+    assert simulator.lock_owner == "REMOTE"
+    driver.close()
+    assert simulator.lock_owner == "NONE"
+
+
+def test_operations_require_connection():
+    driver = EaPs9000T.connect_simulated()
+    driver.close()
+    with pytest.raises(EaPs9000TConnectionError):
+        driver.identify()
+
+
+def test_multi_alias_sessions_are_independent():
+    lib = EaPs9000TLibrary()
+    lib.connect(alias="psu1", simulated=True)
+    lib.connect(alias="psu2", simulated=True)
+
+    lib.set_voltage(12.0, alias="psu1")
+    lib.set_voltage(24.0, alias="psu2")
+
+    assert lib.get_voltage("psu1") == 12.0
+    assert lib.get_voltage("psu2") == 24.0
+    assert lib.list_power_supply_connections() == ["psu1", "psu2"]
+
+    lib.switch_power_supply("psu1")
+    assert lib.get_active_power_supply() == "psu1"
+    assert lib.get_voltage() == 12.0  # uses the active alias when none is given
+
+    lib.disconnect("psu1")
+    assert lib.is_connected("psu1") is False
+    assert lib.is_connected("psu2") is True
+    lib.disconnect("psu2")
+
+
+def test_unknown_alias_raises_with_known_aliases_listed():
+    lib = EaPs9000TLibrary()
+    lib.connect(alias="psu1", simulated=True)
+    with pytest.raises(EaPs9000TConnectionError, match="psu1"):
+        lib.get_voltage(alias="does-not-exist")
+    lib.disconnect("psu1")
+
+
+def test_is_connected_never_raises_for_missing_session():
+    lib = EaPs9000TLibrary()
+    assert lib.is_connected("never-connected") is False
+    assert lib.is_connected() is False
