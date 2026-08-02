@@ -28,6 +28,8 @@ class Transport(Protocol):
 
     def write(self, command: str) -> None: ...
 
+    def write_binary(self, command_prefix: str, data: bytes) -> None: ...
+
     def query(self, command: str) -> str: ...
 
     def query_binary(self, command: str) -> bytes: ...
@@ -105,6 +107,16 @@ class PyvisaUsbtmcTransport:
         except Exception as exc:
             raise Tbs1000cTimeoutError(f"binary query failed for {command!r}: {exc}") from exc
 
+    def write_binary(self, command_prefix: str, data: bytes) -> None:
+        """Sends ``command_prefix`` immediately followed by ``data`` (already IEEE-488.2
+        block-encoded by the caller) and a terminator — used for ``FILESystem:WRITEFile``."""
+
+        instrument = self._require_open()
+        try:
+            instrument.write_raw(command_prefix.encode("ascii") + data + b"\n")
+        except Exception as exc:
+            raise Tbs1000cTimeoutError(f"binary write failed for {command_prefix!r}: {exc}") from exc
+
     @property
     def timeout_s(self) -> float:
         return self._timeout_s
@@ -159,6 +171,10 @@ class SimulatedTransport:
     def query_binary(self, command: str) -> bytes:
         self._require_open()
         return self._simulator.dispatch(command)
+
+    def write_binary(self, command_prefix: str, data: bytes) -> None:
+        self._require_open()
+        self._simulator.dispatch_binary(command_prefix, data)
 
     @property
     def timeout_s(self) -> float:

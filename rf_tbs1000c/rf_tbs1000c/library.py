@@ -92,7 +92,7 @@ class Tbs1000cLibrary:
         for alias in list(self._sessions):
             try:
                 self._sessions[alias].close()
-            except Exception as exc:  # cleanup must not hide an earlier suite failure
+            except Exception as exc:  # noqa: BLE001 - cleanup must not hide an earlier suite failure
                 _rf_logger.warn(f"TBS1000C: cleanup for {alias!r} reported: {exc}")  # noqa: G010 - robot.api.logger has no .warning
         self._sessions.clear()
         self._active_alias = None
@@ -132,9 +132,8 @@ class Tbs1000cLibrary:
         identity_str: str | None = None
         try:
             identity_str = driver.identify(refresh=False).raw
-        except Exception:
-            # A stale/failed identity read must not prevent reporting connection
-            # state; communication_ok below already reflects this as False.
+        except Exception:  # noqa: BLE001 - a stale/failed identity read must not prevent
+            # reporting connection state; communication_ok below already reflects this as False.
             identity_str = None
         return {
             "alias": alias,
@@ -222,9 +221,8 @@ class Tbs1000cLibrary:
         if _as_bool(refresh, "refresh") and driver.connected:
             try:
                 driver.check_communication()
-            except Exception:
-                # A failed probe is itself the answer: it shows up as
-                # communication_ok=False below, not as a raised error here.
+            except Exception:  # noqa: BLE001, S110 - a failed probe is itself the answer: it
+                # shows up as communication_ok=False below, not as a raised error here.
                 pass
         return self._connection_state(selected, driver)
 
@@ -480,6 +478,19 @@ class Tbs1000cLibrary:
         """Vendor-native alternate via SAVe:WAVEform, for cross-checking the driver's own CSV."""
 
         self._session(alias).save_waveform_to_csv_on_instrument(Path(path), channel)
+
+    @keyword("Save Waveform To Reference Memory")
+    def save_waveform_to_reference_memory(self, channel: int, ref: int, alias: str | None = None) -> None:
+        """Instrument-side SAVe:WAVEform CH<x>,REF<y> — no host file transfer (Gate 3)."""
+
+        self._session(alias).save_waveform_to_reference_memory(int(channel), int(ref))
+
+    @keyword("Recall Waveform From Host File")
+    def recall_waveform_from_host_file(self, path: str, ref: int, alias: str | None = None) -> None:
+        """Uploads a host file to the instrument and loads it into reference memory,
+        the round-trip counterpart to 'Save Waveform To CSV On Instrument' (Gate 3)."""
+
+        self._session(alias).recall_waveform_from_host_file(Path(path), int(ref))
 
     @keyword("Save Setup")
     def save_setup(self, path: str, alias: str | None = None) -> None:

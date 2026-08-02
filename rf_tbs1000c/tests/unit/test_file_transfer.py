@@ -130,3 +130,62 @@ def test_slot_out_of_range_rejected():
     with pytest.raises(Tbs1000cValidationError):
         driver.save_setup_to_instrument_memory(11)
     driver.close()
+
+
+# -- Gate 3: instrument-side waveform save/recall (SAVe:WAVEform REF<x>, RECAll:WAVEform) --
+
+
+def test_save_waveform_to_reference_memory_round_trip():
+    driver = Tbs1000c.connect_simulated()
+    driver.set_channel_scale(1, 0.5)
+
+    driver.save_waveform_to_reference_memory(1, 1)
+
+    simulator = driver.transport.simulator  # type: ignore[attr-defined]
+    assert 1 in simulator.reference_waveforms
+    assert len(simulator.reference_waveforms[1]) == simulator.record_length
+    driver.close()
+
+
+def test_save_waveform_to_reference_memory_rejects_invalid_ref():
+    driver = Tbs1000c.connect_simulated()
+    with pytest.raises(Tbs1000cValidationError):
+        driver.save_waveform_to_reference_memory(1, 3)
+    with pytest.raises(Tbs1000cValidationError):
+        driver.save_waveform_to_reference_memory(1, 0)
+    driver.close()
+
+
+def test_recall_waveform_from_host_file_round_trip(tmp_path):
+    """Save a waveform to a host file via the instrument-side path, then push it back
+    onto the instrument and load it into reference memory — full round trip."""
+
+    driver = Tbs1000c.connect_simulated()
+    csv_path = tmp_path / "ch1.csv"
+    driver.save_waveform_to_csv_on_instrument(csv_path, 1)
+    assert csv_path.exists()
+
+    driver.recall_waveform_from_host_file(csv_path, 2)
+
+    simulator = driver.transport.simulator  # type: ignore[attr-defined]
+    assert 2 in simulator.reference_waveforms
+    assert simulator.reference_waveforms[2] == csv_path.read_bytes()
+    # The instrument-side temp file used to upload it must be cleaned up afterward.
+    assert not any(name.startswith("tmp_rf_tbs1000c_recall_ref") for name in simulator.filesystem)
+    driver.close()
+
+
+def test_recall_waveform_from_host_file_rejects_invalid_ref(tmp_path):
+    driver = Tbs1000c.connect_simulated()
+    csv_path = tmp_path / "ch1.csv"
+    csv_path.write_text("Time,Value\n0,0\n")
+    with pytest.raises(Tbs1000cValidationError):
+        driver.recall_waveform_from_host_file(csv_path, 5)
+    driver.close()
+
+
+def test_recall_waveform_from_host_file_raises_for_missing_host_file(tmp_path):
+    driver = Tbs1000c.connect_simulated()
+    with pytest.raises(FileNotFoundError):
+        driver.recall_waveform_from_host_file(tmp_path / "does_not_exist.csv", 1)
+    driver.close()

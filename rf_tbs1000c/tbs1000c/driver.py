@@ -11,6 +11,7 @@ import logging
 from pathlib import Path
 
 from .codec import (
+    build_ieee_block,
     decode_samples,
     parse_curve_response,
     parse_idn,
@@ -54,6 +55,13 @@ def _validate_channel(channel: int) -> int:
     if channel not in (1, 2):
         raise Tbs1000cValidationError(f"channel must be 1 or 2, got {channel!r}")
     return channel
+
+
+def _validate_ref(ref: int) -> int:
+    ref = int(ref)
+    if ref not in (1, 2):
+        raise Tbs1000cValidationError(f"reference memory location must be 1 or 2, got {ref!r}")
+    return ref
 
 
 class Tbs1000c:
@@ -397,7 +405,7 @@ class Tbs1000c:
     def _delete_instrument_file_best_effort(self, instrument_path: str) -> None:
         try:
             self._write(f'FILESystem:DELEte "{instrument_path}"')
-        except Exception as exc:  # best-effort cleanup only
+        except Exception as exc:  # noqa: BLE001 - best-effort cleanup only
             logger.warning("TBS1000C: could not remove temp file %s: %s", instrument_path, exc)
 
     def save_screen_image(
@@ -444,6 +452,37 @@ class Tbs1000c:
         host_path = Path(host_path)
         host_path.parent.mkdir(parents=True, exist_ok=True)
         host_path.write_bytes(data)
+        self._delete_instrument_file_best_effort(instrument_path)
+
+    def _write_instrument_file(self, instrument_path: str, data: bytes) -> None:
+        """FILESystem:WRITEFile <path>, <IEEE block> — the write counterpart to
+        :meth:`_read_instrument_file` (Gate 3, task §2 "instrument-side waveform
+        save/recall")."""
+
+        self._require_connected()
+        self.transport.write_binary(f'FILESystem:WRITEFile "{instrument_path}", ', build_ieee_block(data))
+
+    def save_waveform_to_reference_memory(self, channel: int, ref: int) -> None:
+        """Instrument-side SAVe:WAVEform CH<x>,REF<y> — no host file transfer, distinct
+        from :meth:`save_waveform_to_csv_on_instrument` (Gate 3)."""
+
+        channel = _validate_channel(channel)
+        ref = _validate_ref(ref)
+        self._write(f"SAVe:WAVEform CH{channel},REF{ref}")
+        self._check_events(f"Save Waveform To Reference Memory(CH{channel}->REF{ref})")
+
+    def recall_waveform_from_host_file(self, host_path: str | Path, ref: int) -> None:
+        """Uploads a host file to the instrument's temp filesystem, then RECAll:WAVEform
+        into reference memory — the round-trip counterpart to
+        :meth:`save_waveform_to_csv_on_instrument`'s temp-file pattern (Gate 3)."""
+
+        ref = _validate_ref(ref)
+        host_path = Path(host_path)
+        data = host_path.read_bytes()
+        instrument_path = f"tmp_rf_tbs1000c_recall_ref{ref}{host_path.suffix or '.isf'}"
+        self._write_instrument_file(instrument_path, data)
+        self._write(f'RECAll:WAVEform "{instrument_path}",REF{ref}')
+        self._check_events(f"Recall Waveform From Host File(ref={ref})")
         self._delete_instrument_file_best_effort(instrument_path)
 
     def save_setup(self, host_path: str | Path) -> None:

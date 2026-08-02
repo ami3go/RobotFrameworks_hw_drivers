@@ -81,6 +81,7 @@ class SimTbs1000cInstrument:
         self.waveform_file_format = "INTERNal"
         self.filesystem: dict[str, bytes] = {}
         self.memory_slots: dict[int, str] = {}
+        self.reference_waveforms: dict[int, bytes] = {}
         self.autoset_calls = 0
         self.calibration_start_calls = 0
         self.force_trigger_calls = 0
@@ -114,12 +115,36 @@ class SimTbs1000cInstrument:
         if channel_match:
             return self._dispatch_channel(channel_match.group(1), channel_match.group(2), rest, is_query)
 
+        ref_match = re.match(r"^REF(\d+)$", handler_name, re.IGNORECASE)
+        if ref_match:
+            return self._ref_query(int(ref_match.group(1)), is_query)
+
         try:
             handler = self._ROUTES[handler_name.upper()]
         except KeyError:
             self._push_event(113, f"Undefined header;{command}")
             return b""
         return handler(self, rest, is_query)
+
+    def dispatch_binary(self, command_prefix: str, data: bytes) -> None:
+        """Handles ``FILESystem:WRITEFile "<path>", <IEEE block>`` — the write
+        counterpart to ``_filesystem_readfile``'s IEEE-block-encoded response.
+        ``data`` is the already block-encoded payload built by ``driver.py``
+        via :func:`build_ieee_block`; this method decodes it the same way a
+        real instrument would.
+        """
+
+        match = re.match(r'^FILESYSTEM:WRITEFILE\s+"([^"]*)"\s*,\s*$', command_prefix.strip(), re.IGNORECASE)
+        if not match:
+            self._push_event(113, f"Undefined header;{command_prefix}")
+            return
+        if data[:1] != b"#" or len(data) < 2:
+            self._push_event(-161, "Invalid block data")
+            return
+        n_digits = int(chr(data[1]))
+        header_len = 2 + n_digits
+        length = int(data[2:header_len])
+        self.filesystem[match.group(1)] = data[header_len : header_len + length]
 
     def _dispatch_concatenated(self, command: str) -> bytes:
         """Replay a ';'-separated command sequence, e.g. a resent *LRN?/SET? string.
@@ -439,16 +464,48 @@ class SimTbs1000cInstrument:
 
     def _save_waveform(self, rest: str, _is_query: bool) -> bytes:
         parts = [p.strip().strip('"') for p in rest.split(",")]
-        path = parts[-1] if parts else ""
+        target = parts[-1] if parts else ""
         codes = self._synthetic_codes()
         if self.waveform_file_format == "SPREADSHEET":
             lines = ["Time,Value"] + [f"{i},{c}" for i, c in enumerate(codes)]
             data = "\n".join(lines).encode("ascii")
         else:
-            data = bytes(int(c).to_bytes(1, "big", signed=True) for c in codes)
-        if path:
-            self.filesystem[path] = data
+            data = bytes(int(c) & 0xFF for c in codes)
+        ref_match = re.match(r"^REF(\d+)$", target, re.IGNORECASE)
+        if ref_match:
+            self.reference_waveforms[int(ref_match.group(1))] = data
+        elif target:
+            self.filesystem[target] = data
         return b""
+
+    def _recall_waveform(self, rest: str, _is_query: bool) -> bytes:
+        """RECAll:WAVEform <file path>,REF<x> — recall a previously-saved-to-file
+        waveform into internal reference memory."""
+
+        parts = [p.strip().strip('"') for p in rest.split(",")]
+        if len(parts) < 2:
+            self._push_event(-224, "Illegal parameter value;RECAll:WAVEform requires <path>,REF<x>")
+            return b""
+        path, ref_token = parts[0], parts[1]
+        ref_match = re.match(r"^REF(\d+)$", ref_token, re.IGNORECASE)
+        if not ref_match:
+            self._push_event(-224, f"Illegal parameter value;{ref_token!r} is not a REF<x> destination")
+            return b""
+        try:
+            data = self.filesystem[path]
+        except KeyError:
+            self._push_event(292, f"Execution error, file not found;{path}")
+            return b""
+        self.reference_waveforms[int(ref_match.group(1))] = (
+            data if isinstance(data, bytes) else data.encode("ascii")
+        )
+        return b""
+
+    def _ref_query(self, ref: int, _is_query: bool) -> bytes:
+        if ref not in self.reference_waveforms:
+            self._push_event(-224, f"Illegal parameter value;REF{ref} has no data")
+            return b""
+        return build_ieee_block(self.reference_waveforms[ref])
 
     def _save_setup(self, rest: str, _is_query: bool) -> bytes:
         target = rest.strip().strip('"')
@@ -613,6 +670,7 @@ SimTbs1000cInstrument._ROUTES = {
     "SAVE:WAVEFORM": SimTbs1000cInstrument._save_waveform,
     "SAVE:SETUP": SimTbs1000cInstrument._save_setup,
     "RECALL:SETUP": SimTbs1000cInstrument._recall_setup,
+    "RECALL:WAVEFORM": SimTbs1000cInstrument._recall_waveform,
     "*SAV": SimTbs1000cInstrument._sav,
     "*RCL": SimTbs1000cInstrument._rcl,
     "*LRN": SimTbs1000cInstrument._lrn,
