@@ -63,3 +63,21 @@ class AlarmAction(_ScpiEnum):
 
     AUTO = "AUTO"
     OFF = "OFF"
+
+
+class AnalogRemsbLevel(_ScpiEnum):
+    """SYSTem:CONFig:ANAlog:REMSB:LEVel {NORMAL|INVERTED} — how pin REM-SB of the
+    analog interface is interpreted. Factory default NORMAL (Gate 3, task §2/§9)."""
+
+    NORMAL = "NORMAL"
+    INVERTED = "INVERTED"
+
+
+class AnalogRemsbAction(_ScpiEnum):
+    """SYSTem:CONFig:ANAlog:REMSB:ACTion {OFF|AUTO} — what pin REM-SB of the analog
+    interface can do to the DC output: OFF = switch off only, AUTO = switch off and
+    back on if it was previously enabled via front panel or digital command. Factory
+    default OFF (Gate 3, task §2/§9)."""
+
+    OFF = "OFF"
+    AUTO = "AUTO"

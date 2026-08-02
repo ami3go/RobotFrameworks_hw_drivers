@@ -9,7 +9,14 @@ from __future__ import annotations
 
 import logging
 
-from .enums import AlarmAction, OutputRestoreMode, PowerStageAfterRemote, RemoteControlOwner
+from .enums import (
+    AlarmAction,
+    AnalogRemsbAction,
+    AnalogRemsbLevel,
+    OutputRestoreMode,
+    PowerStageAfterRemote,
+    RemoteControlOwner,
+)
 from .exceptions import (
     EaPs9000TConnectionError,
     EaPs9000TDeviceError,
@@ -379,6 +386,159 @@ class EaPs9000T:
 
     def get_overtemperature_alarm_action(self) -> AlarmAction:
         return AlarmAction(self._query("SYSTem:ALARm:ACTion:OTEMperature?").strip())
+
+    # ------------------------------------------------------------------
+    # LAN configuration (Gate 3 extension — SYSTem:COMMunicate:LAN:*)
+    # ------------------------------------------------------------------
+    # Confirmed against the EA/Intepro "Programming Guide ModBus & SCPI" (Doc ID
+    # PGMBEN, Rev. 17), pages 57-60 — universal across the whole device family in
+    # the source document, no per-series exclusion found for PST. These are
+    # ordinary device-configuration commands (like the Gate 2 device-configuration
+    # keywords above), so no special safety guard is applied here beyond the
+    # instrument's own universal remote-control gating.
+    #
+    # SYSTem:COMMunicate:LAN:1SPEed / :2SPEed (Anybus/IF-AB Ethernet module speed
+    # selection) and SYSTem:COMMunicate:LAN:INDex (10000-series dual-Ethernet-port
+    # selector) are deliberately NOT implemented: the PST series this driver
+    # targets has a single, fixed, built-in Ethernet port — not an optional
+    # multi-port Anybus/IF-AB interface module — so all three commands describe
+    # hardware this driver's instrument family doesn't have (judgment call, see
+    # README.md).
+    def set_lan_dhcp_enabled(self, enabled: bool) -> None:
+        self._write(f"SYSTem:COMMunicate:LAN:DHCP {'ON' if enabled else 'OFF'}")
+        self._check_events("Set LAN DHCP Enabled")
+
+    def get_lan_dhcp_enabled(self) -> bool:
+        return self._query("SYSTem:COMMunicate:LAN:DHCP?").strip().upper() in ("1", "ON")
+
+    def set_lan_ip_address(self, address: str) -> None:
+        self._write(f'SYSTem:COMMunicate:LAN:ADDRess "{address}"')
+        self._check_events("Set LAN IP Address")
+
+    def get_lan_ip_address(self) -> str:
+        return self._query("SYSTem:COMMunicate:LAN:ADDRess?").strip().strip('"')
+
+    def set_lan_subnet_mask(self, mask: str) -> None:
+        self._write(f'SYSTem:COMMunicate:LAN:SMASk "{mask}"')
+        self._check_events("Set LAN Subnet Mask")
+
+    def get_lan_subnet_mask(self) -> str:
+        return self._query("SYSTem:COMMunicate:LAN:SMASk?").strip().strip('"')
+
+    def set_lan_gateway(self, gateway: str) -> None:
+        self._write(f'SYSTem:COMMunicate:LAN:GATeway "{gateway}"')
+        self._check_events("Set LAN Gateway")
+
+    def get_lan_gateway(self) -> str:
+        return self._query("SYSTem:COMMunicate:LAN:GATeway?").strip().strip('"')
+
+    def set_lan_hostname(self, hostname: str) -> None:
+        if len(hostname) > 54:
+            raise EaPs9000TValidationError("LAN hostname must be 54 characters or fewer")
+        self._write(f'SYSTem:COMMunicate:LAN:HOSTname "{hostname}"')
+        self._check_events("Set LAN Hostname")
+
+    def get_lan_hostname(self) -> str:
+        return self._query("SYSTem:COMMunicate:LAN:HOSTname?").strip().strip('"')
+
+    def set_lan_domain(self, domain: str) -> None:
+        if len(domain) > 54:
+            raise EaPs9000TValidationError("LAN domain must be 54 characters or fewer")
+        self._write(f'SYSTem:COMMunicate:LAN:DOMain "{domain}"')
+        self._check_events("Set LAN Domain")
+
+    def get_lan_domain(self) -> str:
+        return self._query("SYSTem:COMMunicate:LAN:DOMain?").strip().strip('"')
+
+    def set_lan_dns1(self, address: str) -> None:
+        self._write(f'SYSTem:COMMunicate:LAN:DNS1 "{address}"')
+        self._check_events("Set LAN DNS1")
+
+    def get_lan_dns1(self) -> str:
+        return self._query("SYSTem:COMMunicate:LAN:DNS1?").strip().strip('"')
+
+    def set_lan_dns2(self, address: str) -> None:
+        """Anybus modules only per the source document; this driver does not
+        client-side-gate on module presence since it has no reliable way to know
+        which interface module is fitted at the SCPI layer (same reasoning as
+        ``set_communication_timeout``)."""
+
+        self._write(f'SYSTem:COMMunicate:LAN:DNS2 "{address}"')
+        self._check_events("Set LAN DNS2")
+
+    def get_lan_dns2(self) -> str:
+        return self._query("SYSTem:COMMunicate:LAN:DNS2?").strip().strip('"')
+
+    def set_lan_control_port(self, port: int) -> None:
+        port = int(port)
+        if not (0 <= port <= 65535):
+            raise EaPs9000TValidationError("LAN control port must be between 0 and 65535")
+        if port == 502:
+            raise EaPs9000TValidationError(
+                "LAN control port 502 is reserved for ModBus TCP and illegal to set here"
+            )
+        self._write(f"SYSTem:COMMunicate:LAN:CONTrol {port}")
+        self._check_events("Set LAN Control Port")
+
+    def get_lan_control_port(self) -> int:
+        return int(self._query("SYSTem:COMMunicate:LAN:CONTrol?"))
+
+    def set_lan_keepalive_enabled(self, enabled: bool) -> None:
+        self._write(f"SYSTem:COMMunicate:LAN:KEEPalive {'ON' if enabled else 'OFF'}")
+        self._check_events("Set LAN Keepalive Enabled")
+
+    def get_lan_keepalive_enabled(self) -> bool:
+        return self._query("SYSTem:COMMunicate:LAN:KEEPalive?").strip().upper() in ("1", "ON")
+
+    def set_lan_timeout(self, seconds: int) -> None:
+        seconds = int(seconds)
+        if seconds != 0 and not (5 <= seconds <= 65535):
+            raise EaPs9000TValidationError(
+                "LAN timeout must be 0 (disabled) or between 5 and 65535 seconds"
+            )
+        self._write(f"SYSTem:COMMunicate:LAN:TIMeout {seconds}")
+        self._check_events("Set LAN Timeout")
+
+    def get_lan_timeout(self) -> int:
+        return int(self._query("SYSTem:COMMunicate:LAN:TIMeout?"))
+
+    def get_lan_mac_address(self) -> str:
+        """Read-only — when the interface is physically present."""
+
+        return self._query("SYSTem:COMMunicate:LAN:MAC?").strip().strip('"')
+
+    # ------------------------------------------------------------------
+    # Analog interface configuration (Gate 3 extension — SYSTem:CONFig:ANAlog:*)
+    # ------------------------------------------------------------------
+    # Confirmed present for PST specifically, from the same source document
+    # (task §2). Ordinary device-configuration commands, same treatment as the
+    # LAN configuration commands above: no special safety guard beyond the
+    # instrument's universal remote-control gating.
+    def set_analog_reference_range(self, range_v: int) -> None:
+        range_v = int(range_v)
+        if range_v not in (5, 10):
+            raise EaPs9000TValidationError("analog reference range must be 5 or 10 (volts)")
+        self._write(f"SYSTem:CONFig:ANAlog:REFerence {range_v}")
+        self._check_events("Set Analog Reference Range")
+
+    def get_analog_reference_range(self) -> int:
+        return int(float(self._query("SYSTem:CONFig:ANAlog:REFerence?")))
+
+    def set_analog_remsb_level(self, level: AnalogRemsbLevel | str) -> None:
+        level = AnalogRemsbLevel(level)
+        self._write(f"SYSTem:CONFig:ANAlog:REMSB:LEVel {level.value}")
+        self._check_events("Set Analog REM-SB Level")
+
+    def get_analog_remsb_level(self) -> AnalogRemsbLevel:
+        return AnalogRemsbLevel(self._query("SYSTem:CONFig:ANAlog:REMSB:LEVel?").strip())
+
+    def set_analog_remsb_action(self, action: AnalogRemsbAction | str) -> None:
+        action = AnalogRemsbAction(action)
+        self._write(f"SYSTem:CONFig:ANAlog:REMSB:ACTion {action.value}")
+        self._check_events("Set Analog REM-SB Action")
+
+    def get_analog_remsb_action(self) -> AnalogRemsbAction:
+        return AnalogRemsbAction(self._query("SYSTem:CONFig:ANAlog:REMSB:ACTion?").strip())
 
     # ------------------------------------------------------------------
     # Raw SCPI escape hatch (task §10)

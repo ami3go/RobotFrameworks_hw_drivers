@@ -3,8 +3,9 @@ Documentation     Offline acceptance suite against the bundled simulator (task Â
 ...               Covers identity, the RFDS-002 canonical connection lifecycle including
 ...               remote-control acquisition/release, set voltage/current/power and an
 ...               immediate measurement, overvoltage/overcurrent/overpower protection
-...               threshold configuration, output enable/disable, adjustment limits, and
-...               a device-configuration round trip.
+...               threshold configuration, output enable/disable, adjustment limits, a
+...               device-configuration round trip, and (Gate 3) LAN and analog-interface
+...               configuration round trips.
 Library           rf_ea_ps9000t.EaPs9000TLibrary
 Suite Setup       Connect    alias=default    simulated=${TRUE}
 Suite Teardown    Disconnect
@@ -76,3 +77,25 @@ Device Configuration Round Trip
     Set User Text    bench 3
     ${text}=    Get User Text
     Should Be Equal    ${text}    bench 3
+
+LAN Configuration Round Trip
+    Set LAN DHCP Enabled    ${TRUE}
+    ${dhcp}=    Get LAN DHCP Enabled
+    Should Be True    ${dhcp}
+    Set LAN IP Address    192.168.1.50
+    ${ip}=    Get LAN IP Address
+    Should Be Equal    ${ip}    192.168.1.50
+    Run Keyword And Expect Error    *ValidationError*    Set LAN Control Port    502
+    ${mac}=    Get LAN MAC Address
+    Should Not Be Empty    ${mac}
+
+Analog Interface Configuration Round Trip
+    Set Analog Reference Range    5
+    ${range}=    Get Analog Reference Range
+    Should Be Equal As Numbers    ${range}    5
+    Set Analog REMSB Level    INVERTED
+    ${level}=    Get Analog REMSB Level
+    Should Be Equal    ${level}    INVERTED
+    Set Analog REMSB Action    AUTO
+    ${action}=    Get Analog REMSB Action
+    Should Be Equal    ${action}    AUTO

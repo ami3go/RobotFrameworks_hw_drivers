@@ -466,6 +466,132 @@ class EaPs9000TLibrary:
         return self._session(alias).get_overtemperature_alarm_action().value
 
     # ------------------------------------------------------------------
+    # LAN configuration (Gate 3 extension)
+    # ------------------------------------------------------------------
+    @keyword("Set LAN DHCP Enabled")
+    def set_lan_dhcp_enabled(self, enabled: bool, alias: str | None = None) -> None:
+        self._session(alias).set_lan_dhcp_enabled(_as_bool(enabled, "enabled"))
+
+    @keyword("Get LAN DHCP Enabled")
+    def get_lan_dhcp_enabled(self, alias: str | None = None) -> bool:
+        return self._session(alias).get_lan_dhcp_enabled()
+
+    @keyword("Set LAN IP Address")
+    def set_lan_ip_address(self, address: str, alias: str | None = None) -> None:
+        self._session(alias).set_lan_ip_address(address)
+
+    @keyword("Get LAN IP Address")
+    def get_lan_ip_address(self, alias: str | None = None) -> str:
+        return self._session(alias).get_lan_ip_address()
+
+    @keyword("Set LAN Subnet Mask")
+    def set_lan_subnet_mask(self, mask: str, alias: str | None = None) -> None:
+        self._session(alias).set_lan_subnet_mask(mask)
+
+    @keyword("Get LAN Subnet Mask")
+    def get_lan_subnet_mask(self, alias: str | None = None) -> str:
+        return self._session(alias).get_lan_subnet_mask()
+
+    @keyword("Set LAN Gateway")
+    def set_lan_gateway(self, gateway: str, alias: str | None = None) -> None:
+        self._session(alias).set_lan_gateway(gateway)
+
+    @keyword("Get LAN Gateway")
+    def get_lan_gateway(self, alias: str | None = None) -> str:
+        return self._session(alias).get_lan_gateway()
+
+    @keyword("Set LAN Hostname")
+    def set_lan_hostname(self, hostname: str, alias: str | None = None) -> None:
+        self._session(alias).set_lan_hostname(hostname)
+
+    @keyword("Get LAN Hostname")
+    def get_lan_hostname(self, alias: str | None = None) -> str:
+        return self._session(alias).get_lan_hostname()
+
+    @keyword("Set LAN Domain")
+    def set_lan_domain(self, domain: str, alias: str | None = None) -> None:
+        self._session(alias).set_lan_domain(domain)
+
+    @keyword("Get LAN Domain")
+    def get_lan_domain(self, alias: str | None = None) -> str:
+        return self._session(alias).get_lan_domain()
+
+    @keyword("Set LAN DNS1")
+    def set_lan_dns1(self, address: str, alias: str | None = None) -> None:
+        self._session(alias).set_lan_dns1(address)
+
+    @keyword("Get LAN DNS1")
+    def get_lan_dns1(self, alias: str | None = None) -> str:
+        return self._session(alias).get_lan_dns1()
+
+    @keyword("Set LAN DNS2")
+    def set_lan_dns2(self, address: str, alias: str | None = None) -> None:
+        """Anybus modules only (task §9); see ``ea_ps9000t.driver.EaPs9000T.set_lan_dns2``."""
+
+        self._session(alias).set_lan_dns2(address)
+
+    @keyword("Get LAN DNS2")
+    def get_lan_dns2(self, alias: str | None = None) -> str:
+        return self._session(alias).get_lan_dns2()
+
+    @keyword("Set LAN Control Port")
+    def set_lan_control_port(self, port: int, alias: str | None = None) -> None:
+        """Rejects port 502, reserved for ModBus TCP (task §9)."""
+
+        self._session(alias).set_lan_control_port(int(port))
+
+    @keyword("Get LAN Control Port")
+    def get_lan_control_port(self, alias: str | None = None) -> int:
+        return self._session(alias).get_lan_control_port()
+
+    @keyword("Set LAN Keepalive Enabled")
+    def set_lan_keepalive_enabled(self, enabled: bool, alias: str | None = None) -> None:
+        self._session(alias).set_lan_keepalive_enabled(_as_bool(enabled, "enabled"))
+
+    @keyword("Get LAN Keepalive Enabled")
+    def get_lan_keepalive_enabled(self, alias: str | None = None) -> bool:
+        return self._session(alias).get_lan_keepalive_enabled()
+
+    @keyword("Set LAN Timeout")
+    def set_lan_timeout(self, seconds: int, alias: str | None = None) -> None:
+        self._session(alias).set_lan_timeout(int(seconds))
+
+    @keyword("Get LAN Timeout")
+    def get_lan_timeout(self, alias: str | None = None) -> int:
+        return self._session(alias).get_lan_timeout()
+
+    @keyword("Get LAN MAC Address")
+    def get_lan_mac_address(self, alias: str | None = None) -> str:
+        return self._session(alias).get_lan_mac_address()
+
+    # ------------------------------------------------------------------
+    # Analog interface configuration (Gate 3 extension)
+    # ------------------------------------------------------------------
+    @keyword("Set Analog Reference Range")
+    def set_analog_reference_range(self, range_v: int, alias: str | None = None) -> None:
+        self._session(alias).set_analog_reference_range(int(range_v))
+
+    @keyword("Get Analog Reference Range")
+    def get_analog_reference_range(self, alias: str | None = None) -> int:
+        return self._session(alias).get_analog_reference_range()
+
+    @keyword("Set Analog REMSB Level")
+    def set_analog_remsb_level(self, level: str, alias: str | None = None) -> None:
+        self._session(alias).set_analog_remsb_level(level)
+
+    @keyword("Get Analog REMSB Level")
+    def get_analog_remsb_level(self, alias: str | None = None) -> str:
+        return self._session(alias).get_analog_remsb_level().value
+
+    @keyword("Set Analog REMSB Action")
+    def set_analog_remsb_action(self, action: str, alias: str | None = None) -> None:
+        self._session(alias).set_analog_remsb_action(action)
+
+    @keyword("Get Analog REMSB Action")
+    def get_analog_remsb_action(self, alias: str | None = None) -> str:
+        return self._session(alias).get_analog_remsb_action().value
+
+    # ------------------------------------------------------------------
     # Raw SCPI escape hatch (task §10)
     # ------------------------------------------------------------------
     @keyword("Enable Raw SCPI")
@@ -474,9 +600,11 @@ class EaPs9000TLibrary:
 
     @keyword("Raw SCPI Query")
     def raw_scpi_query(self, command: str, alias: str | None = None) -> str:
-        """Bypasses typed validation. Also the sanctioned path to ModBus-disable, LAN,
-        and analog-interface configuration commands, deliberately not wrapped as typed
-        keywords (task §9)."""
+        """Bypasses typed validation. Also the sanctioned path to ModBus-disable and
+        to LAN/analog-interface commands not exposed as typed keywords (Gate 3 added
+        typed keywords for the ordinary LAN and analog-interface configuration
+        commands themselves; ModBus-disable and the Anybus/IF-AB/10000-series-only
+        LAN commands remain raw-SCPI-only, task §9)."""
 
         return self._session(alias).raw_query(command)
 

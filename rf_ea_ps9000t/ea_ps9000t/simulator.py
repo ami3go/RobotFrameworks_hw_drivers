@@ -65,6 +65,36 @@ class _AlarmCounters:
     power_fail: int = 0
 
 
+@dataclass
+class _LanConfig:
+    """SYSTem:COMMunicate:LAN:* state (Gate 3). Defaults match the documented
+    factory defaults except IP-ish fields, which are seeded with plausible
+    private-range placeholders since the source document's own stated default
+    IP is a likely typo (see README.md "Known documentation discrepancy")."""
+
+    dhcp: str = "OFF"
+    address: str = "192.168.0.2"
+    subnet_mask: str = "255.255.255.0"
+    gateway: str = "192.168.0.1"
+    hostname: str = ""
+    domain: str = ""
+    dns1: str = ""
+    dns2: str = ""
+    control_port: int = 5025
+    keepalive: str = "OFF"
+    timeout_s: int = 5
+    mac: str = "00:80:A3:00:00:01"
+
+
+@dataclass
+class _AnalogConfig:
+    """SYSTem:CONFig:ANAlog:* state (Gate 3)."""
+
+    reference_v: int = 10
+    remsb_level: str = "NORMAL"
+    remsb_action: str = "OFF"
+
+
 class SimEaPs9000TInstrument:
     """A small, deterministic stand-in for a real PS 9000 T over VISA."""
 
@@ -76,6 +106,8 @@ class SimEaPs9000TInstrument:
         self.protection = _Protection()
         self.limits = _Limits()
         self.config = _DeviceConfig()
+        self.lan = _LanConfig()
+        self.analog = _AnalogConfig()
         self.alarm_counters = _AlarmCounters()
         self.measured = _SetValues()  # deterministic "next reading" per quantity
         self.force_data_out_of_range = False
@@ -369,6 +401,125 @@ class SimEaPs9000TInstrument:
         self.config.alarm_action_otemperature = rest.strip().upper()
         return b""
 
+    # -- LAN configuration (Gate 3) -------------------------------------------------
+
+    def _lan_dhcp(self, rest: str, is_query: bool) -> bytes:
+        if is_query:
+            return self.lan.dhcp.encode("ascii")
+        if not self._require_remote():
+            return b""
+        self.lan.dhcp = rest.strip().upper()
+        return b""
+
+    def _lan_address(self, rest: str, is_query: bool) -> bytes:
+        if is_query:
+            return f'"{self.lan.address}"'.encode("ascii")
+        if not self._require_remote():
+            return b""
+        self.lan.address = rest.strip().strip('"')
+        return b""
+
+    def _lan_smask(self, rest: str, is_query: bool) -> bytes:
+        if is_query:
+            return f'"{self.lan.subnet_mask}"'.encode("ascii")
+        if not self._require_remote():
+            return b""
+        self.lan.subnet_mask = rest.strip().strip('"')
+        return b""
+
+    def _lan_gateway(self, rest: str, is_query: bool) -> bytes:
+        if is_query:
+            return f'"{self.lan.gateway}"'.encode("ascii")
+        if not self._require_remote():
+            return b""
+        self.lan.gateway = rest.strip().strip('"')
+        return b""
+
+    def _lan_hostname(self, rest: str, is_query: bool) -> bytes:
+        if is_query:
+            return f'"{self.lan.hostname}"'.encode("ascii")
+        if not self._require_remote():
+            return b""
+        self.lan.hostname = rest.strip().strip('"')
+        return b""
+
+    def _lan_domain(self, rest: str, is_query: bool) -> bytes:
+        if is_query:
+            return f'"{self.lan.domain}"'.encode("ascii")
+        if not self._require_remote():
+            return b""
+        self.lan.domain = rest.strip().strip('"')
+        return b""
+
+    def _lan_dns1(self, rest: str, is_query: bool) -> bytes:
+        if is_query:
+            return f'"{self.lan.dns1}"'.encode("ascii")
+        if not self._require_remote():
+            return b""
+        self.lan.dns1 = rest.strip().strip('"')
+        return b""
+
+    def _lan_dns2(self, rest: str, is_query: bool) -> bytes:
+        if is_query:
+            return f'"{self.lan.dns2}"'.encode("ascii")
+        if not self._require_remote():
+            return b""
+        self.lan.dns2 = rest.strip().strip('"')
+        return b""
+
+    def _lan_control(self, rest: str, is_query: bool) -> bytes:
+        if is_query:
+            return str(self.lan.control_port).encode("ascii")
+        if not self._require_remote():
+            return b""
+        self.lan.control_port = int(rest)
+        return b""
+
+    def _lan_keepalive(self, rest: str, is_query: bool) -> bytes:
+        if is_query:
+            return self.lan.keepalive.encode("ascii")
+        if not self._require_remote():
+            return b""
+        self.lan.keepalive = rest.strip().upper()
+        return b""
+
+    def _lan_timeout(self, rest: str, is_query: bool) -> bytes:
+        if is_query:
+            return str(self.lan.timeout_s).encode("ascii")
+        if not self._require_remote():
+            return b""
+        self.lan.timeout_s = int(rest)
+        return b""
+
+    def _lan_mac(self, _rest: str, _is_query: bool) -> bytes:
+        return self.lan.mac.encode("ascii")
+
+    # -- analog interface configuration (Gate 3) -------------------------------------
+
+    def _analog_reference(self, rest: str, is_query: bool) -> bytes:
+        if is_query:
+            return str(self.analog.reference_v).encode("ascii")
+        if not self._require_remote():
+            return b""
+        self.analog.reference_v = int(float(rest))
+        return b""
+
+    def _analog_remsb_level(self, rest: str, is_query: bool) -> bytes:
+        if is_query:
+            return self.analog.remsb_level.encode("ascii")
+        if not self._require_remote():
+            return b""
+        self.analog.remsb_level = rest.strip().upper()
+        return b""
+
+    def _analog_remsb_action(self, rest: str, is_query: bool) -> bytes:
+        if is_query:
+            return self.analog.remsb_action.encode("ascii")
+        if not self._require_remote():
+            return b""
+        self.analog.remsb_action = rest.strip().upper()
+        return b""
+
     # -- system/error --------------------------------------------------------------
 
     def _system_error(self, _rest: str, _is_query: bool) -> bytes:
@@ -429,6 +580,21 @@ _ROUTES: dict[str, Callable] = {
     "SYSTEM:ALARM:ACTION:OTEMPERATURE": SimEaPs9000TInstrument._alarm_action_otemperature,
     "SYSTEM:ERROR": SimEaPs9000TInstrument._system_error,
     "SYSTEM:ERROR:ALL": SimEaPs9000TInstrument._system_error_all,
+    "SYSTEM:COMMUNICATE:LAN:DHCP": SimEaPs9000TInstrument._lan_dhcp,
+    "SYSTEM:COMMUNICATE:LAN:ADDRESS": SimEaPs9000TInstrument._lan_address,
+    "SYSTEM:COMMUNICATE:LAN:SMASK": SimEaPs9000TInstrument._lan_smask,
+    "SYSTEM:COMMUNICATE:LAN:GATEWAY": SimEaPs9000TInstrument._lan_gateway,
+    "SYSTEM:COMMUNICATE:LAN:HOSTNAME": SimEaPs9000TInstrument._lan_hostname,
+    "SYSTEM:COMMUNICATE:LAN:DOMAIN": SimEaPs9000TInstrument._lan_domain,
+    "SYSTEM:COMMUNICATE:LAN:DNS1": SimEaPs9000TInstrument._lan_dns1,
+    "SYSTEM:COMMUNICATE:LAN:DNS2": SimEaPs9000TInstrument._lan_dns2,
+    "SYSTEM:COMMUNICATE:LAN:CONTROL": SimEaPs9000TInstrument._lan_control,
+    "SYSTEM:COMMUNICATE:LAN:KEEPALIVE": SimEaPs9000TInstrument._lan_keepalive,
+    "SYSTEM:COMMUNICATE:LAN:TIMEOUT": SimEaPs9000TInstrument._lan_timeout,
+    "SYSTEM:COMMUNICATE:LAN:MAC": SimEaPs9000TInstrument._lan_mac,
+    "SYSTEM:CONFIG:ANALOG:REFERENCE": SimEaPs9000TInstrument._analog_reference,
+    "SYSTEM:CONFIG:ANALOG:REMSB:LEVEL": SimEaPs9000TInstrument._analog_remsb_level,
+    "SYSTEM:CONFIG:ANALOG:REMSB:ACTION": SimEaPs9000TInstrument._analog_remsb_action,
 }
 
 SimEaPs9000TInstrument._ROUTES = _ROUTES
