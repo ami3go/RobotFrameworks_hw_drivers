@@ -36,6 +36,9 @@ TERMINATORS: tuple[bytes, ...] = (CR, BEL)
 _STANDARD_ID_MAX = 0x7FF
 _EXTENDED_ID_MAX = 0x1FFFFFFF
 _MAX_DLC = 8
+_TIMESTAMP_MODULUS = 60000  # ms; documented judgment call, see task doc §16
+_TIMESTAMP_HEX_DIGITS = 4
+_ACCEPTANCE_REGISTER_MAX = 0xFFFFFFFF
 
 
 # ----------------------------------------------------------------------
@@ -63,6 +66,26 @@ def encode_version_query() -> bytes:
 
 def encode_serial_query() -> bytes:
     return b"N" + CR
+
+
+def encode_set_timestamps(enabled: bool) -> bytes:
+    return f"Z{1 if enabled else 0}".encode("ascii") + CR
+
+
+def encode_set_acceptance_code(code: int) -> bytes:
+    if not (0 <= code <= _ACCEPTANCE_REGISTER_MAX):
+        raise SlcanValidationError(
+            f"acceptance code must be 0-{_ACCEPTANCE_REGISTER_MAX:#x}, got {code:#x}"
+        )
+    return f"M{code:08X}".encode("ascii") + CR
+
+
+def encode_set_acceptance_mask(mask: int) -> bytes:
+    if not (0 <= mask <= _ACCEPTANCE_REGISTER_MAX):
+        raise SlcanValidationError(
+            f"acceptance mask must be 0-{_ACCEPTANCE_REGISTER_MAX:#x}, got {mask:#x}"
+        )
+    return f"m{mask:08X}".encode("ascii") + CR
 
 
 def encode_transmit(frame: CanFrame) -> bytes:
@@ -94,28 +117,46 @@ def encode_transmit(frame: CanFrame) -> bytes:
     return body.encode("ascii") + CR
 
 
+def encode_received_frame(frame: CanFrame, *, timestamps_enabled: bool) -> bytes:
+    """Formats a frame the way the adapter would report one *it* received
+    off the bus — the same wire shape as :func:`encode_transmit`, with an
+    optional trailing 4-hex-digit timestamp (Gate 3, ``Z1`` mode). Used by
+    the simulator's ``inject_frame`` test hook; pure, so it takes the
+    timestamp from ``frame.timestamp_ms`` rather than reading a clock."""
+
+    body = encode_transmit(frame)
+    if not timestamps_enabled:
+        return body
+    ts = (frame.timestamp_ms or 0) % _TIMESTAMP_MODULUS
+    return body[:-1] + f"{ts:0{_TIMESTAMP_HEX_DIGITS}X}".encode("ascii") + CR
+
+
 # ----------------------------------------------------------------------
 # Decoding / classification (adapter -> driver)
 # ----------------------------------------------------------------------
-def classify_line(raw: bytes) -> CanFrame | bytes:
+def classify_line(raw: bytes, *, timestamps_enabled: bool = False) -> CanFrame | bytes:
     """Routes one terminated line from the adapter.
 
     Returns a parsed :class:`CanFrame` if the line is a frame notification;
     otherwise returns the line's body with the terminator stripped (``b""``
     for a bare ack, ``b"\\a"`` for a nack, or the raw data of a query
     response such as ``b"F06"``/``b"V1013"``/``b"NA123"``) for the caller to
-    interpret.
+    interpret. ``timestamps_enabled`` must reflect the adapter's current
+    ``Z0``/``Z1`` mode (tracked by the caller — see
+    :attr:`slcan.reader.BackgroundReader.timestamps_enabled`) since a frame
+    line's wire format doesn't self-describe whether its trailing hex digits
+    are a timestamp or data.
     """
 
     if raw == BEL:
         return BEL
     body = raw[:-1] if raw.endswith(CR) else raw
     if body[:1] in _FRAME_PREFIXES:
-        return parse_frame_line(body)
+        return parse_frame_line(body, timestamps_enabled=timestamps_enabled)
     return body
 
 
-def parse_frame_line(body: bytes) -> CanFrame:
+def parse_frame_line(body: bytes, *, timestamps_enabled: bool = False) -> CanFrame:
     if not body:
         raise SlcanProtocolError("empty frame line")
     try:
@@ -142,20 +183,37 @@ def parse_frame_line(body: bytes) -> CanFrame:
     if dlc > _MAX_DLC:
         raise SlcanProtocolError(f"dlc out of range in frame line: {text!r}")
 
-    data_hex = rest[id_len + 1 :]
+    remainder = rest[id_len + 1 :]
     if remote:
         data = b""
     else:
         expected_len = dlc * 2
-        if len(data_hex) < expected_len:
+        if len(remainder) < expected_len:
             raise SlcanProtocolError(f"truncated frame data: {text!r}")
         try:
-            data = bytes.fromhex(data_hex[:expected_len])
+            data = bytes.fromhex(remainder[:expected_len])
         except ValueError as exc:
             raise SlcanProtocolError(f"malformed frame data: {text!r}") from exc
+        remainder = remainder[expected_len:]
+
+    timestamp_ms: int | None = None
+    if timestamps_enabled:
+        if len(remainder) < _TIMESTAMP_HEX_DIGITS:
+            raise SlcanProtocolError(f"truncated timestamp in frame line: {text!r}")
+        try:
+            timestamp_ms = int(remainder[:_TIMESTAMP_HEX_DIGITS], 16)
+        except ValueError as exc:
+            raise SlcanProtocolError(f"malformed timestamp in frame line: {text!r}") from exc
+    elif remainder:
+        raise SlcanProtocolError(f"unexpected trailing data in frame line: {text!r}")
 
     return CanFrame(
-        arbitration_id=arbitration_id, data=data, dlc=dlc, extended=extended, remote=remote
+        arbitration_id=arbitration_id,
+        data=data,
+        dlc=dlc,
+        extended=extended,
+        remote=remote,
+        timestamp_ms=timestamp_ms,
     )
 
 
@@ -204,3 +262,17 @@ def parse_serial_number(raw: bytes) -> str:
     if not text.startswith("N") or len(text) < 5:
         raise SlcanProtocolError(f"malformed serial-number response: {text!r}")
     return text[1:5]
+
+
+def parse_acceptance_register(command: str, *, prefix: str) -> int:
+    """Parses an ``M<8hex>``/``m<8hex>`` acceptance code/mask command (Gate 3)
+    into its integer register value. Used by the simulator to validate what
+    the host just sent; not an adapter response, so it takes ``str`` rather
+    than the response-decoding ``bytes`` the ``parse_*`` functions above take."""
+
+    if not command.startswith(prefix) or len(command) != 1 + 8:
+        raise SlcanProtocolError(f"malformed acceptance register command: {command!r}")
+    try:
+        return int(command[1:], 16)
+    except ValueError as exc:
+        raise SlcanProtocolError(f"malformed acceptance register command: {command!r}") from exc

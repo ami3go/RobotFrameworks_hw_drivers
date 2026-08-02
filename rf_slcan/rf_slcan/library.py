@@ -94,6 +94,18 @@ def _as_mode(value: Any) -> ChannelMode:
     raise SlcanValidationError(f"mode must be NORMAL or LISTEN_ONLY, got {value!r}")
 
 
+def _as_register_value(value: Any, name: str) -> int:
+    """Accepts an int, or a string in decimal or ``0x``-prefixed hex — for the
+    acceptance code/mask registers (Gate 3), which are naturally hex values."""
+
+    if isinstance(value, int) and not isinstance(value, bool):
+        return value
+    try:
+        return int(str(value).strip(), 0)
+    except ValueError as exc:
+        raise SlcanValidationError(f"{name} must be an integer or hex string, got {value!r}") from exc
+
+
 def _robot_value(value: Any) -> Any:
     if is_dataclass(value) and not isinstance(value, type):
         return {k: _robot_value(v) for k, v in asdict(value).items()}
@@ -307,6 +319,43 @@ class SlcanLibrary:
     @keyword("Is Channel Open")
     def is_channel_open(self, alias: str | None = None) -> bool:
         return self._session(alias).channel_open
+
+    # ------------------------------------------------------------------
+    # Acceptance filter (Gate 3) — rejected by the adapter while the
+    # channel is open, same as Set Bitrate.
+    # ------------------------------------------------------------------
+    @keyword("Set Acceptance Code")
+    def set_acceptance_code(self, code: Any, alias: str | None = None) -> None:
+        self._session(alias).set_acceptance_code(_as_register_value(code, "code"))
+
+    @keyword("Get Acceptance Code")
+    def get_acceptance_code(self, alias: str | None = None) -> int | None:
+        """Read-only, driver-tracked — the adapter has no query form for this."""
+
+        return self._session(alias).get_acceptance_code()
+
+    @keyword("Set Acceptance Mask")
+    def set_acceptance_mask(self, mask: Any, alias: str | None = None) -> None:
+        self._session(alias).set_acceptance_mask(_as_register_value(mask, "mask"))
+
+    @keyword("Get Acceptance Mask")
+    def get_acceptance_mask(self, alias: str | None = None) -> int | None:
+        """Read-only, driver-tracked — the adapter has no query form for this."""
+
+        return self._session(alias).get_acceptance_mask()
+
+    # ------------------------------------------------------------------
+    # Timestamp mode (Gate 3)
+    # ------------------------------------------------------------------
+    @keyword("Set Timestamps Enabled")
+    def set_timestamps_enabled(self, enabled: bool, alias: str | None = None) -> None:
+        self._session(alias).set_timestamps_enabled(_as_bool(enabled, "enabled"))
+
+    @keyword("Get Timestamps Enabled")
+    def get_timestamps_enabled(self, alias: str | None = None) -> bool:
+        """Read-only, driver-tracked — the adapter has no query form for this."""
+
+        return self._session(alias).get_timestamps_enabled()
 
     # ------------------------------------------------------------------
     # Frames

@@ -1,9 +1,10 @@
 *** Settings ***
-Documentation     Offline acceptance suite against the bundled simulator (task §14.2).
+Documentation     Offline acceptance suite against the bundled simulator (task §13.2).
 ...               Covers identity, the RFDS-002 canonical connection lifecycle, bitrate/
 ...               open/close channel control, sending standard and extended frames, receiving
 ...               an asynchronously injected frame, the drain-queue FIFO, status/version/
-...               serial-number queries, and the raw SLCAN escape hatch.
+...               serial-number queries, the raw SLCAN escape hatch, and (Gate 3) the
+...               acceptance code/mask filter and timestamp mode round trips.
 Library           rf_slcan.SlcanLibrary
 Library           Collections
 Suite Setup       Connect    alias=default    simulated=${TRUE}
@@ -77,3 +78,27 @@ Raw SLCAN Escape Hatch
     Enable Raw SLCAN    ENABLE RAW SLCAN
     ${response}=    Raw SLCAN Command    V    expects_data=${TRUE}
     Should Not Be Empty    ${response}
+
+Acceptance Code And Mask Round Trip
+    ${code}=    Get Acceptance Code
+    Should Be Equal    ${code}    ${NONE}
+    Set Acceptance Code    0x123
+    Set Acceptance Mask    0xFFFFFFFF
+    ${code}=    Get Acceptance Code
+    ${mask}=    Get Acceptance Mask
+    Should Be Equal As Integers    ${code}    291
+    Should Be Equal As Integers    ${mask}    4294967295
+
+Acceptance Filter Cannot Change While Channel Open
+    Set Bitrate    500K
+    Open Channel    NORMAL
+    Run Keyword And Expect Error    *DeviceError*    Set Acceptance Code    0x1
+    Close Channel
+
+Timestamps Enabled Round Trip
+    ${enabled}=    Get Timestamps Enabled
+    Should Not Be True    ${enabled}
+    Set Timestamps Enabled    ${TRUE}
+    ${enabled}=    Get Timestamps Enabled
+    Should Be True    ${enabled}
+    Set Timestamps Enabled    ${FALSE}

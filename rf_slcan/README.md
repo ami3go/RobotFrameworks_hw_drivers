@@ -7,9 +7,10 @@ also implemented by CANable/candleLight firmware, the Linux kernel `slcan` drive
 Implementation, RFDS-020): connection, bitrate/channel control, sending and receiving CAN
 frames (including asynchronous frame capture via a background reader thread), status/version/
 serial-number queries, and a raw SLCAN escape hatch are all implemented and tested against the
-bundled simulator. Gate 3 (extended features — acceptance filters/masks, timestamp mode), Gate
-4 (full docs/AI contract/CI), and Gate 5 (review/release) have not started yet — see `task/`
-for the driver specification that shaped this implementation.
+bundled simulator. Gate 3 (Extended Features): the acceptance code/mask filter (`M`/`m`) and
+timestamp mode (`Z0`/`Z1`) are also implemented. Gate 4 (full docs/AI contract/CI) and Gate 5
+(review/release) have not started yet — see `task/` for the driver specification that shaped
+this implementation.
 
 **Scope**: classic CAN 2.0 only (11-bit/29-bit arbitration IDs, 0-8 byte data, remote/RTR
 frames). CAN FD is deliberately out of scope — there is no single agreed FD dialect across
@@ -72,9 +73,9 @@ Against real hardware, pass a serial port path instead of `simulated=${TRUE}`:
 Connect    resource=/dev/ttyACM0
 ```
 
-(or `COM5` on Windows). See `examples/` for four runnable suites (identify, open and transmit,
-receive frames, status and error handling) and `tests/robot/acceptance.robot` for the full
-offline coverage.
+(or `COM5` on Windows). See `examples/` for five runnable suites (identify, open and transmit,
+receive frames, status and error handling, acceptance filter and timestamps) and
+`tests/robot/acceptance.robot` for the full offline coverage.
 
 ## Keywords
 
@@ -90,6 +91,14 @@ offline coverage.
   `Drain Received Frames`, `Get Received Frame Count`, `Clear Received Frames`,
   `Get Receive Overflow Count` (read-only)
 - **Status:** `Get Status`, `Get Version`, `Get Serial Number`
+- **Acceptance filter (Gate 3):** `Set/Get Acceptance Code`, `Set/Get Acceptance Mask` —
+  rejected by the adapter while the channel is open, mirroring `Set Bitrate`. Both `Get`
+  keywords are read-only, driver-tracked round trips: the adapter has no query form for
+  either, so they simply report what this driver last successfully set (`${None}` if never
+  set).
+- **Timestamp mode (Gate 3):** `Set/Get Timestamps Enabled` — when enabled, frames returned
+  by `Receive Frame`/`Drain Received Frames` carry a populated `timestamp_ms` field instead
+  of `${None}`.
 - **Raw escape hatch:** `Enable Raw SLCAN` (requires the exact confirmation text
   `"ENABLE RAW SLCAN"`), `Raw SLCAN Command`
 
@@ -119,5 +128,17 @@ non-connection keyword.
   drawn from the widely-mirrored Lawicel protocol description but has not been re-confirmed
   against a specific target adapter's manual — see the task document §16 item 1 before relying
   on `Get Status` for real bus-fault detection on a particular unit.
+- **The acceptance code/mask filter (Gate 3) is not confirmed as universally supported or
+  identically behaved across adapters** — some real adapters may ignore `M`/`m` entirely and
+  silently ACK rather than actually filtering. The bundled simulator exercises the typed
+  keyword round trip only; it does not enforce filtering against injected test frames, since
+  hardware-accurate filtering behavior was never confirmed against a specific target adapter.
+  Confirm against your specific adapter's manual before relying on this for real bus-load
+  reduction.
+- **Timestamp mode (Gate 3) uses a 4-hex-digit, 60000&nbsp;ms-wrapping counter** per the
+  widely-mirrored protocol description — also not independently re-confirmed against a
+  specific target adapter (task document §16). Enabling/disabling it mid-session only affects
+  frames the adapter reports afterward; already-queued frames keep whatever timestamp state
+  was in effect when they arrived.
 - An `ai/ai_contract.yaml` (RFDS-017 machine-readable contract) has not been generated yet;
   that is Gate 4 work.

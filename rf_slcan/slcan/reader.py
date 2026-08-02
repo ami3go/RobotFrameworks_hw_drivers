@@ -38,6 +38,10 @@ class BackgroundReader:
         self.rx_queue: queue.Queue[CanFrame] = queue.Queue(maxsize=rx_queue_maxsize)
         self.overflow_count = 0
         self.fault: Exception | None = None
+        self.timestamps_enabled = False
+        """Set by ``SlcanAdapter.set_timestamps_enabled`` (Gate 3, ``Z0``/``Z1``) so this
+        thread knows how to parse frame lines. A plain bool set from the calling thread and
+        read here is safe under CPython's GIL, same as ``fault`` above."""
         self._stop_event = threading.Event()
         self._thread: threading.Thread | None = None
 
@@ -73,7 +77,7 @@ class BackgroundReader:
                 return
 
             try:
-                result = codec.classify_line(raw)
+                result = codec.classify_line(raw, timestamps_enabled=self.timestamps_enabled)
             except SlcanError as exc:
                 self._on_fault(exc)
                 return

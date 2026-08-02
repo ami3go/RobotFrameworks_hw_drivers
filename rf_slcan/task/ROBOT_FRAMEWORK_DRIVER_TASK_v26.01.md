@@ -29,9 +29,9 @@ driver in this repository — not retrofitted later.
 **Scope for v26.01**: classic CAN 2.0 only (11-bit/29-bit arbitration IDs, 0-8 byte data,
 remote/RTR frames). CAN FD is explicitly **out of scope** — there is no single agreed FD
 dialect across SLCAN implementations, so adding it now would mean guessing at one vendor's
-extension rather than grounding it in a confirmed source. Acceptance filter/mask commands
-(`M`/`m`), timestamp mode (`Z0`/`Z1`), and additional status detail are deferred to a future
-Gate 3 pass.
+extension rather than grounding it in a confirmed source. Gate 3 adds the acceptance code/mask
+filter (`M`/`m`) and timestamp mode (`Z0`/`Z1`); additional status detail beyond the `F` flags
+already covered in Gate 1-2 remains out of scope.
 
 ## 2. Protocol facts (source: the Lawicel CAN232/CANUSB ASCII protocol — the de facto standard
 essentially every "slcan" implementation agrees on, cross-referenced against the Linux kernel
@@ -64,7 +64,7 @@ identically across vendors)
 - **Status:** `F` queries status flags, returned as `F<hex-byte>`. Bit layout as commonly
   documented: bit0 RX queue full, bit1 TX queue full, bit2 error warning, bit3 data overrun,
   bit4 reserved/unused, bit5 error passive, bit6 arbitration lost, bit7 bus error — **verify
-  against the target adapter's manual during Gate 2** (§19).
+  against the target adapter's manual during Gate 2** (§16).
 - **Identity:** `V` returns hardware/software version as `V<hw:2hex><sw:2hex>`; `N` returns a
   serial number as `N<4hex>`. Neither is a real `*IDN?` equivalent — there is no manufacturer/
   model string in the base protocol, so `Get Identity` synthesizes a stable identity string
@@ -195,7 +195,7 @@ with the adapter's real state.
 - `Set Bitrate {10K|20K|50K|100K|125K|250K|500K|800K|1M}` — `S<n>`. Rejected by the adapter
   while the channel is open (§2).
 - `Open Channel(mode="NORMAL")` — `O` (normal) or `L` (listen-only). Rejected by the adapter
-  if no bitrate has been set first (a documented, conservative judgment call — see §19).
+  if no bitrate has been set first (a documented, conservative judgment call — see §16).
 - `Close Channel` — `C`. Always attempted; see §6 item 1.
 - `Is Channel Open` — read-only, driver-tracked state (mirrors what the last successful
   open/close call established; the adapter itself has no "query current mode" command).
@@ -220,6 +220,26 @@ with the adapter's real state.
 - `Get Version` / `Get Serial Number` — `V`/`N`, both harmless read-only queries that don't
   require the channel to be open.
 
+## 10a. Acceptance filter and timestamp mode keywords (Gate 3)
+
+Neither is confirmed as universally supported/behaved identically across adapters — grounded
+in the widely-mirrored Lawicel description (§2), not independently hardware-verified. See §16.
+
+- `Set/Get Acceptance Code` / `Set/Get Acceptance Mask` — `M<8hex>`/`m<8hex>`. Rejected by the
+  adapter while the channel is open, mirroring the confirmed `S<n>` bitrate constraint. The
+  `Get` keywords are read-only, driver-tracked round trips (the adapter has no query form for
+  either) and return `${None}` until the corresponding `Set` has been called at least once.
+- `Set/Get Timestamps Enabled` — `Z0`/`Z1`. Unlike the filter commands, not documented as
+  requiring the channel to be closed (it only affects the host-facing serial line format, not
+  the CAN controller itself), so no such constraint is enforced. When enabled, frames returned
+  by `Receive Frame`/`Drain Received Frames` carry a populated `timestamp_ms` field (a 4-hex-
+  digit, 60000&nbsp;ms-wrapping counter per the cited source) instead of `${None}`. Enabling/
+  disabling mid-session only affects frames the adapter reports afterward — this is a wire-
+  ordering property of the background reader (`reader.py`), not a client-side approximation:
+  the reader's own timestamp-mode flag is only updated after the `Z0`/`Z1` command's
+  acknowledgement has itself been read off the wire, so any frame line queued ahead of that ack
+  is guaranteed to be parsed under the previous mode.
+
 ## 11. Raw SLCAN escape hatch
 
 - `Enable Raw SLCAN` shall require an exact confirmation string (`"ENABLE RAW SLCAN"`),
@@ -233,7 +253,7 @@ The bundled simulator (`SimSlcanAdapter`) shall support, deterministically and w
 hardware:
 
 - Bitrate/open/close state tracking, including the adapter's documented rejections (bitrate
-  change while open; open without a bitrate set first — §19; open while already open; transmit
+  change while open; open without a bitrate set first — §16; open while already open; transmit
   while not open or while in listen-only mode).
 - `F`/`V`/`N` status/version/serial-number responses, with `status_flags` directly settable by
   a test as a raw byte (test hook, not a driver keyword) so `has_fault`-adjacent behavior can
@@ -244,6 +264,15 @@ hardware:
   code path against the simulator as it would against real hardware. This is the single most
   important simulator requirement for this driver, since it's the only way to test
   asynchronous frame capture offline.
+- **Acceptance code/mask state tracking (Gate 3)** — `M`/`m` accepted only while the channel is
+  closed (mirroring the `S<n>` constraint above), rejected otherwise. Not enforced against
+  `inject_frame` — the simulator exercises the typed keyword round trip only, not hardware-
+  accurate filtering (§10a).
+- **Timestamp mode state tracking (Gate 3)** — `Z0`/`Z1` accepted regardless of open/closed
+  state. When enabled, `inject_frame` encodes the injected frame with a trailing 4-hex-digit
+  timestamp (auto-filled from a monotonic clock if the test didn't supply one on the
+  `CanFrame`), so `Receive Frame`/`Drain Received Frames` genuinely exercise the timestamp-
+  parsing path, not a hardcoded value.
 
 ## 13. Tests
 
@@ -278,21 +307,31 @@ Cover at minimum:
     mode-name, and hex/list/bytes data argument normalization).
 13. Multi-alias session handling, including `_end_suite` closing every session (and therefore
     stopping every reader thread) at suite teardown.
+14. **(Gate 3)** Acceptance code/mask round trips; rejected while the channel is open; rejected
+    out of the 0-0xFFFFFFFF range client-side before any device I/O.
+15. **(Gate 3)** Timestamp mode round trip; a received frame carries no timestamp while
+    disabled, an explicit or auto-filled timestamp while enabled (wrapping at 60000&nbsp;ms);
+    and — the ordering property that makes this safe without extra locking — a frame injected
+    *before* `Set Timestamps Enabled` is still parsed under the *old* mode even though it's
+    dequeued by the background reader *after* the mode flag has already flipped in the driver,
+    because the reader itself only updates its own copy of the flag after processing that
+    command's acknowledgement, which is strictly ordered after any already-queued frame line.
 
 ### 13.2 Robot acceptance tests
 
 Must run offline against the simulator and cover: identity, connect/disconnect lifecycle
 (including the RFDS-002 generic keywords), the open-before-bitrate rejection, a full bitrate/
 open/close round trip, sending standard and extended frames, the receive-timeout contract
-(`${None}` on nothing arriving), status/version/serial-number queries, and the raw SLCAN
-escape hatch. (Frame-injection/interleaving correctness itself is Python-only coverage per
-§12 — `inject_frame` is not a Robot keyword.)
+(`${None}` on nothing arriving), status/version/serial-number queries, the raw SLCAN escape
+hatch, and (Gate 3) the acceptance code/mask and timestamp-enabled round trips. (Frame-
+injection/interleaving correctness itself is Python-only coverage per §12 — `inject_frame` is
+not a Robot keyword.)
 
 ### 13.3 Hardware tests (future — not part of this Gate 1-3 pass)
 
 Deferred until a real SLCAN adapter and CAN bus (or a second node to generate traffic) are
 available for qualification: confirm the exact `F` status-flag bit layout against the target
-adapter's own manual (§19); confirm the default serial baud rate the adapter's USB-CDC port
+adapter's own manual (§16); confirm the default serial baud rate the adapter's USB-CDC port
 actually presents at (separate from, and not to be confused with, the CAN bitrate set via
 `S<n>`); confirm real-world latency/throughput of the background reader under sustained bus
 traffic; confirm behavior when the adapter is physically unplugged mid-session.
@@ -300,10 +339,11 @@ traffic; confirm behavior when the adapter is physically unplugged mid-session.
 ## 14. Documentation and examples
 
 Deliver, matching this repository's other Gate 1-3 drivers: README with install, import,
-quick start, safety notes, keyword reference, and status; four runnable Robot examples
-(identify, open-and-transmit, receive-frames, status-and-error-handling). Full RFDS-005
-documentation set (Pages/MkDocs, PyCharm/hardware setup guides, `ai/ai_contract.yaml`,
-history, review) is Gate 4/5 work, matching every other new driver built this session.
+quick start, safety notes, keyword reference, and status; five runnable Robot examples
+(identify, open-and-transmit, receive-frames, status-and-error-handling, acceptance-filter-
+and-timestamps). Full RFDS-005 documentation set (Pages/MkDocs, PyCharm/hardware setup guides,
+`ai/ai_contract.yaml`, history, review) is Gate 4/5 work, matching every other new driver built
+this session.
 
 ## 15. Acceptance criteria
 
@@ -319,6 +359,9 @@ The task is complete only when:
 - [ ] Receive-queue overflow drops the oldest frame and increments a queryable counter.
 - [ ] Closing the channel is always possible, even mid-fault.
 - [ ] Raw SLCAN requires exact confirmation text.
+- [ ] (Gate 3) Acceptance code/mask filter keywords exist and are rejected while open.
+- [ ] (Gate 3) Timestamp mode keywords exist and received frames carry a populated
+      `timestamp_ms` only while enabled.
 - [ ] Python tests pass.
 - [ ] Robot acceptance tests pass against the simulator.
 - [ ] Offline examples pass.
@@ -347,3 +390,12 @@ required" until it is completed.
    qualification shows a specific target adapter behaves differently.
 4. **CAN FD** — explicitly out of scope for v26.01 (§1); revisit only if a specific target
    adapter and its FD dialect are identified and its manual can be cited directly.
+5. **Acceptance code/mask (`M`/`m`) support and semantics (Gate 3)** — implemented per the
+   widely-mirrored Lawicel description, but not confirmed as universally supported or
+   identically behaved across adapters; some real adapters may silently ACK and ignore these
+   commands rather than actually filtering. Confirm against the target adapter's own manual
+   before relying on this for real bus-load reduction, and note the simulator does not enforce
+   filtering against `inject_frame` (§12/§10a) — only the typed keyword round trip is tested.
+6. **Timestamp field width/wraparound (Gate 3)** — implemented as a 4-hex-digit counter
+   wrapping at 60000&nbsp;ms per the widely-mirrored description, matching §10a; also not
+   independently re-confirmed against a specific target adapter's manual.

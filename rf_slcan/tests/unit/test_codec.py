@@ -136,3 +136,101 @@ def test_parse_version():
 
 def test_parse_serial_number():
     assert codec.parse_serial_number(b"NA123") == "A123"
+
+
+# ------------------------------------------------------------------
+# Gate 3: timestamp mode (Z0/Z1)
+# ------------------------------------------------------------------
+def test_encode_set_timestamps():
+    assert codec.encode_set_timestamps(True) == b"Z1\r"
+    assert codec.encode_set_timestamps(False) == b"Z0\r"
+
+
+def test_encode_received_frame_without_timestamps_matches_encode_transmit():
+    frame = CanFrame(arbitration_id=0x123, data=b"\xaa", dlc=1)
+    assert codec.encode_received_frame(frame, timestamps_enabled=False) == codec.encode_transmit(frame)
+
+
+def test_encode_received_frame_with_timestamp_appends_4_hex_digits():
+    frame = CanFrame(arbitration_id=0x123, data=b"\xaa", dlc=1, timestamp_ms=0x1234)
+    assert codec.encode_received_frame(frame, timestamps_enabled=True) == b"t1231AA1234\r"
+
+
+def test_encode_received_frame_timestamp_wraps_at_60000():
+    frame = CanFrame(arbitration_id=0x1, data=b"", dlc=0, timestamp_ms=60010)
+    result = codec.encode_received_frame(frame, timestamps_enabled=True)
+    assert result == b"t0010000A\r"  # 60010 % 60000 = 10 = 0x000A
+
+
+def test_encode_received_frame_defaults_missing_timestamp_to_zero():
+    frame = CanFrame(arbitration_id=0x1, data=b"", dlc=0)
+    result = codec.encode_received_frame(frame, timestamps_enabled=True)
+    assert result == b"t00100000\r"  # 4 zero hex digits
+
+
+def test_classify_line_frame_with_timestamps_enabled():
+    result = codec.classify_line(b"t1231AA1234\r", timestamps_enabled=True)
+    assert result == CanFrame(arbitration_id=0x123, data=b"\xaa", dlc=1, timestamp_ms=0x1234)
+
+
+def test_classify_line_frame_without_timestamps_has_no_timestamp():
+    result = codec.classify_line(b"t1231AA\r", timestamps_enabled=False)
+    assert isinstance(result, CanFrame)
+    assert result.timestamp_ms is None
+
+
+def test_parse_frame_line_rejects_unexpected_trailing_data_when_timestamps_disabled():
+    with pytest.raises(SlcanProtocolError):
+        codec.parse_frame_line(b"t1231AA1234", timestamps_enabled=False)
+
+
+def test_parse_frame_line_rejects_truncated_timestamp():
+    with pytest.raises(SlcanProtocolError):
+        codec.parse_frame_line(b"t1231AA12", timestamps_enabled=True)  # only 2 timestamp digits
+
+
+def test_remote_frame_timestamp_round_trip():
+    frame = CanFrame(arbitration_id=0x321, data=b"", dlc=4, remote=True, timestamp_ms=0xABCD)
+    encoded = codec.encode_received_frame(frame, timestamps_enabled=True)
+    decoded = codec.classify_line(encoded, timestamps_enabled=True)
+    assert decoded == frame
+
+
+# ------------------------------------------------------------------
+# Gate 3: acceptance code/mask filter (M/m)
+# ------------------------------------------------------------------
+def test_encode_set_acceptance_code():
+    assert codec.encode_set_acceptance_code(0x123) == b"M00000123\r"
+
+
+def test_encode_set_acceptance_mask():
+    assert codec.encode_set_acceptance_mask(0xFFFFFFFF) == b"mFFFFFFFF\r"
+
+
+def test_encode_set_acceptance_code_rejects_out_of_range():
+    with pytest.raises(SlcanValidationError):
+        codec.encode_set_acceptance_code(-1)
+    with pytest.raises(SlcanValidationError):
+        codec.encode_set_acceptance_code(0x100000000)
+
+
+def test_encode_set_acceptance_mask_rejects_out_of_range():
+    with pytest.raises(SlcanValidationError):
+        codec.encode_set_acceptance_mask(-1)
+    with pytest.raises(SlcanValidationError):
+        codec.encode_set_acceptance_mask(0x100000000)
+
+
+def test_parse_acceptance_register():
+    assert codec.parse_acceptance_register("M00000123", prefix="M") == 0x123
+    assert codec.parse_acceptance_register("mFFFFFFFF", prefix="m") == 0xFFFFFFFF
+
+
+def test_parse_acceptance_register_rejects_wrong_prefix():
+    with pytest.raises(SlcanProtocolError):
+        codec.parse_acceptance_register("m00000123", prefix="M")
+
+
+def test_parse_acceptance_register_rejects_malformed_hex():
+    with pytest.raises(SlcanProtocolError):
+        codec.parse_acceptance_register("MZZZZZZZZ", prefix="M")

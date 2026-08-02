@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git commit -m ' *)",
+      "Bash(gh --version)",
+      "Bash(gh auth *)",
+      "Bash(xargs cat)",
+      "Bash(curl -sI --max-time 5 https://fonts.gstatic.com/s/robotomono/v30/L0xuDF4xlVMF-BfR8bXMIhJHg45mwgGEFl0_3vq_ROW4.woff2)",
+      "Bash(echo \"exit:$?\")",
+      "Bash(python3 -c ' *)",
+      "WebSearch",
+      "Bash(pdftotext -layout /tmp/claude-1000/-home-aleksu-Documents-GitHub-RobotFrameworks-hw-drivers/b62eac9a-1b4b-4f91-b224-b1469db05a8b/scratchpad/tbs1000c/programmer_manual.pdf /tmp/claude-1000/-home-aleksu-Documents-GitHub-RobotFrameworks-hw-drivers/b62eac9a-1b4b-4f91-b224-b1469db05a8b/scratchpad/tbs1000c/manual.txt)",
+      "Bash(grep -n \"^[A-Z][A-Za-z]* commands$\" manual.txt)",
+      "Bash(pdftotext -f 103 -l 105 -layout programmer_manual.pdf -)",
+      "WebFetch(domain:www.tek.com)",
+      "Bash(grep -n \"^SET?\\\\|SET? on page\\\\|SET?$\" manual.txt)",
+      "Bash(pdftotext -f 100 -l 103 -layout programmer_manual.pdf -)",
+      "Bash(pdftotext -f 141 -l 143 -layout programmer_manual.pdf -)",
+      "Bash(mkdir -p tbs1000c rf_tbs1000c tests/unit tests/robot examples)",
+      "Bash(touch tbs1000c/__init__.py rf_tbs1000c/__init__.py tests/__init__.py tests/unit/__init__.py)",
+      "Bash(python3 -c \"import ast; ast.parse\\(open\\('tbs1000c/driver.py'\\).read\\(\\)\\)\")",
+      "Bash(python3 -c \"import ast; ast.parse\\(open\\('tbs1000c/simulator.py'\\).read\\(\\)\\)\")",
+      "Bash(/tmp/claude-1000/-home-aleksu-Documents-GitHub-RobotFrameworks-hw-drivers/b62eac9a-1b4b-4f91-b224-b1469db05a8b/scratchpad/verify_venv/bin/python3 -m pip show robotframework-tbs1000c)",
+      "Bash(/tmp/claude-1000/-home-aleksu-Documents-GitHub-RobotFrameworks-hw-drivers/b62eac9a-1b4b-4f91-b224-b1469db05a8b/scratchpad/verify_venv/bin/python3 -c ' *)"
+    ]
+  }
+}

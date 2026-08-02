@@ -42,6 +42,9 @@ class SlcanAdapter:
         self._bitrate: Bitrate | None = None
         self._mode: ChannelMode | None = None
         self._channel_open = False
+        self._timestamps_enabled = False
+        self._acceptance_code: int | None = None
+        self._acceptance_mask: int | None = None
 
     # ------------------------------------------------------------------
     # Construction / lifecycle
@@ -175,6 +178,46 @@ class SlcanAdapter:
         self._send_command(codec.encode_close(), expects_data=False)
         self._channel_open = False
         self._mode = None
+
+    # ------------------------------------------------------------------
+    # Acceptance filter (Gate 3 — M/m commands)
+    #
+    # Not confirmed as universally supported/identical across adapters
+    # (task doc §2/§16) — grounded in the widely-mirrored Lawicel
+    # description, same conservative posture as the bitrate-before-open
+    # rule: rejected by the (simulated) adapter while the channel is open,
+    # mirroring the documented S<n> constraint.
+    # ------------------------------------------------------------------
+    def set_acceptance_code(self, code: int) -> None:
+        self._send_command(codec.encode_set_acceptance_code(code), expects_data=False)
+        self._acceptance_code = code
+
+    def get_acceptance_code(self) -> int | None:
+        """Read-only, driver-tracked — the adapter has no query form for this."""
+
+        return self._acceptance_code
+
+    def set_acceptance_mask(self, mask: int) -> None:
+        self._send_command(codec.encode_set_acceptance_mask(mask), expects_data=False)
+        self._acceptance_mask = mask
+
+    def get_acceptance_mask(self) -> int | None:
+        """Read-only, driver-tracked — the adapter has no query form for this."""
+
+        return self._acceptance_mask
+
+    # ------------------------------------------------------------------
+    # Timestamp mode (Gate 3 — Z0/Z1)
+    # ------------------------------------------------------------------
+    def set_timestamps_enabled(self, enabled: bool) -> None:
+        self._send_command(codec.encode_set_timestamps(enabled), expects_data=False)
+        self._timestamps_enabled = enabled
+        self._reader.timestamps_enabled = enabled
+
+    def get_timestamps_enabled(self) -> bool:
+        """Read-only, driver-tracked — the adapter has no query form for this."""
+
+        return self._timestamps_enabled
 
     # ------------------------------------------------------------------
     # Frames

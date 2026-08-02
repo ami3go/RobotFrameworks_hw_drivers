@@ -20,6 +20,8 @@ synchronous dispatch call can't reach on its own.
 from __future__ import annotations
 
 import queue
+import time
+from dataclasses import replace
 
 from . import codec
 from .codec import BEL, CR
@@ -29,6 +31,7 @@ from .models import CanFrame
 
 _VERSION_RESPONSE = b"V1013" + CR  # simulated hardware 1.0, software 1.3
 _SERIAL_RESPONSE = b"NA123" + CR
+_TIMESTAMP_MODULUS = 60000  # ms; matches codec._TIMESTAMP_MODULUS
 
 
 class _Nack(Exception):
@@ -43,14 +46,28 @@ class SimSlcanAdapter:
         self.mode: ChannelMode | None = None
         self.bitrate: Bitrate | None = None
         self.status_flags = 0
+        self.timestamps_enabled = False
+        self.acceptance_code: int | None = None
+        self.acceptance_mask: int | None = None
         self.queue: queue.Queue[bytes] = queue.Queue()
 
     # -- test hooks --------------------------------------------------------
     def inject_frame(self, frame: CanFrame) -> None:
         """Simulates another node putting a frame on the bus. Bypasses
-        ``dispatch`` entirely — this is not something the host commanded."""
+        ``dispatch`` entirely — this is not something the host commanded.
 
-        self.queue.put(codec.encode_transmit(frame))
+        Does not enforce the acceptance code/mask filter (Gate 3, ``M``/``m``)
+        against injected frames — this simulator only exercises the *typed
+        keyword* round trip for filter configuration, not hardware-accurate
+        filtering behavior, which was never confirmed against a specific
+        adapter (task doc §16). If ``frame.timestamp_ms`` is unset and
+        timestamps are enabled, a wall-clock-derived value is filled in so
+        callers don't have to compute one by hand.
+        """
+
+        if self.timestamps_enabled and frame.timestamp_ms is None:
+            frame = replace(frame, timestamp_ms=int(time.monotonic() * 1000) % _TIMESTAMP_MODULUS)
+        self.queue.put(codec.encode_received_frame(frame, timestamps_enabled=self.timestamps_enabled))
 
     # -- public dispatch -----------------------------------------------------
     def dispatch(self, raw: bytes) -> None:
@@ -74,6 +91,12 @@ class SimSlcanAdapter:
                 self._cmd_version(command)
             elif head == "N":
                 self._cmd_serial(command)
+            elif head == "Z":
+                self._cmd_timestamps(command)
+            elif head == "M":
+                self._cmd_acceptance_code(command)
+            elif head == "m":
+                self._cmd_acceptance_mask(command)
             else:
                 raise _Nack
         except (_Nack, SlcanProtocolError):
@@ -139,3 +162,30 @@ class SimSlcanAdapter:
         if command != "N":
             raise _Nack
         self.queue.put(_SERIAL_RESPONSE)
+
+    def _cmd_timestamps(self, command: str) -> None:
+        if command not in ("Z0", "Z1"):
+            raise _Nack
+        # Unlike bitrate/filters, timestamp mode is not documented as
+        # requiring the channel to be closed — it only affects the host-
+        # facing serial format, not the CAN controller itself.
+        self.timestamps_enabled = command == "Z1"
+        self._ack()
+
+    def _cmd_acceptance_code(self, command: str) -> None:
+        if self.is_open:
+            raise _Nack  # matches the S<n> bitrate constraint: config only while closed
+        try:
+            self.acceptance_code = codec.parse_acceptance_register(command, prefix="M")
+        except SlcanProtocolError as exc:
+            raise _Nack from exc
+        self._ack()
+
+    def _cmd_acceptance_mask(self, command: str) -> None:
+        if self.is_open:
+            raise _Nack
+        try:
+            self.acceptance_mask = codec.parse_acceptance_register(command, prefix="m")
+        except SlcanProtocolError as exc:
+            raise _Nack from exc
+        self._ack()
