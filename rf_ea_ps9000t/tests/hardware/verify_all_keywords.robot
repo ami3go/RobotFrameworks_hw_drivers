@@ -28,13 +28,13 @@ ${COM_PORT}                 5
 ${RESOURCE}                 ${EMPTY}
 ${ALIAS}                    hardware
 ${SECONDARY_ALIAS}          secondary
-${TIMEOUT_S}                5.0
+${TIMEOUT_S}                ${5.0}
 ${ALLOW_OUTPUT_ON}          ${FALSE}
 ${ALLOW_LAN_WRITES}         ${FALSE}
-${VOLTAGE_FRACTION}         0.1
-${CURRENT_FRACTION}         0.1
-${POWER_FRACTION}           0.1
-${SETPOINT_TOLERANCE}       0.05
+${VOLTAGE_FRACTION}         ${0.1}
+${CURRENT_FRACTION}         ${0.1}
+${POWER_FRACTION}           ${0.1}
+${SETPOINT_TOLERANCE}       ${0.05}
 ${EXPECTED_DRIVER_VERSION}    26.1
 
 *** Test Cases ***
