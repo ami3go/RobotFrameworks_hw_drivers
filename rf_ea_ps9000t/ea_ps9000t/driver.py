@@ -8,6 +8,7 @@ module and must not duplicate any of this logic (task §5).
 from __future__ import annotations
 
 import logging
+import re
 
 from .enums import (
     AlarmAction,
@@ -20,6 +21,7 @@ from .enums import (
 from .exceptions import (
     EaPs9000TConnectionError,
     EaPs9000TDeviceError,
+    EaPs9000TProtocolError,
     EaPs9000TValidationError,
 )
 from .models import (
@@ -36,6 +38,24 @@ from .transport import PyvisaTransport, SimulatedTransport, Transport
 logger = logging.getLogger(__name__)
 
 _RAW_SCPI_CONFIRMATION = "ENABLE RAW SCPI"
+
+_NUMBER_PATTERN = re.compile(r"[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?")
+
+
+def _parse_number(response: str) -> str:
+    """Extract the leading numeric token from a SCPI numeric response.
+
+    Confirmed against real hardware: this instrument's firmware appends a
+    trailing unit suffix to some numeric queries (e.g. ``SYSTem:NOMinal:
+    VOLTage?`` replying ``"500.0 V"``) even though the bundled simulator and
+    the programming guide's examples both show a bare number. Every numeric
+    getter routes through this so both forms parse correctly.
+    """
+
+    match = _NUMBER_PATTERN.search(response)
+    if not match:
+        raise EaPs9000TProtocolError(f"could not parse a number from response: {response!r}")
+    return match.group(0)
 
 
 class EaPs9000T:
@@ -178,21 +198,21 @@ class EaPs9000T:
         self._check_events("Set Voltage")
 
     def get_voltage(self) -> float:
-        return float(self._query("VOLTage?"))
+        return float(_parse_number(self._query("VOLTage?")))
 
     def set_current(self, value: float) -> None:
         self._write(f"CURRent {float(value)}")
         self._check_events("Set Current")
 
     def get_current(self) -> float:
-        return float(self._query("CURRent?"))
+        return float(_parse_number(self._query("CURRent?")))
 
     def set_power(self, value: float) -> None:
         self._write(f"POWer {float(value)}")
         self._check_events("Set Power")
 
     def get_power(self) -> float:
-        return float(self._query("POWer?"))
+        return float(_parse_number(self._query("POWer?")))
 
     # ------------------------------------------------------------------
     # Protection thresholds (task §8)
@@ -202,21 +222,21 @@ class EaPs9000T:
         self._check_events("Set Overvoltage Protection")
 
     def get_overvoltage_protection(self) -> float:
-        return float(self._query("VOLTage:PROTection?"))
+        return float(_parse_number(self._query("VOLTage:PROTection?")))
 
     def set_overcurrent_protection(self, value: float) -> None:
         self._write(f"CURRent:PROTection {float(value)}")
         self._check_events("Set Overcurrent Protection")
 
     def get_overcurrent_protection(self) -> float:
-        return float(self._query("CURRent:PROTection?"))
+        return float(_parse_number(self._query("CURRent:PROTection?")))
 
     def set_overpower_protection(self, value: float) -> None:
         self._write(f"POWer:PROTection {float(value)}")
         self._check_events("Set Overpower Protection")
 
     def get_overpower_protection(self) -> float:
-        return float(self._query("POWer:PROTection?"))
+        return float(_parse_number(self._query("POWer:PROTection?")))
 
     def get_protection_thresholds(self) -> ProtectionThresholds:
         return ProtectionThresholds(
@@ -243,13 +263,13 @@ class EaPs9000T:
     # Measuring (task §8)
     # ------------------------------------------------------------------
     def get_measured_voltage(self) -> float:
-        return float(self._query("MEASure:VOLTage?"))
+        return float(_parse_number(self._query("MEASure:VOLTage?")))
 
     def get_measured_current(self) -> float:
-        return float(self._query("MEASure:CURRent?"))
+        return float(_parse_number(self._query("MEASure:CURRent?")))
 
     def get_measured_power(self) -> float:
-        return float(self._query("MEASure:POWer?"))
+        return float(_parse_number(self._query("MEASure:POWer?")))
 
     def get_measured_values(self) -> MeasuredValues:
         raw = self._query("MEASure:ARRay?")
@@ -262,9 +282,9 @@ class EaPs9000T:
     # ------------------------------------------------------------------
     def get_nominal_ratings(self) -> NominalRatings:
         return NominalRatings(
-            voltage=float(self._query("SYSTem:NOMinal:VOLTage?")),
-            current=float(self._query("SYSTem:NOMinal:CURRent?")),
-            power=float(self._query("SYSTem:NOMinal:POWer?")),
+            voltage=float(_parse_number(self._query("SYSTem:NOMinal:VOLTage?"))),
+            current=float(_parse_number(self._query("SYSTem:NOMinal:CURRent?"))),
+            power=float(_parse_number(self._query("SYSTem:NOMinal:POWer?"))),
         )
 
     def get_device_class(self) -> str:
@@ -272,11 +292,11 @@ class EaPs9000T:
 
     def get_alarm_counters(self) -> AlarmCounters:
         return AlarmCounters(
-            overvoltage=int(self._query("SYSTem:ALARm:COUNt:OVOLtage?")),
-            overtemperature=int(self._query("SYSTem:ALARm:COUNt:OTEMperature?")),
-            overpower=int(self._query("SYSTem:ALARm:COUNt:OPOWer?")),
-            overcurrent=int(self._query("SYSTem:ALARm:COUNt:OCURrent?")),
-            power_fail=int(self._query("SYSTem:ALARm:COUNt:PFAil?")),
+            overvoltage=int(_parse_number(self._query("SYSTem:ALARm:COUNt:OVOLtage?"))),
+            overtemperature=int(_parse_number(self._query("SYSTem:ALARm:COUNt:OTEMperature?"))),
+            overpower=int(_parse_number(self._query("SYSTem:ALARm:COUNt:OPOWer?"))),
+            overcurrent=int(_parse_number(self._query("SYSTem:ALARm:COUNt:OCURrent?"))),
+            power_fail=int(_parse_number(self._query("SYSTem:ALARm:COUNt:PFAil?"))),
         )
 
     # ------------------------------------------------------------------
@@ -292,8 +312,8 @@ class EaPs9000T:
 
     def get_voltage_limits(self) -> tuple[float, float]:
         return (
-            float(self._query("VOLTage:LIMit:LOW?")),
-            float(self._query("VOLTage:LIMit:HIGH?")),
+            float(_parse_number(self._query("VOLTage:LIMit:LOW?"))),
+            float(_parse_number(self._query("VOLTage:LIMit:HIGH?"))),
         )
 
     def set_current_limit_low(self, value: float) -> None:
@@ -306,8 +326,8 @@ class EaPs9000T:
 
     def get_current_limits(self) -> tuple[float, float]:
         return (
-            float(self._query("CURRent:LIMit:LOW?")),
-            float(self._query("CURRent:LIMit:HIGH?")),
+            float(_parse_number(self._query("CURRent:LIMit:LOW?"))),
+            float(_parse_number(self._query("CURRent:LIMit:HIGH?"))),
         )
 
     def set_power_limit_high(self, value: float) -> None:
@@ -317,7 +337,7 @@ class EaPs9000T:
         self._check_events("Set Power Limit High")
 
     def get_power_limit_high(self) -> float:
-        return float(self._query("POWer:LIMit:HIGH?"))
+        return float(_parse_number(self._query("POWer:LIMit:HIGH?")))
 
     def get_adjustment_limits(self) -> AdjustmentLimits:
         voltage_low, voltage_high = self.get_voltage_limits()
@@ -369,7 +389,7 @@ class EaPs9000T:
         self._check_events("Set Communication Timeout")
 
     def get_communication_timeout(self) -> int:
-        return int(self._query("SYSTem:COMMunicate:TIMeout?"))
+        return int(_parse_number(self._query("SYSTem:COMMunicate:TIMeout?")))
 
     def set_power_fail_alarm_action(self, action: AlarmAction | str) -> None:
         action = AlarmAction(action)
@@ -481,7 +501,7 @@ class EaPs9000T:
         self._check_events("Set LAN Control Port")
 
     def get_lan_control_port(self) -> int:
-        return int(self._query("SYSTem:COMMunicate:LAN:CONTrol?"))
+        return int(_parse_number(self._query("SYSTem:COMMunicate:LAN:CONTrol?")))
 
     def set_lan_keepalive_enabled(self, enabled: bool) -> None:
         self._write(f"SYSTem:COMMunicate:LAN:KEEPalive {'ON' if enabled else 'OFF'}")
@@ -500,7 +520,7 @@ class EaPs9000T:
         self._check_events("Set LAN Timeout")
 
     def get_lan_timeout(self) -> int:
-        return int(self._query("SYSTem:COMMunicate:LAN:TIMeout?"))
+        return int(_parse_number(self._query("SYSTem:COMMunicate:LAN:TIMeout?")))
 
     def get_lan_mac_address(self) -> str:
         """Read-only — when the interface is physically present."""
@@ -522,7 +542,7 @@ class EaPs9000T:
         self._check_events("Set Analog Reference Range")
 
     def get_analog_reference_range(self) -> int:
-        return int(float(self._query("SYSTem:CONFig:ANAlog:REFerence?")))
+        return int(float(_parse_number(self._query("SYSTem:CONFig:ANAlog:REFerence?"))))
 
     def set_analog_remsb_level(self, level: AnalogRemsbLevel | str) -> None:
         level = AnalogRemsbLevel(level)

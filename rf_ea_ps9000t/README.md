@@ -190,6 +190,13 @@ Suite Setup — the instrument is left as it was found either way.
 
 ## Known documentation discrepancy
 
+Confirmed against real hardware (RFDS-019 conformance run): this instrument's firmware
+appends a trailing unit suffix to some numeric query responses (e.g.
+`SYSTem:NOMinal:VOLTage?` replying `"500.0 V"`) even though the programming guide's
+examples and the bundled simulator both show a bare number. Every numeric getter parses
+the leading numeric token, so both forms work transparently — nothing to do on the
+keyword side, noted here only because the guide doesn't mention it.
+
 The source programming guide states the default Ethernet IP as `198.168.0.2`, which is
 outside the private `192.168.0.0/16` range and is very plausibly a manual typo for
 `192.168.0.2`. This driver never hardcodes this value (connection always takes an

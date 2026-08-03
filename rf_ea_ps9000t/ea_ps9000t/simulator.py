@@ -203,7 +203,7 @@ class SimEaPs9000TInstrument:
 
     def _voltage(self, rest: str, is_query: bool) -> bytes:
         if is_query:
-            return f"{self.set_values.voltage:.4f}".encode("ascii")
+            return f"{self.set_values.voltage:.4f} V".encode("ascii")
         if not self._require_remote():
             return b""
         value = self._resolve_value(rest, minimum=0.0, maximum=_NOMINAL_VOLTAGE * 1.02)
@@ -215,7 +215,7 @@ class SimEaPs9000TInstrument:
 
     def _current(self, rest: str, is_query: bool) -> bytes:
         if is_query:
-            return f"{self.set_values.current:.4f}".encode("ascii")
+            return f"{self.set_values.current:.4f} A".encode("ascii")
         if not self._require_remote():
             return b""
         value = self._resolve_value(rest, minimum=0.0, maximum=_NOMINAL_CURRENT * 1.02)
@@ -227,7 +227,7 @@ class SimEaPs9000TInstrument:
 
     def _power(self, rest: str, is_query: bool) -> bytes:
         if is_query:
-            return f"{self.set_values.power:.4f}".encode("ascii")
+            return f"{self.set_values.power:.4f} W".encode("ascii")
         if not self._require_remote():
             return b""
         value = self._resolve_value(rest, minimum=0.0, maximum=_NOMINAL_POWER * 1.02)
@@ -241,7 +241,7 @@ class SimEaPs9000TInstrument:
 
     def _voltage_protection(self, rest: str, is_query: bool) -> bytes:
         if is_query:
-            return f"{self.protection.overvoltage:.4f}".encode("ascii")
+            return f"{self.protection.overvoltage:.4f} V".encode("ascii")
         if not self._require_remote():
             return b""
         self.protection.overvoltage = self._resolve_value(rest, minimum=0.0, maximum=_NOMINAL_VOLTAGE * 1.1)
@@ -249,7 +249,7 @@ class SimEaPs9000TInstrument:
 
     def _current_protection(self, rest: str, is_query: bool) -> bytes:
         if is_query:
-            return f"{self.protection.overcurrent:.4f}".encode("ascii")
+            return f"{self.protection.overcurrent:.4f} A".encode("ascii")
         if not self._require_remote():
             return b""
         self.protection.overcurrent = self._resolve_value(rest, minimum=0.0, maximum=_NOMINAL_CURRENT * 1.1)
@@ -257,7 +257,7 @@ class SimEaPs9000TInstrument:
 
     def _power_protection(self, rest: str, is_query: bool) -> bytes:
         if is_query:
-            return f"{self.protection.overpower:.4f}".encode("ascii")
+            return f"{self.protection.overpower:.4f} W".encode("ascii")
         if not self._require_remote():
             return b""
         self.protection.overpower = self._resolve_value(rest, minimum=0.0, maximum=_NOMINAL_POWER * 1.1)
@@ -267,7 +267,7 @@ class SimEaPs9000TInstrument:
 
     def _voltage_limit_low(self, rest: str, is_query: bool) -> bytes:
         if is_query:
-            return f"{self.limits.voltage_low:.4f}".encode("ascii")
+            return f"{self.limits.voltage_low:.4f} V".encode("ascii")
         if not self._require_remote():
             return b""
         self.limits.voltage_low = float(rest)
@@ -275,7 +275,7 @@ class SimEaPs9000TInstrument:
 
     def _voltage_limit_high(self, rest: str, is_query: bool) -> bytes:
         if is_query:
-            return f"{self.limits.voltage_high:.4f}".encode("ascii")
+            return f"{self.limits.voltage_high:.4f} V".encode("ascii")
         if not self._require_remote():
             return b""
         self.limits.voltage_high = float(rest)
@@ -283,7 +283,7 @@ class SimEaPs9000TInstrument:
 
     def _current_limit_low(self, rest: str, is_query: bool) -> bytes:
         if is_query:
-            return f"{self.limits.current_low:.4f}".encode("ascii")
+            return f"{self.limits.current_low:.4f} A".encode("ascii")
         if not self._require_remote():
             return b""
         self.limits.current_low = float(rest)
@@ -291,7 +291,7 @@ class SimEaPs9000TInstrument:
 
     def _current_limit_high(self, rest: str, is_query: bool) -> bytes:
         if is_query:
-            return f"{self.limits.current_high:.4f}".encode("ascii")
+            return f"{self.limits.current_high:.4f} A".encode("ascii")
         if not self._require_remote():
             return b""
         self.limits.current_high = float(rest)
@@ -299,7 +299,7 @@ class SimEaPs9000TInstrument:
 
     def _power_limit_high(self, rest: str, is_query: bool) -> bytes:
         if is_query:
-            return f"{self.limits.power_high:.4f}".encode("ascii")
+            return f"{self.limits.power_high:.4f} W".encode("ascii")
         if not self._require_remote():
             return b""
         self.limits.power_high = float(rest)
@@ -308,13 +308,13 @@ class SimEaPs9000TInstrument:
     # -- measuring -------------------------------------------------------------
 
     def _measure_voltage(self, _rest: str, _is_query: bool) -> bytes:
-        return f"{self.measured.voltage:.4f}".encode("ascii")
+        return f"{self.measured.voltage:.4f} V".encode("ascii")
 
     def _measure_current(self, _rest: str, _is_query: bool) -> bytes:
-        return f"{self.measured.current:.4f}".encode("ascii")
+        return f"{self.measured.current:.4f} A".encode("ascii")
 
     def _measure_power(self, _rest: str, _is_query: bool) -> bytes:
-        return f"{self.measured.power:.4f}".encode("ascii")
+        return f"{self.measured.power:.4f} W".encode("ascii")
 
     def _measure_array(self, _rest: str, _is_query: bool) -> bytes:
         m = self.measured
@@ -323,13 +323,13 @@ class SimEaPs9000TInstrument:
     # -- general queries ---------------------------------------------------------
 
     def _nominal_voltage(self, _rest: str, _is_query: bool) -> bytes:
-        return f"{_NOMINAL_VOLTAGE:.4f}".encode("ascii")
+        return f"{_NOMINAL_VOLTAGE:.4f} V".encode("ascii")
 
     def _nominal_current(self, _rest: str, _is_query: bool) -> bytes:
-        return f"{_NOMINAL_CURRENT:.4f}".encode("ascii")
+        return f"{_NOMINAL_CURRENT:.4f} A".encode("ascii")
 
     def _nominal_power(self, _rest: str, _is_query: bool) -> bytes:
-        return f"{_NOMINAL_POWER:.4f}".encode("ascii")
+        return f"{_NOMINAL_POWER:.4f} W".encode("ascii")
 
     def _device_class(self, _rest: str, _is_query: bool) -> bytes:
         return _DEVICE_CLASS.encode("ascii")
