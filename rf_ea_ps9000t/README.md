@@ -167,6 +167,27 @@ by every non-connection keyword.
   yet; that is Gate 4 work. When it is, this repository's convention names it
   `ea_ps9000t_ai_contract.yaml`/`.lock`.
 
+## Hardware tests
+
+`tests/hardware/verify_all_keywords.robot` exercises every one of this library's public
+keywords against a real PS 9000 T unit and checks its response — one test case per
+keyword. It is tagged `hardware` and does not run in CI; run it explicitly:
+
+```console
+python -m robot --outputdir results tests/hardware/verify_all_keywords.robot
+```
+
+By default it connects over the USB virtual COM port (`COM_PORT`, default `5`) since
+that's the only interface most benches expose; override with `-v COM_PORT:<n>`, or pass
+`-v RESOURCE:<visa string>` to test over RS232/Ethernet instead. The DC output stays off
+for the whole suite unless `-v ALLOW_OUTPUT_ON:True` is passed (only do this with a
+suitable load, or nothing, connected), and LAN-identity `Set` keywords
+(IP/subnet/gateway/hostname/DNS/...) are read-only unless `-v ALLOW_LAN_WRITES:True` is
+passed. Every keyword that mutates device-persistent state (adjustment limits, protection
+thresholds, device configuration, LAN/analog settings) restores the original value before
+its own test case ends, and Suite Teardown restores the adjustment limits captured at
+Suite Setup — the instrument is left as it was found either way.
+
 ## Known documentation discrepancy
 
 The source programming guide states the default Ethernet IP as `198.168.0.2`, which is
