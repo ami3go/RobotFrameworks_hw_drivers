@@ -10,6 +10,7 @@ not duplicate that logic, it only calls those methods.
 
 from __future__ import annotations
 
+import re
 from dataclasses import asdict, is_dataclass
 from enum import Enum
 from typing import Any
@@ -56,6 +57,32 @@ def _as_bool(value: Any, name: str = "value") -> bool:
         if normalized in {"false", "0", "no", "off", "", "none"}:
             return False
     raise EaPs9000TValidationError(f"{name} must be a Boolean, got {value!r}")
+
+
+_COM_PORT_PATTERN = re.compile(r"^(?:COM)?(\d+)$", re.IGNORECASE)
+
+
+def _resolve_visa_resource(resource: Any, com_port: Any) -> str:
+    """Expand a bare COM-port number/name to a VISA ``ASRL`` resource string.
+
+    USB and RS232 both enumerate as a COM port on this instrument, so
+    ``com_port=5`` or the shorthand ``resource="COM5"``/``resource="5"`` are
+    equivalent to ``resource="ASRL5::INSTR"``. Anything else (e.g. a full
+    VISA resource string such as ``TCPIP0::...::SOCKET`` or a Linux serial
+    device path) is passed through unchanged.
+    """
+    if com_port is not None:
+        match = _COM_PORT_PATTERN.match(str(com_port).strip())
+        if not match:
+            raise EaPs9000TValidationError(
+                f"com_port must be a COM port number or name like 5 or 'COM5', got {com_port!r}"
+            )
+        return f"ASRL{match.group(1)}::INSTR"
+    if not resource:
+        raise EaPs9000TValidationError("resource or com_port is required unless simulated=True")
+    resource_text = str(resource).strip()
+    match = _COM_PORT_PATTERN.match(resource_text)
+    return f"ASRL{match.group(1)}::INSTR" if match else resource_text
 
 
 def _robot_value(value: Any) -> Any:
@@ -162,33 +189,43 @@ class EaPs9000TLibrary:
         resource: str | None = None,
         alias: str = "default",
         timeout_s: float | None = None,
+        com_port: int | str | None = None,
         **options: Any,
     ) -> dict[str, Any]:
         """Connect over VISA (USB/RS232/Ethernet), or the bundled simulator with
         ``simulated=True``. Acquires remote control as part of connecting and
         raises ``EaPs9000TConnectionError`` if the device refuses it (task §6 item 1).
 
+        USB and RS232 both enumerate as a COM port on this instrument: pass
+        either a bare port number/name (``com_port=5``, or the shorthand
+        ``resource=COM5``/``resource=5``) and it expands to the VISA ``ASRL``
+        resource string automatically, or supply a full VISA resource string
+        (``ASRL5::INSTR``, ``TCPIP0::...``) directly.
+
         Idempotent when ``alias`` is already connected to the same ``resource``.
         """
 
         selected_alias = str(alias).strip() or "default"
+        simulated = _as_bool(options.pop("simulated", False), "simulated")
+
         if selected_alias in self._sessions:
             existing = self._sessions[selected_alias]
-            if resource and existing.connected and str(existing.resource) != str(resource):
-                raise EaPs9000TConnectionError(
-                    f"alias {selected_alias!r} is already connected to {existing.resource!r}; "
-                    f"disconnect it before connecting it to {resource!r}."
-                )
+            if not simulated and (resource or com_port is not None):
+                resolved_resource = _resolve_visa_resource(resource, com_port)
+                if existing.connected and str(existing.resource) != resolved_resource:
+                    raise EaPs9000TConnectionError(
+                        f"alias {selected_alias!r} is already connected to {existing.resource!r}; "
+                        f"disconnect it before connecting it to {resolved_resource!r}."
+                    )
             self._active_alias = selected_alias
             return self._connection_state(selected_alias, existing)
 
-        simulated = _as_bool(options.pop("simulated", False), "simulated")
         if simulated:
             driver = EaPs9000T.connect_simulated()
         else:
-            if not resource:
-                raise EaPs9000TValidationError("resource is required unless simulated=True")
-            driver = EaPs9000T.connect_visa(str(resource), timeout_s=timeout_s or 5.0)
+            driver = EaPs9000T.connect_visa(
+                _resolve_visa_resource(resource, com_port), timeout_s=timeout_s or 5.0
+            )
         self._sessions[selected_alias] = driver
         self._active_alias = selected_alias
         _rf_logger.info(f"EaPs9000T: connected alias={selected_alias!r} resource={driver.resource!r}")

@@ -65,6 +65,24 @@ Against real hardware, pass a VISA resource string instead of `simulated=${TRUE}
 Connect    resource=TCPIP0::192.168.0.2::5025::SOCKET
 ```
 
+Over USB or RS232 the instrument enumerates as a serial port, so use the VISA `ASRL`
+resource class with the COM port number (Windows) or device path (Linux/macOS) instead
+of the Ethernet form above:
+
+```robotframework
+Connect    resource=ASRL5::INSTR
+```
+
+For the common case of a plain Windows COM port, `Connect` also accepts the port
+number/name directly — either a `com_port` argument or a `resource` shorthand — and
+expands it to the `ASRL` form above automatically:
+
+```robotframework
+Connect    com_port=5
+# or equivalently:
+Connect    resource=COM5
+```
+
 `Connect` acquires remote control as part of connecting and raises a typed error if the
 device refuses it — see Safety notes below.
 

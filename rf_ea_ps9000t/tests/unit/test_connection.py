@@ -9,9 +9,9 @@ import pytest
 
 from ea_ps9000t.driver import EaPs9000T
 from ea_ps9000t.enums import RemoteControlOwner
-from ea_ps9000t.exceptions import EaPs9000TConnectionError
+from ea_ps9000t.exceptions import EaPs9000TConnectionError, EaPs9000TValidationError
 from ea_ps9000t.simulator import SimEaPs9000TInstrument
-from rf_ea_ps9000t.library import EaPs9000TLibrary
+from rf_ea_ps9000t.library import EaPs9000TLibrary, _resolve_visa_resource
 
 
 def test_simulator_connect_acquires_remote_control_and_identity():
@@ -101,3 +101,68 @@ def test_is_connected_never_raises_for_missing_session():
     lib = EaPs9000TLibrary()
     assert lib.is_connected("never-connected") is False
     assert lib.is_connected() is False
+
+
+@pytest.mark.parametrize(
+    "com_port",
+    [5, "5", "COM5", "com5"],
+)
+def test_resolve_visa_resource_expands_com_port_argument(com_port):
+    assert _resolve_visa_resource(None, com_port) == "ASRL5::INSTR"
+
+
+@pytest.mark.parametrize(
+    "resource",
+    ["5", "COM5", "com5"],
+)
+def test_resolve_visa_resource_expands_bare_resource_shorthand(resource):
+    assert _resolve_visa_resource(resource, None) == "ASRL5::INSTR"
+
+
+def test_resolve_visa_resource_passes_full_visa_strings_through_unchanged():
+    assert _resolve_visa_resource("ASRL5::INSTR", None) == "ASRL5::INSTR"
+    assert _resolve_visa_resource("TCPIP0::192.168.0.2::5025::SOCKET", None) == (
+        "TCPIP0::192.168.0.2::5025::SOCKET"
+    )
+
+
+def test_resolve_visa_resource_com_port_takes_precedence_over_resource():
+    assert _resolve_visa_resource("TCPIP0::192.168.0.2::5025::SOCKET", 7) == "ASRL7::INSTR"
+
+
+def test_resolve_visa_resource_rejects_invalid_com_port():
+    with pytest.raises(EaPs9000TValidationError, match="com_port"):
+        _resolve_visa_resource(None, "not-a-port")
+
+
+def test_resolve_visa_resource_requires_resource_or_com_port():
+    with pytest.raises(EaPs9000TValidationError, match="resource or com_port"):
+        _resolve_visa_resource(None, None)
+
+
+def test_connect_com_port_idempotent_for_the_same_alias(monkeypatch):
+    """A repeated ``com_port=5`` connect must recognize it as the same
+    resource as the first call, even though the first call normalized the
+    shorthand to ``ASRL5::INSTR`` before storing it (task §7)."""
+
+    simulator = SimEaPs9000TInstrument()
+
+    def fake_connect_visa(resource, timeout_s=5.0):
+        assert resource == "ASRL5::INSTR"
+        driver = EaPs9000T.connect_simulated(simulator)
+        driver.transport.resource = resource  # mimic PyvisaTransport, which reports the real resource
+        return driver
+
+    monkeypatch.setattr(EaPs9000T, "connect_visa", staticmethod(fake_connect_visa))
+
+    lib = EaPs9000TLibrary()
+    first = lib.connect(alias="bench", com_port=5)
+    second = lib.connect(alias="bench", com_port=5)
+    assert first["resource"] == second["resource"] == "ASRL5::INSTR"
+
+    # A bare re-connect with no resource/com_port on an already-connected
+    # alias must stay a no-op rather than demanding one be supplied again.
+    third = lib.connect(alias="bench")
+    assert third["resource"] == "ASRL5::INSTR"
+
+    lib.disconnect("bench")
