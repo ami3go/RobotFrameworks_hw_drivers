@@ -1,6 +1,6 @@
 *** Settings ***
 Documentation    Structured diagnostics and evidence export.
-Library    rf_votsch_climate_chamber.library.VotschClimateChamberLibrary
+Library    rf_votsch_climate_chamber.VotschClimateChamberLibrary
 Library    Collections
 Library    OperatingSystem
 Suite Setup    Connect    SIM::default

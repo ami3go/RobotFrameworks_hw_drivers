@@ -1,6 +1,6 @@
 *** Settings ***
 Documentation    RFDS-014 configuration validation and profile example.
-Library    rf_votsch_climate_chamber.library.VotschClimateChamberLibrary    managed_configuration_root=${OUTPUT DIR}${/}profiles
+Library    rf_votsch_climate_chamber.VotschClimateChamberLibrary    managed_configuration_root=${OUTPUT DIR}${/}profiles
 
 *** Test Cases ***
 Validate Save And Load Configuration

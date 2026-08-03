@@ -1,5 +1,5 @@
 *** Settings ***
-Library         BK8500BLibrary
+Library         rf_bk8500b.BK8500BLibrary
 Suite Setup     Connect To Electronic Load    %{BK8500B_PORT}
 Suite Teardown  Disconnect All Electronic Loads
 Test Teardown   Disable Electronic Load Input

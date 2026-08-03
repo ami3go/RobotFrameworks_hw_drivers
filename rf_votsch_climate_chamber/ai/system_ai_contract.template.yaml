@@ -10,7 +10,7 @@ identity:
 available_drivers:
   - plugin_id: votsch.climate_chamber
     version: "26.08"
-    robot_library: rf_votsch_climate_chamber.library.VotschClimateChamberLibrary
+    robot_library: rf_votsch_climate_chamber.VotschClimateChamberLibrary
     ai_contract: ai/votsch_climate_chamber_ai_contract.yaml
     role: environmental_temperature_control
     required: true

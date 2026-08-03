@@ -1,5 +1,5 @@
 *** Settings ***
-Library    rf_eresistor
+Library    rf_eresistor.EResistorLibrary
 
 *** Test Cases ***
 Discover Boards On Lab Subnet

@@ -44,7 +44,7 @@ keyword layer. On Linux add your user to the `dialout` group, or you will get
 
 ```robotframework
 *** Settings ***
-Library           BK8500Library    port=/dev/ttyUSB0    baudrate=9600    model=8500
+Library           rf_bk8500_load.BK8500Library    port=/dev/ttyUSB0    baudrate=9600    model=8500
 Suite Teardown    Close All Load Connections
 Test Teardown     Load Input Off
 
@@ -64,9 +64,14 @@ Supply Holds Voltage Under Two Amps
 Every keyword works against the built-in instrument model:
 
 ```robotframework
-Library    BK8500Library    simulated=${TRUE}    model=8500
+Library    rf_bk8500_load.BK8500Library    simulated=${TRUE}    model=8500
 ...        source_voltage=${12.0}    source_resistance=${0.05}
 ```
+
+The bare `Library    BK8500Library` import also still works for backward
+compatibility, but `rf_bk8500_load.BK8500Library` is the recommended form —
+it matches the `rf_<device>.<Device>Library` convention used across this
+repository's drivers.
 
 The simulator gives physically consistent readings for all four modes, so
 sequencing, teardown and oracle logic can all be developed and run in CI. It

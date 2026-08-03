@@ -1,6 +1,6 @@
 *** Settings ***
 Documentation    Demonstrates explicit safe shutdown using the simulator.
-Library          rf_votsch_climate_chamber.library.VotschClimateChamberLibrary
+Library          rf_votsch_climate_chamber.VotschClimateChamberLibrary
 Suite Setup      Connect    resource=SIM::safe-shutdown    alias=default
 Suite Teardown   Disconnect All
 

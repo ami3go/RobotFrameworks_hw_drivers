@@ -19,5 +19,5 @@ python3 -m venv .venv
 Import the library with:
 
 ```robot
-Library    rf_ngi_n83624.library.NGI_N83624
+Library    rf_ngi_n83624.NGI_N83624Library
 ```

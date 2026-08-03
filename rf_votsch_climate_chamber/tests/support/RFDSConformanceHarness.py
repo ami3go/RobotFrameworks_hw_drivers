@@ -230,6 +230,7 @@ class RFDSConformanceHarness:
     def _get_library_instance(builtin: Any) -> Any:
         candidates = (
             "VotschClimateChamberLibrary",
+            "rf_votsch_climate_chamber.VotschClimateChamberLibrary",
             "rf_votsch_climate_chamber.library.VotschClimateChamberLibrary",
         )
         errors = []

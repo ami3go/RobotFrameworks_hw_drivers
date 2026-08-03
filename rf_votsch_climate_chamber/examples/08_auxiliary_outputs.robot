@@ -1,6 +1,6 @@
 *** Settings ***
 Documentation    Model-dependent auxiliary outputs; simulator use only until mapping is qualified.
-Library    rf_votsch_climate_chamber.library.VotschClimateChamberLibrary
+Library    rf_votsch_climate_chamber.VotschClimateChamberLibrary
 Suite Setup    Connect    SIM::default
 Suite Teardown    Run Keywords    Safe Shutdown    AND    Disconnect All
 

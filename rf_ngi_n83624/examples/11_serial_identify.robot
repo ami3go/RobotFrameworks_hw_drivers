@@ -1,6 +1,6 @@
 *** Settings ***
 Documentation     RS232 identification example; adjust COM port for the bench.
-Library           rf_ngi_n83624.library.NGI_N83624    auto_close_on_suite_end=${False}
+Library           rf_ngi_n83624.NGI_N83624Library    auto_close_on_suite_end=${False}
 Suite Teardown    Close All N83624 Connections
 
 *** Variables ***

@@ -126,7 +126,7 @@ desynchronises the link until the port is reopened.
 | `bk8500_load/library.py` | `BK8500Library`: Robot keywords and oracles |
 | `bk8500_load/enums.py` | Modes, functions, triggers, state registers, model limits, data models |
 | `bk8500_load/exceptions.py` | Error catalogue |
-| `BK8500Library.py` | Import shim so suites can write `Library    BK8500Library` |
+| `BK8500Library.py` | Legacy import shim so suites can write `Library    BK8500Library`; the canonical import is `rf_bk8500_load.BK8500Library` (see `rf_bk8500_load/__init__.py`) |
 | `ai/bk8500_load_ai_contract.yaml` | Root-level RFDS-017 v3.0 machine contract; installed as wheel data under `share/rf_bk8500_load/ai` |
 | `ai/bk8500_load_ai_contract.lock` | SHA-256 of the contract and of the keyword surface |
 | `atest/` | Robot Framework conformance suite and shared resource file |

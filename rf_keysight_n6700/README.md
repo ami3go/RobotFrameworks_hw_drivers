@@ -119,7 +119,7 @@ python -m pip install -e ".[dev,docs]"
 
 ```robotframework
 *** Settings ***
-Library    KeysightN6700Library
+Library    rf_keysight_n6700.KeysightN6700Library
 Suite Setup       Connect To Simulated N6700
 Suite Teardown    Disconnect All N6700
 
@@ -131,6 +131,11 @@ Configure And Measure Channel 1
     Log    ${measurement}
     Turn Off N6700 Output    1
 ```
+
+The bare `Library    KeysightN6700Library` import also still works for
+backward compatibility, but `rf_keysight_n6700.KeysightN6700Library` is the
+recommended form — it matches the `rf_<device>.<Device>Library` convention
+used across this repository's drivers.
 
 ## Real instrument connection
 
@@ -195,7 +200,7 @@ Results are stored below `results/call_protocol_conformance/keysight_n6700/<UTC 
 The library constructor supports:
 
 ```robotframework
-Library    KeysightN6700Library    auto_shutdown=${TRUE}    strict_errors=${TRUE}
+Library    rf_keysight_n6700.KeysightN6700Library    auto_shutdown=${TRUE}    strict_errors=${TRUE}
 ```
 
 - `auto_shutdown=${TRUE}` attempts to disable controllable outputs and load inputs before closing a connection and at suite end.

@@ -55,7 +55,7 @@ bk8500b = "bk8500b.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["bk8500b*", "BK8500BLibrary*"]
+include = ["bk8500b*", "BK8500BLibrary*", "rf_bk8500b*"]
 exclude = ["tests*"]
 
 [tool.setuptools.data-files]

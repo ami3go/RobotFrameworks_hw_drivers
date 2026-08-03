@@ -1,6 +1,6 @@
 *** Settings ***
 Documentation    Shared RFDS Vötsch climate chamber resource.
-Library    rf_votsch_climate_chamber.library.VotschClimateChamberLibrary
+Library    rf_votsch_climate_chamber.VotschClimateChamberLibrary
 
 *** Keywords ***
 Connect Simulator Chamber

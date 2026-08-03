@@ -1,6 +1,6 @@
 *** Settings ***
 Documentation     Real-chamber verification of the canonical API 3.0 keyword surface. State-changing tests require explicit authorization.
-Library           rf_votsch_climate_chamber.library.VotschClimateChamberLibrary    managed_configuration_root=${OUTPUT DIR}${/}profiles
+Library           rf_votsch_climate_chamber.VotschClimateChamberLibrary    managed_configuration_root=${OUTPUT DIR}${/}profiles
 Library           Collections
 Library           OperatingSystem
 Suite Setup       Connect And Capture Original Chamber State

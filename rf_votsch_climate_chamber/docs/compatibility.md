@@ -4,7 +4,7 @@ v26.07 changes the public API major version from 2.0.0 to 3.0.0.
 
 ## Supported
 
-- canonical import: `rf_votsch_climate_chamber.library.VotschClimateChamberLibrary`;
+- canonical import: `rf_votsch_climate_chamber.VotschClimateChamberLibrary`;
 - 57 canonical Robot Framework keywords;
 - Python 3.11–3.13;
 - Robot Framework 7.x and 8.x as declared by package metadata;

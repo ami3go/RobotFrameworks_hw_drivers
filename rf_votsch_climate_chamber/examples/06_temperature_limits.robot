@@ -1,6 +1,6 @@
 *** Settings ***
 Documentation    Local pre-transmission temperature safety limits.
-Library    rf_votsch_climate_chamber.library.VotschClimateChamberLibrary
+Library    rf_votsch_climate_chamber.VotschClimateChamberLibrary
 Library    Collections
 Suite Setup    Connect    SIM::default
 Suite Teardown    Disconnect All

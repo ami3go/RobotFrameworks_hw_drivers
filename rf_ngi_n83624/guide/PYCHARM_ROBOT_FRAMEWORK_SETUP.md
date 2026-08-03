@@ -58,7 +58,7 @@ After installation:
 
 1. Associate `*.robot` with Robot Framework files if not automatic.
 2. Ensure the plugin uses the project `.venv` interpreter.
-3. Confirm it resolves `rf_ngi_n83624.library.NGI_N83624`.
+3. Confirm it resolves `rf_ngi_n83624.NGI_N83624Library`.
 
 ## 6. Create a Robot run configuration
 
@@ -101,7 +101,7 @@ Run one example:
 
 ```robot
 *** Settings ***
-Library           rf_ngi_n83624.library.NGI_N83624    auto_close_on_suite_end=${False}
+Library           rf_ngi_n83624.NGI_N83624Library    auto_close_on_suite_end=${False}
 Suite Setup       Open N83624 Emulator    dev
 Suite Teardown    Close All N83624 Connections
 

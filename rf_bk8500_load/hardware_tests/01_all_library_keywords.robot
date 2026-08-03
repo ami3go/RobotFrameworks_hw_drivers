@@ -4,7 +4,7 @@ Documentation     Full real-device conformance test for every public BK8500Libra
 ...               readback where available, and reports each keyword independently.
 ...               The input remains OFF unless ALLOW_INPUT_ON is explicitly true.
 ...               Persistent list/settings slots are untouched unless ALLOW_PERSISTENT_WRITES is true.
-Library           BK8500Library    auto_connect=${FALSE}
+Library           rf_bk8500_load.BK8500Library    auto_connect=${FALSE}
 Library           Collections
 Suite Setup       Initialize Hardware Conformance
 Suite Teardown    Final Safe Teardown

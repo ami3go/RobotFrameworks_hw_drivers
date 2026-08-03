@@ -1,5 +1,5 @@
 *** Settings ***
-Library    rf_eresistor
+Library    rf_eresistor.EResistorLibrary
 
 *** Test Cases ***
 Disconnected Keyword Produces Clear Error

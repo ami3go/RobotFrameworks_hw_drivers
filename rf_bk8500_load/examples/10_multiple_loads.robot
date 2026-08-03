@@ -1,6 +1,6 @@
 *** Settings ***
 Documentation    Open two simulated loads and switch between aliases explicitly.
-Library          BK8500Library    auto_connect=${FALSE}
+Library          rf_bk8500_load.BK8500Library    auto_connect=${FALSE}
 Suite Teardown   Close All Load Connections
 
 *** Test Cases ***

@@ -1,6 +1,6 @@
 *** Settings ***
 Documentation    RFDS-002 universal lifecycle and identity example.
-Library    rf_votsch_climate_chamber.library.VotschClimateChamberLibrary
+Library    rf_votsch_climate_chamber.VotschClimateChamberLibrary
 Suite Teardown    Disconnect All
 
 *** Test Cases ***

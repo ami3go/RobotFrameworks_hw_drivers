@@ -1,6 +1,6 @@
 *** Settings ***
 Resource          common.resource
-Library           rf_eresistor    host=${ERESISTOR_HOST}
+Library           rf_eresistor.EResistorLibrary    host=${ERESISTOR_HOST}
 Suite Setup       Connect To EResistor
 Suite Teardown    Disconnect From EResistor
 

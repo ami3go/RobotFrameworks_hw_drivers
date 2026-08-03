@@ -47,7 +47,7 @@ python3.11 -m venv .venv
 
 ```robotframework
 *** Settings ***
-Library    rf_votsch_climate_chamber.library.VotschClimateChamberLibrary
+Library    rf_votsch_climate_chamber.VotschClimateChamberLibrary
 Suite Teardown    Disconnect All
 
 *** Test Cases ***

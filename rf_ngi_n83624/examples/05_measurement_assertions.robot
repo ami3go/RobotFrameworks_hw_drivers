@@ -1,6 +1,6 @@
 *** Settings ***
 Documentation     Use deterministic readbacks and Robot-friendly assertions.
-Library           rf_ngi_n83624.library.NGI_N83624    auto_close_on_suite_end=${False}
+Library           rf_ngi_n83624.NGI_N83624Library    auto_close_on_suite_end=${False}
 Suite Setup       Open N83624 Emulator    measure
 Suite Teardown    Close All N83624 Connections
 

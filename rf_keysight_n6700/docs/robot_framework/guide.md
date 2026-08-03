@@ -7,13 +7,13 @@
 ## Library import
 
 ```robotframework
-Library    KeysightN6700Library
+Library    rf_keysight_n6700.KeysightN6700Library
 ```
 
 Optional constructor arguments:
 
 ```robotframework
-Library    KeysightN6700Library    auto_shutdown=${TRUE}    strict_errors=${TRUE}
+Library    rf_keysight_n6700.KeysightN6700Library    auto_shutdown=${TRUE}    strict_errors=${TRUE}
 ```
 
 The library scope is `SUITE`. Each suite receives an independent session registry.
@@ -95,7 +95,7 @@ Recommended suite structure:
 
 ```robotframework
 *** Settings ***
-Library           KeysightN6700Library
+Library           rf_keysight_n6700.KeysightN6700Library
 Suite Setup       Connect To N6700 Via VISA    ${N6700_RESOURCE}
 Suite Teardown    Disconnect All N6700
 Test Teardown     Shutdown All N6700 Channels

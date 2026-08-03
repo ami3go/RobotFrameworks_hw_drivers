@@ -63,7 +63,7 @@ enabling its input.
 
 ```robot
 *** Settings ***
-Library           BK8500BLibrary
+Library           rf_bk8500b.BK8500BLibrary
 Suite Setup       Connect To Electronic Load    %{BK8500B_PORT}
 Suite Teardown    Disconnect All Electronic Loads
 Test Teardown     Disable Electronic Load Input
@@ -74,6 +74,11 @@ Sink One Ampere And Verify Supply Voltage
     Voltage Should Be Within Range    11.5    12.5
     Current Should Be Within Range    0.95    1.05
 ```
+
+The bare `Library    BK8500BLibrary` import also still works for backward
+compatibility, but `rf_bk8500b.BK8500BLibrary` is the recommended form — it
+matches the `rf_<device>.<Device>Library` convention used across this
+repository's drivers.
 
 ## Main keyword groups
 

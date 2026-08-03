@@ -1,6 +1,6 @@
 *** Settings ***
 Documentation    Read-only temperature measurement example.
-Library    rf_votsch_climate_chamber.library.VotschClimateChamberLibrary
+Library    rf_votsch_climate_chamber.VotschClimateChamberLibrary
 Suite Setup    Connect    SIM::default
 Suite Teardown    Disconnect All
 

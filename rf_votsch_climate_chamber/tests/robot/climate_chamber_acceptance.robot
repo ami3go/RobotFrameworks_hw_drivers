@@ -1,6 +1,6 @@
 *** Settings ***
 Documentation     Acceptance tests use the built-in protocol simulator; no hardware is required.
-Library           rf_votsch_climate_chamber.library.VotschClimateChamberLibrary
+Library           rf_votsch_climate_chamber.VotschClimateChamberLibrary
 Suite Setup       Connect    resource=SIM::acceptance    alias=default    temperature_min_c=-40    temperature_max_c=180
 Suite Teardown    Disconnect All
 

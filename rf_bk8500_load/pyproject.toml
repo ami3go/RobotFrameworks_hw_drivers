@@ -26,7 +26,7 @@ py-modules = ["BK8500Library"]
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["bk8500_load*"]
+include = ["bk8500_load*", "rf_bk8500_load*"]
 exclude = ["tests*", "atest*", "examples*", "tools*"]
 
 [tool.setuptools.data-files]

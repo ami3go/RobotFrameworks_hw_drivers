@@ -1,6 +1,6 @@
 *** Settings ***
 Documentation    Named multi-session example.
-Library    rf_votsch_climate_chamber.library.VotschClimateChamberLibrary
+Library    rf_votsch_climate_chamber.VotschClimateChamberLibrary
 Suite Teardown    Disconnect All
 
 *** Test Cases ***

@@ -1,6 +1,6 @@
 *** Settings ***
 Documentation    RFDS-019 real-device self-check for a Keysight N6775A module. Non-energizing by default.
-Library          KeysightN6700Library    auto_shutdown=${TRUE}    strict_errors=${TRUE}
+Library          rf_keysight_n6700.KeysightN6700Library    auto_shutdown=${TRUE}    strict_errors=${TRUE}
 Resource         resources/conformance_variables.resource
 Resource         resources/conformance_keywords.resource
 Suite Setup      Prepare N6775A Self Check

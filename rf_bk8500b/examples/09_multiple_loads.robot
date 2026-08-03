@@ -1,5 +1,5 @@
 *** Settings ***
-Library         BK8500BLibrary
+Library         rf_bk8500b.BK8500BLibrary
 Suite Teardown  Disconnect All Electronic Loads
 
 *** Test Cases ***

@@ -1,6 +1,6 @@
 *** Settings ***
 Documentation    Configure and verify a safe temperature setpoint.
-Library    rf_votsch_climate_chamber.library.VotschClimateChamberLibrary
+Library    rf_votsch_climate_chamber.VotschClimateChamberLibrary
 Suite Setup    Connect    SIM::default
 Suite Teardown    Run Keywords    Safe Shutdown    AND    Disconnect All
 

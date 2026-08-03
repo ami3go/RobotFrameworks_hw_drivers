@@ -1,6 +1,6 @@
 *** Settings ***
 Documentation    Explicit chamber operating-state control.
-Library    rf_votsch_climate_chamber.library.VotschClimateChamberLibrary
+Library    rf_votsch_climate_chamber.VotschClimateChamberLibrary
 Suite Setup    Connect    SIM::default
 Suite Teardown    Run Keywords    Safe Shutdown    AND    Disconnect All
 

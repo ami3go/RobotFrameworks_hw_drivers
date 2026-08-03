@@ -30,7 +30,7 @@ python -m pip install -e ".[test,yaml]"
 
 ```robot
 *** Settings ***
-Library      rf_eresistor    host=192.168.0.55
+Library      rf_eresistor.EResistorLibrary    host=192.168.0.55
 Suite Setup     Connect To EResistor    all_off_on_connect=${True}
 Suite Teardown  Disconnect From EResistor
 

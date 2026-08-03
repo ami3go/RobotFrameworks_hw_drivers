@@ -1,6 +1,6 @@
 *** Settings ***
 Documentation     Hardware smoke test. The first test is non-destructive; disconnect applies the configured safe-shutdown policy.
-Library           rf_votsch_climate_chamber.library.VotschClimateChamberLibrary
+Library           rf_votsch_climate_chamber.VotschClimateChamberLibrary
 Library           Collections
 Suite Setup       Configure Read Only Disconnect And Connect
 Suite Teardown    Disconnect    alias=default

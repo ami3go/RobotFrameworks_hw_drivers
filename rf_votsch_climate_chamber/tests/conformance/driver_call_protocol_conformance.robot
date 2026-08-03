@@ -1,6 +1,6 @@
 *** Settings ***
 Documentation    RFDS-019 public keyword callability and SimServ protocol-boundary conformance.
-Library          rf_votsch_climate_chamber.library.VotschClimateChamberLibrary    default_resource=SIM::conformance
+Library          rf_votsch_climate_chamber.VotschClimateChamberLibrary    default_resource=SIM::conformance
 Library          ../../tests/support/RFDSConformanceHarness.py    ${CURDIR}${/}..${/}..    ${OUTPUT DIR}
 Resource         resources/conformance_variables.resource
 Resource         resources/conformance_keywords.resource

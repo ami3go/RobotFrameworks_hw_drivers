@@ -1,5 +1,5 @@
 *** Settings ***
-Library    KeysightN6700Library
+Library    rf_keysight_n6700.KeysightN6700Library
 Suite Setup       Connect To Simulated N6700
 Suite Teardown    Disconnect All N6700
 Test Teardown     Shutdown All N6700 Channels
