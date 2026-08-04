@@ -50,6 +50,44 @@ def test_connect_raises_typed_error_when_remote_control_is_refused():
     assert simulator.lock_owner == "NONE"
 
 
+def test_acquire_remote_control_tolerates_a_brief_owner_readback_race():
+    """Reproduces a real-hardware finding (RFDS-019 conformance run): the front panel
+    already showed "Remote: USB" while an immediate SYSTem:LOCK:OWNer? still read back
+    NONE. acquire_remote_control must re-check briefly rather than treating the first
+    stale read as a genuine refusal."""
+
+    class DelayedOwnerTransport:
+        resource = "FAKE::INSTR"
+        timeout_s = 5.0
+
+        def __init__(self):
+            self._open = True
+            self._owner_queries = 0
+
+        def is_open(self):
+            return self._open
+
+        def write(self, _command):
+            pass
+
+        def query(self, command):
+            if command == "*OPC?":
+                return "1"
+            if command == "SYSTem:LOCK:OWNer?":
+                self._owner_queries += 1
+                return "NONE" if self._owner_queries == 1 else "REMOTE"
+            raise AssertionError(f"unexpected query: {command}")
+
+        def close(self):
+            self._open = False
+
+    transport = DelayedOwnerTransport()
+    driver = EaPs9000T(transport)
+    driver.acquire_remote_control()
+    assert transport._owner_queries == 2
+    driver.close()
+
+
 def test_disconnect_releases_remote_control_before_closing():
     """task §12.1 item 3."""
 

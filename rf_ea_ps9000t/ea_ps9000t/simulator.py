@@ -172,6 +172,12 @@ class SimEaPs9000TInstrument:
     def _stb(self, _rest: str, _is_query: bool) -> bytes:
         return b"4" if self._events else b"0"
 
+    def _opc(self, _rest: str, _is_query: bool) -> bytes:
+        """The simulator processes every command synchronously, so there is never a
+        pending overlapped operation to wait on — always reports complete."""
+
+        return b"1"
+
     # -- remote control lock -----------------------------------------------
 
     def _system_lock(self, rest: str, _is_query: bool) -> bytes:
@@ -545,6 +551,7 @@ _ROUTES: dict[str, Callable] = {
     "*CLS": SimEaPs9000TInstrument._cls,
     "*RST": SimEaPs9000TInstrument._rst,
     "*STB": SimEaPs9000TInstrument._stb,
+    "*OPC": SimEaPs9000TInstrument._opc,
     "SYSTEM:LOCK": SimEaPs9000TInstrument._system_lock,
     "SYSTEM:LOCK:OWNER": SimEaPs9000TInstrument._system_lock_owner,
     "OUTPUT": SimEaPs9000TInstrument._output,

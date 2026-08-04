@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import logging
 import re
+import time
 
 from .enums import (
     AlarmAction,
@@ -150,10 +151,28 @@ class EaPs9000T:
         itself (task §2) — so this method explicitly re-queries
         ``SYSTem:LOCK:OWNer?`` after requesting the lock rather than trusting
         the write succeeded.
+
+        Confirmed against real hardware: the front panel can already display
+        "Remote: USB" while an immediate ``SYSTem:LOCK:OWNer?`` still reads
+        back ``NONE`` — a brief state-propagation race between accepting the
+        lock and updating what that query reports, not a genuine refusal.
+        ``*OPC?`` (a mandatory IEEE-488.2 command every SCPI instrument
+        supports) blocks until the lock request itself has actually
+        completed, and a couple of short-interval re-checks absorb any
+        remaining propagation delay beyond that — a genuine refusal (front
+        panel truly in "Local", or already owned by another interface)
+        stays refused across every attempt, so this doesn't weaken the
+        never-trust-the-write guarantee above.
         """
 
         self._write("SYSTem:LOCK ON")
+        self._query("*OPC?")
         owner = self.get_remote_control_owner()
+        attempts = 1
+        while owner != RemoteControlOwner.REMOTE and attempts < 3:
+            time.sleep(0.15)
+            owner = self.get_remote_control_owner()
+            attempts += 1
         if owner != RemoteControlOwner.REMOTE:
             raise EaPs9000TConnectionError(
                 f"remote control was refused; current owner is {owner.value!r} "
