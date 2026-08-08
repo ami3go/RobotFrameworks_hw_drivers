@@ -1,6 +1,6 @@
 # RF E-Resistor
 
-Robot Framework library for the OpenBench/RP2040 + W5500 E-Resistor programmable resistor matrix. Release **26.02** wraps the bundled and reviewed Python driver `eresistor-driver 0.1.1` without changing its SCPI, calibration, solver, safety, or HTTP fallback logic.
+Robot Framework library for the OpenBench/RP2040 + W5500 E-Resistor programmable resistor matrix. Release **26.03** wraps the bundled and reviewed Python driver `eresistor-driver 0.1.1` without changing its SCPI, calibration, solver, safety, or HTTP fallback logic.
 
 ## Capabilities
 
@@ -14,6 +14,9 @@ Robot Framework library for the OpenBench/RP2040 + W5500 E-Resistor programmable
 - Discover boards, inspect errors/status, use raw SCPI, watchdog and metrics
 - Return Robot-friendly dictionaries for result assertions
 - Provide a locked, machine-readable RFDS-017 AI driver contract covering every Robot keyword
+- Record every keyword call as RFDS-008 structured evidence (arguments, duration,
+  SCPI/HTTP protocol trace, errors) for troubleshooting — see "Logging and evidence" below
+- Export a real-hardware RFDS-019 conformance suite covering all 42 public keywords
 
 ## Install
 
@@ -49,9 +52,50 @@ Run it with `robot --outputdir results examples/02_set_resistance.robot`.
 
 Do not connect a DUT until you have run the read-only identity example and verified the channel/mask mapping on your hardware. Use `force=True` only when intentionally overriding simulation-channel locking; it does not bypass resistance or active-bit safety limits.
 
+## Logging and evidence
+
+Every keyword call is recorded as structured, correlated RFDS-008 evidence —
+arguments, duration, result/failure, and the underlying SCPI/HTTP exchanges —
+written to `results/session/rf_eresistor/<run>/` (override with the
+`RFDS_EVIDENCE_ROOT` environment variable). On by default; pass
+`evidence_enabled=${FALSE}` to the `Library` import to disable it, or call
+`Export Diagnostic Bundle` to zip the current run for a bug report. This is a
+deeper, correlated complement to the existing `AuditLogger` facility
+(`audit_log_file=...`), not a replacement for it — see
+`docs/logging_and_evidence.md` for the full evidence layout and how the two
+relate, and `guide/evidence_and_diagnostics.md` for a task-oriented "my test
+failed, now what" walkthrough. Validate a run's integrity (hashes, JSONL
+sequencing) with:
+
+```console
+python scripts/validate_evidence.py results/session/rf_eresistor/<run>/
+```
+
+## Hardware tests
+
+`tests/hardware/verify_all_keywords.robot` is the RFDS-019 real-hardware
+conformance suite: one test case per public keyword (42 total), run against a
+real E-Resistor board. It is tagged `hardware` and does not run in CI:
+
+```console
+python -m robot --outputdir results -v HOST:192.168.0.55 tests/hardware/verify_all_keywords.robot
+```
+
+Every channel stays at mask `0000` (open) for the whole suite unless
+`-v ALLOW_ACTIVATE:True` is passed — setting a mask/resistance/temperature
+activates a MOSFET branch and can drive current through whatever is wired to
+that channel (see "Safety" above: verify the channel/mask mapping before
+connecting a DUT). Discovery keywords additionally require
+`-v ALLOW_DISCOVERY:True` (plus `-v DISCOVERY_SUBNET:<cidr>` for the
+manual-subnet variant) since a network scan is disruptive/unexpected default
+behavior. Test Teardown and Suite Teardown always attempt to reopen every
+channel regardless of how a test case left the board.
+
 ## Documentation
 
 - [Keyword reference](docs/keyword_reference.md)
+- [Logging and evidence](docs/logging_and_evidence.md)
+- [Evidence and diagnostics guide](guide/evidence_and_diagnostics.md)
 - [Installation and PyCharm/Robot guide](guide/pycharm_robot_framework_setup.md)
 - [Hardware setup](guide/hardware_setup.md)
 - [Examples](examples/README.md)
@@ -60,6 +104,7 @@ Do not connect a DUT until you have run the read-only identity example and verif
 - [AI driver contract](ai/README.md)
 - [Release 26.02 history](history/v26.02.md)
 - [Release 26.02 compliance review](review/v26.02_code_review.md)
+- [Release 26.03 history](history/v26.03.md)
 
 Generate Robot's HTML keyword documentation with:
 
@@ -69,11 +114,16 @@ python -m robot.libdoc rf_eresistor docs/rf_eresistor.html
 
 The `docs/` folder is GitHub Pages ready. Enable Pages from the repository root or publish that folder with your preferred workflow.
 
-## Test
+## Running the tests
+
+Unit tests (`tests/test_robot_adapter.py`, `tests/test_ai_contract.py`,
+`tests/evidence/`) use hand-rolled fakes, so they need no E-Resistor hardware:
 
 ```bash
 python -m pytest
 python -m robot --outputdir results tests/robot
 ```
 
-Hardware examples are deliberately not part of the offline test suite.
+Hardware examples and `tests/hardware/verify_all_keywords.robot` are
+deliberately not part of the offline test suite — see "Hardware tests" above
+for how to run the real-hardware conformance suite.

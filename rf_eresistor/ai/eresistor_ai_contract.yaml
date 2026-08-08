@@ -2,7 +2,7 @@
   "contract": {
     "id": "RFDS-017",
     "specification_version": "3.0",
-    "driver_contract_version": "26.02",
+    "driver_contract_version": "26.03",
     "status": "conformant-with-declared-unknowns",
     "generated_by": "tools/generate_ai_contract.py"
   },
@@ -10,7 +10,7 @@
     "library": "rf_eresistor",
     "class": "rf_eresistor.library.EResistorLibrary",
     "robot_scope": "SUITE",
-    "library_version": "26.02",
+    "library_version": "26.03",
     "instrument": "OpenBench E-Resistor",
     "channels": 8,
     "branches_per_channel": 16,
@@ -1233,6 +1233,34 @@
       ],
       "postconditions": [],
       "side_effects": [],
+      "risk_level": "low",
+      "timing": "<3 s typical; bounded by configured transport timeout and retries",
+      "stabilization_delay": "none",
+      "retry_policy": "transport retries only; do not retry state changes at test level unless state is read back",
+      "errors": [
+        "NOT_CONNECTED",
+        "TRANSPORT_ERROR",
+        "DEVICE_ERROR"
+      ],
+      "exclusive_resources": [
+        "eresistor.scpi_session"
+      ]
+    },
+    {
+      "keyword": "Export Diagnostic Bundle",
+      "signature": "destination=None",
+      "purpose": "Zip the current session's RFDS-008 evidence run (events, protocol trace, device identity, manifest) for offline troubleshooting.",
+      "inputs": {
+        "destination": "optional file path; defaults next to the run's own result directory"
+      },
+      "output": "path string, or null when evidence_enabled=False",
+      "preconditions": [],
+      "postconditions": [
+        "evidence_manifest.json inside the run directory is refreshed"
+      ],
+      "side_effects": [
+        "Writes a .zip file to disk"
+      ],
       "risk_level": "low",
       "timing": "<3 s typical; bounded by configured transport timeout and retries",
       "stabilization_delay": "none",

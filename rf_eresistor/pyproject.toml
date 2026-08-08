@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "rf-eresistor"
-version = "26.2"
+version = "26.3"
 description = "Robot Framework library for the OpenBench E-Resistor programmable resistor matrix"
 readme = "README.md"
 requires-python = ">=3.10"

@@ -73,11 +73,12 @@ CAPABILITIES = [
     cap("Get Connection State", "alias=None, refresh=False", "Return the RFDS-002 Section 12.1 normalized connection-state dictionary.", inputs={"alias":"accepted for interface compatibility; unused", "refresh":"strict Boolean; probes reachability first when true and connected"}, output="RFDS-002 Section 12.1 connection-state dictionary", pre=[], post=["No state change."], side=["Optional reachability probe when refresh is true"], risk="none", retry="safe to retry", errors=[], resources=[]),
     cap("Check Communication", "alias=None", "Perform a bounded, non-destructive communication check (reads identity). Raises on failure rather than returning False.", inputs={"alias":"accepted for interface compatibility; unused"}, output="Boolean", **READ),
     cap("Get Identity", "alias=None, refresh=True", "RFDS-002 generic stable identity string. Equivalent to Get EResistor Identity.", inputs={"alias":"accepted for interface compatibility; unused", "refresh":"accepted for interface compatibility; this driver always queries the device"}, output="manufacturer,model,serial,firmware string", **READ),
+    cap("Export Diagnostic Bundle", "destination=None", "Zip the current session's RFDS-008 evidence run (events, protocol trace, device identity, manifest) for offline troubleshooting.", inputs={"destination":"optional file path; defaults next to the run's own result directory"}, output="path string, or null when evidence_enabled=False", pre=[], post=["evidence_manifest.json inside the run directory is refreshed"], side=["Writes a .zip file to disk"], risk="low", resources=[]),
 ]
 
 CONTRACT = {
-    "contract": {"id":"RFDS-017", "specification_version":"3.0", "driver_contract_version":"26.02", "status":"conformant-with-declared-unknowns", "generated_by":"tools/generate_ai_contract.py"},
-    "identity": {"library":"rf_eresistor", "class":"rf_eresistor.library.EResistorLibrary", "robot_scope":"SUITE", "library_version":"26.02", "instrument":"OpenBench E-Resistor", "channels":8, "branches_per_channel":16, "transport":{"primary":"SCPI/TCP", "default_host":"192.168.0.55", "default_port":5025, "secondary":"HTTP/TCP port 80"}},
+    "contract": {"id":"RFDS-017", "specification_version":"3.0", "driver_contract_version":"26.03", "status":"conformant-with-declared-unknowns", "generated_by":"tools/generate_ai_contract.py"},
+    "identity": {"library":"rf_eresistor", "class":"rf_eresistor.library.EResistorLibrary", "robot_scope":"SUITE", "library_version":"26.03", "instrument":"OpenBench E-Resistor", "channels":8, "branches_per_channel":16, "transport":{"primary":"SCPI/TCP", "default_host":"192.168.0.55", "default_port":5025, "secondary":"HTTP/TCP port 80"}},
     "mental_model": ["Each channel is an independent 16-branch programmable resistance network.", "Mask 0000 opens a channel; a set bit activates a branch.", "Bit 0 maps to Q16 (lowest branch) and bit 15 maps to Q1 (highest branch).", "Resistance and temperature operations require calibrated branch data; computed values are not DMM measurements."],
     "state_machine": {"initial":"DISCONNECTED", "states":["DISCONNECTED","CONNECTED","RECONNECTING","LOST","CLOSED"], "transitions":[{"from":"DISCONNECTED","via":"Connect To EResistor","to":"CONNECTED"},{"from":"CONNECTED","via":"transport failure","to":"LOST or RECONNECTING"},{"from":"CONNECTED|LOST|RECONNECTING","via":"Disconnect From EResistor","to":"CLOSED"}], "operation_rule":"All device I/O keywords except discovery require CONNECTED; local metrics/file-table actions declare their own preconditions."},
     "resources": {"consumed":["one IPv4 address", "SCPI TCP port 5025", "optional HTTP port 80", "optional calibration JSON", "optional temperature CSV"], "provided":["eresistor.scpi_session", "eight logical resistance outputs", "calibration/solver cache", "optional watchdog"]},
@@ -99,7 +100,7 @@ def main():
     payload = json.dumps(CONTRACT, indent=2, ensure_ascii=False) + "\n"
     OUT.write_text(payload, encoding="utf-8")
     digest = hashlib.sha256(payload.encode()).hexdigest()
-    lock = {"contract_file":"eresistor_ai_contract.yaml", "sha256":digest, "capability_count":len(CAPABILITIES), "driver_contract_version":"26.02", "specification":"RFDS-017 v3.0"}
+    lock = {"contract_file":"eresistor_ai_contract.yaml", "sha256":digest, "capability_count":len(CAPABILITIES), "driver_contract_version":"26.03", "specification":"RFDS-017 v3.0"}
     LOCK.write_text(json.dumps(lock, indent=2) + "\n", encoding="utf-8")
 
 

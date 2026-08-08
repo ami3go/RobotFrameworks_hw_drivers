@@ -1,7 +1,7 @@
 {
   "contract_file": "eresistor_ai_contract.yaml",
-  "sha256": "611739570078efe6c1d2b370a206f0e60d13ae2155adf5e9d402700db5cf72a5",
-  "capability_count": 41,
-  "driver_contract_version": "26.02",
+  "sha256": "f8fda086f6aecabb87023cc0c9a24de6bbe845e8cd353b0c4df4bac1d4d1a2c7",
+  "capability_count": 42,
+  "driver_contract_version": "26.03",
   "specification": "RFDS-017 v3.0"
 }

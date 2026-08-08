@@ -7,4 +7,4 @@ class rf_eresistor(EResistorLibrary):
 
 
 __all__ = ["EResistorLibrary", "rf_eresistor"]
-__version__ = "26.02"
+__version__ = "26.03"
