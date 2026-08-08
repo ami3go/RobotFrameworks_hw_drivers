@@ -1,4 +1,4 @@
-# Public keyword reference — 26.06
+# Public keyword reference — 26.07
 
 The authoritative public surface contains **109** explicitly exported Robot Framework keywords.
 
