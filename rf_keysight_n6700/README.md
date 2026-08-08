@@ -195,6 +195,17 @@ Raw TCP socket example:
 
 Results are stored below `results/call_protocol_conformance/keysight_n6700/<UTC timestamp>/` and include Robot reports, protocol traces, environment/device identity, keyword coverage, vector results, exclusions, and a Markdown summary. See [N6775A self-check guide](docs/n6775a_self_check.md).
 
+## Logging and evidence
+
+Every SCPI write/query — from every typed keyword and from raw `Query N6700 SCPI` — passes through one transport-boundary choke point in `keysight_n6700/driver.py`. Passing `audit_log_path` when connecting records a `.jsonl` trace of that session's complete command/response history, timestamps, durations, and errors, independent of any formal test run:
+
+```robotframework
+Connect To N6700    USB0::0x0957::0x0907::MY43014421::INSTR    main
+...    audit_log_path=${OUTPUT DIR}/n6700_audit.jsonl
+```
+
+This is the tool for "what did this session actually send/receive and when" troubleshooting questions. See [Audit logging](docs/audit_logging.md) for the record schema and how it relates to the RFDS-019 self-check's own evidence bundle (above) — the two are complementary: `audit_log_path` traces one session, the self-check proves every keyword still reaches the instrument correctly.
+
 ## Safety model
 
 The library constructor supports:

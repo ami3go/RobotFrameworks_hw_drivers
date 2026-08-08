@@ -1,4 +1,20 @@
-"""Main N6700 driver."""
+"""Typed core driver for the Keysight N6700 modular power-supply/SMU/electronic-load mainframe.
+
+``N6700`` owns SCPI command construction, response parsing, module-capability
+dispatch (a mainframe can hold any mix of power-supply, SMU, and electronic-load
+modules — see ``capabilities.py``/``channel.py``), and connection lifecycle over
+VISA, USB, a raw Ethernet socket, or the bundled simulator (``transport.py``).
+The Robot Framework adapter (``KeysightN6700Library/library.py``) is a thin
+layer on top of this module and must not duplicate SCPI/hardware logic.
+
+``write_scpi``/``query_scpi`` below are the single transport-boundary choke
+point every typed keyword and raw SCPI call routes through; when
+``audit_log_path`` is set, every transaction passing through them is appended
+to that file as a JSONL trace (see ``_append_protocol_trace`` and
+``docs/audit_logging.md``) — this is this driver's per-session, opt-in
+troubleshooting log, distinct from the RFDS-019 self-check's own evidence
+bundle under ``tests/conformance/`` (see ``docs/n6775a_self_check.md``).
+"""
 
 from __future__ import annotations
 
