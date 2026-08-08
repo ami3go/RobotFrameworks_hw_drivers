@@ -24,5 +24,11 @@ Resistance results are dictionaries with `channel`, `requested_ohm`, `calculated
 
 `Send EResistor SCPI Query`, `Get EResistor Status`, `Get EResistor Error`, `Clear EResistor Errors`, `Start EResistor Watchdog`, `Stop EResistor Watchdog`, `Get EResistor Metrics`, `Discover EResistor Boards`, and `Auto Discover EResistor Boards`.
 
+## Evidence
+
+`Export Diagnostic Bundle` — zips the current session's RFDS-008 evidence run
+(every keyword call and every SCPI/HTTP exchange, correlated and
+SHA-256-manifested) for troubleshooting. See [Logging and evidence](logging_and_evidence.md).
+
 For full generated signatures and embedded docstrings, run Libdoc as described in the README.
 
