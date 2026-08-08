@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "robotframework-agilent33220a"
-version = "26.1"
+version = "26.2"
 description = "Robot Framework driver for the Agilent (Keysight) 33220A function/arbitrary waveform generator"
 readme = "README.md"
 requires-python = ">=3.10"

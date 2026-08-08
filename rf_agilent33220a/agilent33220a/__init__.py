@@ -34,7 +34,7 @@ from .models import (
 )
 from .simulator import SimAgilent33220AInstrument
 
-__version__ = "26.1"
+__version__ = "26.2"
 
 __all__ = [
     "Agilent33220A",

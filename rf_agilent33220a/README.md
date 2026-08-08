@@ -1,7 +1,7 @@
 # RF Agilent33220A
 
 Robot Framework driver for the Agilent (Keysight) 33220A function/arbitrary
-waveform generator. Version **26.1**. Gate 2 (Core Implementation,
+waveform generator. Version **26.2**. Gate 2 (Core Implementation,
 RFDS-020): connection, output configuration, pulse, all five modulation
 modes, sweep with marker, burst, trigger, arbitrary waveform upload, setup
 save/restore, and a raw SCPI escape hatch are all implemented and tested
@@ -110,9 +110,59 @@ offline coverage.
   `Set/Get LAN Telnet Welcome Message`
 - **Raw SCPI escape hatch:** `Enable Raw SCPI` (requires the exact
   confirmation text `"ENABLE RAW SCPI"`), `Raw SCPI Query`, `Raw SCPI Write`
+- **Diagnostics:** `Export Diagnostic Bundle` — zips the current RFDS-008
+  evidence run (see "Logging and evidence" below) for troubleshooting
 
 Multiple generators can be driven from one suite via the `alias` parameter
 accepted by every non-connection keyword.
+
+## Logging and evidence
+
+Every keyword call is recorded as structured, correlated RFDS-008 evidence —
+arguments, duration, result/failure, and every SCPI command/response sent
+over the wire — written to `results/session/rf_agilent33220a/<run>/`
+(override with `RFDS_EVIDENCE_ROOT`). On by default; pass
+`evidence_enabled=${FALSE}` to the `Library` import to disable it, or call
+`Export Diagnostic Bundle` to zip the current run for a bug report. See
+`docs/logging_and_evidence.md` for the full evidence layout and
+`guide/evidence_and_diagnostics.md` for a task-oriented "my test failed, now
+what" walkthrough. Validate a run's integrity (hashes, JSONL sequencing) with:
+
+```console
+python scripts/validate_evidence.py results/session/rf_agilent33220a/<run>/
+```
+
+## Hardware tests
+
+`tests/hardware/verify_all_keywords.robot` is the RFDS-019 real-hardware
+conformance suite: one test case per public keyword (117 total), run against
+a real 33220A unit. It is tagged `hardware` and does not run in CI:
+
+```console
+python -m robot --outputdir results -v RESOURCE:USB0::0x0957::0x0407::<serial>::INSTR \
+    tests/hardware/verify_all_keywords.robot
+```
+
+Several gates protect real-hardware side effects and are OFF by default:
+`ALLOW_OUTPUT_ON` (energizes the output), `ALLOW_CALIBRATION` (touches
+calibration memory — additionally needs `CALIBRATION_SECURITY_CODE`, the
+unit's actual vendor code, or calibration-write keywords stay skipped even
+with the gate on), `ALLOW_LAN_WRITES` (GPIB/LAN identity keywords — read-only
+otherwise), and `ALLOW_SETUP_WRITES` (instrument-memory setup slots and
+`*RST`). Every keyword that mutates device-persistent state restores the
+original value before its own test case ends where the instrument makes that
+possible to read back; Suite Teardown disables output and disconnects either
+way.
+
+## Running the tests
+
+```console
+python -m pip install -e "./rf_agilent33220a[dev,visa,visa-py]"
+python -m pytest rf_agilent33220a                                    # unit + evidence tests, no hardware
+python -m robot --outputdir results rf_agilent33220a/tests/robot/     # offline acceptance, bundled simulator
+python -m robot --outputdir results -v RESOURCE:<visa string> \
+    rf_agilent33220a/tests/hardware/verify_all_keywords.robot         # real hardware, RFDS-019
+```
 
 ## Safety-relevant behaviors
 
