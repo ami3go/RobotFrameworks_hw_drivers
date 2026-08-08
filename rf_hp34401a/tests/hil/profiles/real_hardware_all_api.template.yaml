@@ -1,7 +1,7 @@
 schema_version: '1.0'
 profile_id: hp34401a.real_hardware_all_public_api
 driver: rf_hp34401a
-driver_version: '26.06'
+driver_version: '26.07'
 execution_mode: REAL_HARDWARE
 hil_enabled: false
 instrument:

@@ -11,18 +11,21 @@ This module owns the safety-critical command sequencing:
 
 from __future__ import annotations
 
-import datetime as _dt
 import contextlib
+import datetime as _dt
 import logging
 import re
 import threading
 import time
-from typing import Callable, Iterator
+from collections.abc import Callable
 
+from . import parser
 from .config import DriverConfig, SerialRs232Config, StabilityProfile, VisaGpibConfig
 from .enums import (
     MAX_COUNT,
     MAX_INTERNAL_READINGS,
+    NPLC_FUNCTIONS,
+    RANGE_TABLES,
     AcFilterHz,
     Aperture,
     AutoRange,
@@ -31,8 +34,6 @@ from .enums import (
     InputTerminal,
     MeasurementFunction,
     Nplc,
-    NPLC_FUNCTIONS,
-    RANGE_TABLES,
     TriggerSource,
 )
 from .errors import (
@@ -40,7 +41,6 @@ from .errors import (
     InstrumentConnectionError,
     InstrumentTimeoutError,
     ProtocolError,
-    RecoveryError,
     SafetyError,
     scpi_error_for,
 )
@@ -52,7 +52,6 @@ from .measurement import (
     RecoveryReport,
     SelfTestResult,
 )
-from . import parser
 from .transports import Transport
 
 _log = logging.getLogger("hp34401a_dmm")
@@ -177,6 +176,13 @@ class Hp34401A:
         # This RLock prevents configure/read/trigger flows from interleaving
         # across application threads when DriverConfig.thread_safe=True.
         self._op_lock = threading.RLock()
+        # Optional RFDS-008 protocol-trace hook, set by the RF adapter layer
+        # (rf_hp34401a/library.py) once a session's EvidenceRun exists. Called as
+        # trace_callback(direction, text) with direction "outbound"/"inbound" for
+        # every SCPI command/query this driver sends, regardless of which of the
+        # three transports (VISA/serial/Prologix) carried it. None by default so
+        # this core driver has no dependency on the evidence layer.
+        self.trace_callback: Callable[[str, str], None] | None = None
 
     def _locked(self) -> contextlib.AbstractContextManager[object]:
         return self._op_lock if self._cfg.thread_safe else contextlib.nullcontext()
@@ -185,7 +191,7 @@ class Hp34401A:
     @classmethod
     def from_serial(
         cls, config: SerialRs232Config, driver_config: DriverConfig | None = None
-    ) -> "Hp34401A":
+    ) -> Hp34401A:
         from .serial_transport import SerialRs232Transport
 
         dc = driver_config or DriverConfig()
@@ -195,7 +201,7 @@ class Hp34401A:
     @classmethod
     def from_visa_gpib(
         cls, config: VisaGpibConfig, driver_config: DriverConfig | None = None
-    ) -> "Hp34401A":
+    ) -> Hp34401A:
         from .visa_transport import VisaGpibTransport
 
         dc = driver_config or DriverConfig()
@@ -203,7 +209,7 @@ class Hp34401A:
         return cls(transport, dc)
 
     # ------------------------------------------------------------------ context
-    def __enter__(self) -> "Hp34401A":
+    def __enter__(self) -> Hp34401A:
         self.connect()
         return self
 
@@ -303,6 +309,8 @@ class Hp34401A:
     def write(self, command: str) -> None:
         with self._locked():
             self._guard_safety(command)
+            if self.trace_callback is not None:
+                self.trace_callback("outbound", command)
             try:
                 self._t.write(command)
             except InstrumentTimeoutError:
@@ -323,6 +331,8 @@ class Hp34401A:
         """
         with self._locked():
             self._guard_safety(command)
+            if self.trace_callback is not None:
+                self.trace_callback("outbound", command)
             attempts_left = (
                 self._cfg.max_query_retries
                 if self._should_retry_timeout_query(command)
@@ -335,6 +345,8 @@ class Hp34401A:
                     self._state = CommandState.HAS_UNREAD_OUTPUT
                     resp = self._t.query(command)
                     self._state = CommandState.CONNECTED_REMOTE
+                    if self.trace_callback is not None:
+                        self.trace_callback("inbound", resp)
                     if attempt > 0:
                         _log.warning(
                             "Query %r succeeded after %d timeout retry attempt(s)",

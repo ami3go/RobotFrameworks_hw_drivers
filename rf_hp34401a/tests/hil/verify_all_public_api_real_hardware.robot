@@ -62,7 +62,7 @@ Verify Offline Metadata Capability And Configuration APIs
     ${features}=    Get Driver Features    mode=static
     ${refreshed}=    Refresh Driver Capabilities    mode=static
     ${validation}=    Validate Driver Capabilities
-    Should Be Equal    ${information}[package_version]    26.06
+    Should Be Equal    ${information}[package_version]    26.07
     Should Not Be Empty    ${capability_ids}
     Should Be True    ${validation}[valid]
 
@@ -73,6 +73,9 @@ Verify Offline Metadata Capability And Configuration APIs
     ${validated_import}=    Import Driver Configuration    ${default}    validate_only=${TRUE}
     ${applied}=    Import Driver Configuration    ${default}
     ${json_text}=    Export Driver Configuration    ${OUTPUT DIR}${/}driver_configuration.json
+    ${diagnostic_bundle}=    Export Diagnostic Bundle    ${OUTPUT DIR}${/}hil_diagnostic_bundle.zip
+    Should Not Be Empty    ${diagnostic_bundle}
+    File Should Exist    ${diagnostic_bundle}
     ${saved_path}=    Save Driver Configuration    hil_all_api    overwrite=${TRUE}
     ${profiles}=    List Driver Configuration Profiles
     ${loaded}=    Load Driver Configuration    hil_all_api

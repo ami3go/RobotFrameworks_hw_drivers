@@ -525,7 +525,7 @@ class ConformanceHarness:
         environment = {
             "timestamp_utc": datetime.now(timezone.utc).isoformat(),
             "driver_package": "rf_hp34401a",
-            "driver_version": "26.06",
+            "driver_version": "26.07",
             "core_driver_version": "1.2.8",
             "python_version": platform.python_version(),
             "robot_framework_version": robot.__version__,

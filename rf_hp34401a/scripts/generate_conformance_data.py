@@ -52,6 +52,7 @@ def source_surface() -> list[dict[str, Any]]:
 
 
 RETURN_TYPES = {
+    "Export Diagnostic Bundle": "string",
     "Connect DMM": "string",
     "Open DMM Via VISA": "string",
     "Open DMM Via Serial": "string",
@@ -93,6 +94,7 @@ RETURN_TYPES = {
 }
 
 NON_DEVICE = {
+    "Export Diagnostic Bundle",
     "List VISA Resources",
     "Select DMM",
     "Get Active DMM Alias",
@@ -524,7 +526,7 @@ def vector_for(item: dict[str, Any], index: int) -> dict[str, Any]:
     elif name == "Get DMM Driver Version":
         vector["expected_return"]["exact"] = "1.2.8"
     elif name == "Get Robot DMM Library Version":
-        vector["expected_return"]["exact"] = "26.06"
+        vector["expected_return"]["exact"] = "26.07"
     elif name == "Get Driver Capabilities":
         vector["expected_return"]["minimum_length"] = 1
     elif name == "Get Driver Metadata":
@@ -642,7 +644,7 @@ def main() -> None:
     inventory = {
         "rfds019_version": "1.1",
         "driver": "rf_hp34401a.Hp34401ALibrary",
-        "driver_version": "26.06",
+        "driver_version": "26.07",
         "keywords": [
             {
                 "keyword": item["keyword"],

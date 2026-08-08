@@ -6,7 +6,7 @@
   "library": {
     "name": "rf_hp34401a",
     "module": "rf_hp34401a.Hp34401ALibrary",
-    "package_version": "26.06",
+    "package_version": "26.07",
     "api_version": "1.1.0",
     "scope": "SUITE",
     "scope_rationale": "Each suite owns deterministic named DMM sessions and teardown.",
@@ -2462,6 +2462,61 @@
       "example": "Disconnect DMM"
     },
     {
+      "name": "Export Diagnostic Bundle",
+      "canonical_name": "Export Diagnostic Bundle",
+      "python_method": "export_diagnostic_bundle",
+      "aliases": [],
+      "signature": "Export Diagnostic Bundle(destination=${NONE})",
+      "category": "diagnostic",
+      "capability_id": "diagnostics",
+      "device_facing": false,
+      "risk": "low",
+      "idempotent": false,
+      "data_freshness": "cached",
+      "arguments": [
+        {
+          "name": "destination",
+          "type": "object",
+          "required": false,
+          "default": null,
+          "unit": null,
+          "accepted": "documented by Libdoc and RFDS-017"
+        }
+      ],
+      "returns": {
+        "type": "str | None",
+        "schema": null
+      },
+      "preconditions": [],
+      "postconditions": [
+        "documented operation completed or a typed RFDS error was raised"
+      ],
+      "side_effects": [
+        "writes a .zip archive to disk; does not change driver or DMM state"
+      ],
+      "exclusive_resources": [],
+      "timeout_behavior": "bounded",
+      "max_duration_s": 60.0,
+      "retry": {
+        "attempts": 1,
+        "backoff_s": 0.0
+      },
+      "errors": [
+        "RFDS-VAL-001",
+        "RFDS-STATE-001"
+      ],
+      "protocol_vector": "HP34401A-KW-034",
+      "tags": [
+        "rfds:diagnostic",
+        "rfds:low_risk"
+      ],
+      "status": "active",
+      "deprecated_since": null,
+      "replacement": null,
+      "documentation": "Zip this library instance's RFDS-008 evidence run for troubleshooting.",
+      "example": "${result}=    Export Diagnostic Bundle"
+    },
+    {
       "name": "Export Driver Configuration",
       "canonical_name": "Export Driver Configuration",
       "python_method": "export_driver_configuration",
@@ -2513,7 +2568,7 @@
         "RFDS-VAL-001",
         "RFDS-STATE-001"
       ],
-      "protocol_vector": "HP34401A-KW-034",
+      "protocol_vector": "HP34401A-KW-035",
       "tags": [
         "rfds:configuration",
         "rfds:low_risk"
@@ -2575,7 +2630,7 @@
         "RFDS-TR-001",
         "RFDS-PROTO-001"
       ],
-      "protocol_vector": "HP34401A-KW-035",
+      "protocol_vector": "HP34401A-KW-036",
       "tags": [
         "rfds:measurement",
         "rfds:low_risk"
@@ -2662,7 +2717,7 @@
         "RFDS-VAL-001",
         "RFDS-STATE-001"
       ],
-      "protocol_vector": "HP34401A-KW-036",
+      "protocol_vector": "HP34401A-KW-037",
       "tags": [
         "rfds:query",
         "rfds:low_risk"
@@ -2706,7 +2761,7 @@
         "RFDS-VAL-001",
         "RFDS-STATE-001"
       ],
-      "protocol_vector": "HP34401A-KW-037",
+      "protocol_vector": "HP34401A-KW-038",
       "tags": [
         "rfds:query",
         "rfds:low_risk"
@@ -2750,7 +2805,7 @@
         "RFDS-VAL-001",
         "RFDS-STATE-001"
       ],
-      "protocol_vector": "HP34401A-KW-038",
+      "protocol_vector": "HP34401A-KW-039",
       "tags": [
         "rfds:query",
         "rfds:low_risk"
@@ -2818,7 +2873,7 @@
         "RFDS-TR-001",
         "RFDS-PROTO-001"
       ],
-      "protocol_vector": "HP34401A-KW-039",
+      "protocol_vector": "HP34401A-KW-040",
       "tags": [
         "rfds:diagnostic",
         "rfds:low_risk"
@@ -2878,7 +2933,7 @@
         "RFDS-TR-001",
         "RFDS-PROTO-001"
       ],
-      "protocol_vector": "HP34401A-KW-040",
+      "protocol_vector": "HP34401A-KW-041",
       "tags": [
         "rfds:query",
         "rfds:low_risk"
@@ -2946,7 +3001,7 @@
         "RFDS-TR-001",
         "RFDS-PROTO-001"
       ],
-      "protocol_vector": "HP34401A-KW-041",
+      "protocol_vector": "HP34401A-KW-042",
       "tags": [
         "rfds:query",
         "rfds:low_risk"
@@ -2990,7 +3045,7 @@
         "RFDS-VAL-001",
         "RFDS-STATE-001"
       ],
-      "protocol_vector": "HP34401A-KW-042",
+      "protocol_vector": "HP34401A-KW-043",
       "tags": [
         "rfds:query",
         "rfds:low_risk"
@@ -3058,7 +3113,7 @@
         "RFDS-TR-001",
         "RFDS-PROTO-001"
       ],
-      "protocol_vector": "HP34401A-KW-043",
+      "protocol_vector": "HP34401A-KW-044",
       "tags": [
         "rfds:diagnostic",
         "rfds:low_risk"
@@ -3118,7 +3173,7 @@
         "RFDS-TR-001",
         "RFDS-PROTO-001"
       ],
-      "protocol_vector": "HP34401A-KW-044",
+      "protocol_vector": "HP34401A-KW-045",
       "tags": [
         "rfds:diagnostic",
         "rfds:low_risk"
@@ -3178,7 +3233,7 @@
         "RFDS-TR-001",
         "RFDS-PROTO-001"
       ],
-      "protocol_vector": "HP34401A-KW-045",
+      "protocol_vector": "HP34401A-KW-046",
       "tags": [
         "rfds:query",
         "rfds:low_risk"
@@ -3231,7 +3286,7 @@
         "RFDS-VAL-001",
         "RFDS-STATE-001"
       ],
-      "protocol_vector": "HP34401A-KW-046",
+      "protocol_vector": "HP34401A-KW-047",
       "tags": [
         "rfds:query",
         "rfds:low_risk"
@@ -3291,7 +3346,7 @@
         "RFDS-TR-001",
         "RFDS-PROTO-001"
       ],
-      "protocol_vector": "HP34401A-KW-047",
+      "protocol_vector": "HP34401A-KW-048",
       "tags": [
         "rfds:diagnostic",
         "rfds:low_risk"
@@ -3335,7 +3390,7 @@
         "RFDS-VAL-001",
         "RFDS-STATE-001"
       ],
-      "protocol_vector": "HP34401A-KW-048",
+      "protocol_vector": "HP34401A-KW-049",
       "tags": [
         "rfds:query",
         "rfds:low_risk"
@@ -3396,7 +3451,7 @@
         "RFDS-VAL-001",
         "RFDS-STATE-001"
       ],
-      "protocol_vector": "HP34401A-KW-049",
+      "protocol_vector": "HP34401A-KW-050",
       "tags": [
         "rfds:query",
         "rfds:low_risk"
@@ -3449,7 +3504,7 @@
         "RFDS-VAL-001",
         "RFDS-STATE-001"
       ],
-      "protocol_vector": "HP34401A-KW-050",
+      "protocol_vector": "HP34401A-KW-051",
       "tags": [
         "rfds:query",
         "rfds:low_risk"
@@ -3526,7 +3581,7 @@
         "RFDS-VAL-001",
         "RFDS-STATE-001"
       ],
-      "protocol_vector": "HP34401A-KW-051",
+      "protocol_vector": "HP34401A-KW-052",
       "tags": [
         "rfds:configuration",
         "rfds:low_risk"
@@ -3570,7 +3625,7 @@
         "RFDS-VAL-001",
         "RFDS-STATE-001"
       ],
-      "protocol_vector": "HP34401A-KW-052",
+      "protocol_vector": "HP34401A-KW-053",
       "tags": [
         "rfds:configuration",
         "rfds:low_risk"
@@ -3614,7 +3669,7 @@
         "RFDS-VAL-001",
         "RFDS-STATE-001"
       ],
-      "protocol_vector": "HP34401A-KW-053",
+      "protocol_vector": "HP34401A-KW-054",
       "tags": [
         "rfds:configuration",
         "rfds:low_risk"
@@ -3667,7 +3722,7 @@
         "RFDS-VAL-001",
         "RFDS-STATE-001"
       ],
-      "protocol_vector": "HP34401A-KW-054",
+      "protocol_vector": "HP34401A-KW-055",
       "tags": [
         "rfds:query",
         "rfds:low_risk"
@@ -3711,7 +3766,7 @@
         "RFDS-VAL-001",
         "RFDS-STATE-001"
       ],
-      "protocol_vector": "HP34401A-KW-055",
+      "protocol_vector": "HP34401A-KW-056",
       "tags": [
         "rfds:query",
         "rfds:low_risk"
@@ -3764,7 +3819,7 @@
         "RFDS-VAL-001",
         "RFDS-STATE-001"
       ],
-      "protocol_vector": "HP34401A-KW-056",
+      "protocol_vector": "HP34401A-KW-057",
       "tags": [
         "rfds:query",
         "rfds:low_risk"
@@ -3832,7 +3887,7 @@
         "RFDS-TR-001",
         "RFDS-PROTO-001"
       ],
-      "protocol_vector": "HP34401A-KW-057",
+      "protocol_vector": "HP34401A-KW-058",
       "tags": [
         "rfds:identity",
         "rfds:low_risk"
@@ -3885,7 +3940,7 @@
         "RFDS-VAL-001",
         "RFDS-STATE-001"
       ],
-      "protocol_vector": "HP34401A-KW-058",
+      "protocol_vector": "HP34401A-KW-059",
       "tags": [
         "rfds:query",
         "rfds:low_risk"
@@ -3938,7 +3993,7 @@
         "RFDS-VAL-001",
         "RFDS-STATE-001"
       ],
-      "protocol_vector": "HP34401A-KW-059",
+      "protocol_vector": "HP34401A-KW-060",
       "tags": [
         "rfds:query",
         "rfds:low_risk"
@@ -3982,7 +4037,7 @@
         "RFDS-VAL-001",
         "RFDS-STATE-001"
       ],
-      "protocol_vector": "HP34401A-KW-060",
+      "protocol_vector": "HP34401A-KW-061",
       "tags": [
         "rfds:query",
         "rfds:low_risk"
@@ -4026,7 +4081,7 @@
         "RFDS-VAL-001",
         "RFDS-STATE-001"
       ],
-      "protocol_vector": "HP34401A-KW-061",
+      "protocol_vector": "HP34401A-KW-062",
       "tags": [
         "rfds:query",
         "rfds:low_risk"
@@ -4088,7 +4143,7 @@
         "RFDS-TR-001",
         "RFDS-PROTO-001"
       ],
-      "protocol_vector": "HP34401A-KW-062",
+      "protocol_vector": "HP34401A-KW-063",
       "tags": [
         "rfds:query",
         "rfds:low_risk"
@@ -4159,7 +4214,7 @@
         "RFDS-VAL-001",
         "RFDS-STATE-001"
       ],
-      "protocol_vector": "HP34401A-KW-063",
+      "protocol_vector": "HP34401A-KW-064",
       "tags": [
         "rfds:configuration",
         "rfds:low_risk"
@@ -4221,7 +4276,7 @@
         "RFDS-TR-001",
         "RFDS-PROTO-001"
       ],
-      "protocol_vector": "HP34401A-KW-064",
+      "protocol_vector": "HP34401A-KW-065",
       "tags": [
         "rfds:configuration",
         "rfds:low_risk"
@@ -4274,7 +4329,7 @@
         "RFDS-VAL-001",
         "RFDS-STATE-001"
       ],
-      "protocol_vector": "HP34401A-KW-065",
+      "protocol_vector": "HP34401A-KW-066",
       "tags": [
         "rfds:query",
         "rfds:low_risk"
@@ -4318,7 +4373,7 @@
         "RFDS-VAL-001",
         "RFDS-STATE-001"
       ],
-      "protocol_vector": "HP34401A-KW-066",
+      "protocol_vector": "HP34401A-KW-067",
       "tags": [
         "rfds:query",
         "rfds:low_risk"
@@ -4362,7 +4417,7 @@
         "RFDS-VAL-001",
         "RFDS-STATE-001"
       ],
-      "protocol_vector": "HP34401A-KW-067",
+      "protocol_vector": "HP34401A-KW-068",
       "tags": [
         "rfds:configuration",
         "rfds:low_risk"
@@ -4415,7 +4470,7 @@
         "RFDS-VAL-001",
         "RFDS-STATE-001"
       ],
-      "protocol_vector": "HP34401A-KW-068",
+      "protocol_vector": "HP34401A-KW-069",
       "tags": [
         "rfds:query",
         "rfds:low_risk"
@@ -4478,7 +4533,7 @@
         "RFDS-VAL-001",
         "RFDS-STATE-001"
       ],
-      "protocol_vector": "HP34401A-KW-069",
+      "protocol_vector": "HP34401A-KW-070",
       "tags": [
         "rfds:configuration",
         "rfds:low_risk"
@@ -4556,7 +4611,7 @@
         "RFDS-TR-001",
         "RFDS-PROTO-001"
       ],
-      "protocol_vector": "HP34401A-KW-070",
+      "protocol_vector": "HP34401A-KW-071",
       "tags": [
         "rfds:measurement",
         "rfds:low_risk"
@@ -4634,7 +4689,7 @@
         "RFDS-TR-001",
         "RFDS-PROTO-001"
       ],
-      "protocol_vector": "HP34401A-KW-071",
+      "protocol_vector": "HP34401A-KW-072",
       "tags": [
         "rfds:measurement",
         "rfds:low_risk"
@@ -4712,7 +4767,7 @@
         "RFDS-TR-001",
         "RFDS-PROTO-001"
       ],
-      "protocol_vector": "HP34401A-KW-072",
+      "protocol_vector": "HP34401A-KW-073",
       "tags": [
         "rfds:measurement",
         "rfds:low_risk"
@@ -4790,7 +4845,7 @@
         "RFDS-TR-001",
         "RFDS-PROTO-001"
       ],
-      "protocol_vector": "HP34401A-KW-073",
+      "protocol_vector": "HP34401A-KW-074",
       "tags": [
         "rfds:measurement",
         "rfds:low_risk"
@@ -4852,7 +4907,7 @@
         "RFDS-TR-001",
         "RFDS-PROTO-001"
       ],
-      "protocol_vector": "HP34401A-KW-074",
+      "protocol_vector": "HP34401A-KW-075",
       "tags": [
         "rfds:measurement",
         "rfds:low_risk"
@@ -4930,7 +4985,7 @@
         "RFDS-TR-001",
         "RFDS-PROTO-001"
       ],
-      "protocol_vector": "HP34401A-KW-075",
+      "protocol_vector": "HP34401A-KW-076",
       "tags": [
         "rfds:measurement",
         "rfds:low_risk"
@@ -5008,7 +5063,7 @@
         "RFDS-TR-001",
         "RFDS-PROTO-001"
       ],
-      "protocol_vector": "HP34401A-KW-076",
+      "protocol_vector": "HP34401A-KW-077",
       "tags": [
         "rfds:measurement",
         "rfds:low_risk"
@@ -5070,7 +5125,7 @@
         "RFDS-TR-001",
         "RFDS-PROTO-001"
       ],
-      "protocol_vector": "HP34401A-KW-077",
+      "protocol_vector": "HP34401A-KW-078",
       "tags": [
         "rfds:measurement",
         "rfds:low_risk"
@@ -5148,7 +5203,7 @@
         "RFDS-TR-001",
         "RFDS-PROTO-001"
       ],
-      "protocol_vector": "HP34401A-KW-078",
+      "protocol_vector": "HP34401A-KW-079",
       "tags": [
         "rfds:measurement",
         "rfds:low_risk"
@@ -5226,7 +5281,7 @@
         "RFDS-TR-001",
         "RFDS-PROTO-001"
       ],
-      "protocol_vector": "HP34401A-KW-079",
+      "protocol_vector": "HP34401A-KW-080",
       "tags": [
         "rfds:measurement",
         "rfds:low_risk"
@@ -5406,7 +5461,7 @@
         "RFDS-TR-001",
         "RFDS-PROTO-001"
       ],
-      "protocol_vector": "HP34401A-KW-080",
+      "protocol_vector": "HP34401A-KW-081",
       "tags": [
         "rfds:connection",
         "rfds:low_risk"
@@ -5554,7 +5609,7 @@
         "RFDS-TR-001",
         "RFDS-PROTO-001"
       ],
-      "protocol_vector": "HP34401A-KW-081",
+      "protocol_vector": "HP34401A-KW-082",
       "tags": [
         "rfds:connection",
         "rfds:low_risk"
@@ -5646,7 +5701,7 @@
         "RFDS-TR-001",
         "RFDS-PROTO-001"
       ],
-      "protocol_vector": "HP34401A-KW-082",
+      "protocol_vector": "HP34401A-KW-083",
       "tags": [
         "rfds:simulation",
         "rfds:low_risk"
@@ -5716,7 +5771,7 @@
         "RFDS-TR-001",
         "RFDS-PROTO-001"
       ],
-      "protocol_vector": "HP34401A-KW-083",
+      "protocol_vector": "HP34401A-KW-084",
       "tags": [
         "rfds:raw_io",
         "rfds:high_risk"
@@ -5794,7 +5849,7 @@
         "RFDS-TR-001",
         "RFDS-PROTO-001"
       ],
-      "protocol_vector": "HP34401A-KW-084",
+      "protocol_vector": "HP34401A-KW-085",
       "tags": [
         "rfds:raw_io",
         "rfds:high_risk"
@@ -5856,7 +5911,7 @@
         "RFDS-TR-001",
         "RFDS-PROTO-001"
       ],
-      "protocol_vector": "HP34401A-KW-085",
+      "protocol_vector": "HP34401A-KW-086",
       "tags": [
         "rfds:measurement",
         "rfds:low_risk"
@@ -5918,7 +5973,7 @@
         "RFDS-TR-001",
         "RFDS-PROTO-001"
       ],
-      "protocol_vector": "HP34401A-KW-086",
+      "protocol_vector": "HP34401A-KW-087",
       "tags": [
         "rfds:diagnostic",
         "rfds:low_risk"
@@ -5980,7 +6035,7 @@
         "RFDS-TR-001",
         "RFDS-PROTO-001"
       ],
-      "protocol_vector": "HP34401A-KW-087",
+      "protocol_vector": "HP34401A-KW-088",
       "tags": [
         "rfds:measurement",
         "rfds:low_risk"
@@ -6050,7 +6105,7 @@
         "RFDS-TR-001",
         "RFDS-PROTO-001"
       ],
-      "protocol_vector": "HP34401A-KW-088",
+      "protocol_vector": "HP34401A-KW-089",
       "tags": [
         "rfds:raw_io",
         "rfds:high_risk"
@@ -6208,7 +6263,7 @@
         "RFDS-TR-001",
         "RFDS-PROTO-001"
       ],
-      "protocol_vector": "HP34401A-KW-089",
+      "protocol_vector": "HP34401A-KW-090",
       "tags": [
         "rfds:measurement",
         "rfds:low_risk"
@@ -6270,7 +6325,7 @@
         "RFDS-TR-001",
         "RFDS-PROTO-001"
       ],
-      "protocol_vector": "HP34401A-KW-090",
+      "protocol_vector": "HP34401A-KW-091",
       "tags": [
         "rfds:diagnostic",
         "rfds:medium_risk"
@@ -6332,7 +6387,7 @@
         "RFDS-TR-001",
         "RFDS-PROTO-001"
       ],
-      "protocol_vector": "HP34401A-KW-091",
+      "protocol_vector": "HP34401A-KW-092",
       "tags": [
         "rfds:query",
         "rfds:low_risk"
@@ -6402,7 +6457,7 @@
         "RFDS-TR-001",
         "RFDS-PROTO-001"
       ],
-      "protocol_vector": "HP34401A-KW-092",
+      "protocol_vector": "HP34401A-KW-093",
       "tags": [
         "rfds:query",
         "rfds:low_risk"
@@ -6480,7 +6535,7 @@
         "RFDS-TR-001",
         "RFDS-PROTO-001"
       ],
-      "protocol_vector": "HP34401A-KW-093",
+      "protocol_vector": "HP34401A-KW-094",
       "tags": [
         "rfds:configuration",
         "rfds:high_risk"
@@ -6526,7 +6581,7 @@
         "RFDS-VAL-001",
         "RFDS-STATE-001"
       ],
-      "protocol_vector": "HP34401A-KW-094",
+      "protocol_vector": "HP34401A-KW-095",
       "tags": [
         "rfds:configuration",
         "rfds:low_risk"
@@ -6588,7 +6643,7 @@
         "RFDS-TR-001",
         "RFDS-PROTO-001"
       ],
-      "protocol_vector": "HP34401A-KW-095",
+      "protocol_vector": "HP34401A-KW-096",
       "tags": [
         "rfds:diagnostic",
         "rfds:medium_risk"
@@ -6651,7 +6706,7 @@
         "RFDS-VAL-001",
         "RFDS-STATE-001"
       ],
-      "protocol_vector": "HP34401A-KW-096",
+      "protocol_vector": "HP34401A-KW-097",
       "tags": [
         "rfds:configuration",
         "rfds:low_risk"
@@ -6706,7 +6761,7 @@
         "RFDS-VAL-001",
         "RFDS-STATE-001"
       ],
-      "protocol_vector": "HP34401A-KW-097",
+      "protocol_vector": "HP34401A-KW-098",
       "tags": [
         "rfds:connection",
         "rfds:low_risk"
@@ -6768,7 +6823,7 @@
         "RFDS-TR-001",
         "RFDS-PROTO-001"
       ],
-      "protocol_vector": "HP34401A-KW-098",
+      "protocol_vector": "HP34401A-KW-099",
       "tags": [
         "rfds:connection",
         "rfds:low_risk"
@@ -6830,7 +6885,7 @@
         "RFDS-TR-001",
         "RFDS-PROTO-001"
       ],
-      "protocol_vector": "HP34401A-KW-099",
+      "protocol_vector": "HP34401A-KW-100",
       "tags": [
         "rfds:configuration",
         "rfds:low_risk"
@@ -6900,7 +6955,7 @@
         "RFDS-TR-001",
         "RFDS-PROTO-001"
       ],
-      "protocol_vector": "HP34401A-KW-100",
+      "protocol_vector": "HP34401A-KW-101",
       "tags": [
         "rfds:configuration",
         "rfds:low_risk"
@@ -6970,7 +7025,7 @@
         "RFDS-TR-001",
         "RFDS-PROTO-001"
       ],
-      "protocol_vector": "HP34401A-KW-101",
+      "protocol_vector": "HP34401A-KW-102",
       "tags": [
         "rfds:configuration",
         "rfds:low_risk"
@@ -7025,7 +7080,7 @@
         "RFDS-VAL-001",
         "RFDS-STATE-001"
       ],
-      "protocol_vector": "HP34401A-KW-102",
+      "protocol_vector": "HP34401A-KW-103",
       "tags": [
         "rfds:configuration",
         "rfds:high_risk"
@@ -7094,7 +7149,7 @@
         "RFDS-VAL-001",
         "RFDS-STATE-001"
       ],
-      "protocol_vector": "HP34401A-KW-103",
+      "protocol_vector": "HP34401A-KW-104",
       "tags": [
         "rfds:assertion",
         "rfds:low_risk"
@@ -7252,7 +7307,7 @@
         "RFDS-TR-001",
         "RFDS-PROTO-001"
       ],
-      "protocol_vector": "HP34401A-KW-104",
+      "protocol_vector": "HP34401A-KW-105",
       "tags": [
         "rfds:measurement",
         "rfds:low_risk"
@@ -7296,7 +7351,7 @@
         "RFDS-VAL-001",
         "RFDS-STATE-001"
       ],
-      "protocol_vector": "HP34401A-KW-105",
+      "protocol_vector": "HP34401A-KW-106",
       "tags": [
         "rfds:diagnostic",
         "rfds:low_risk"
@@ -7357,7 +7412,7 @@
         "RFDS-VAL-001",
         "RFDS-STATE-001"
       ],
-      "protocol_vector": "HP34401A-KW-106",
+      "protocol_vector": "HP34401A-KW-107",
       "tags": [
         "rfds:configuration",
         "rfds:low_risk"
@@ -7427,7 +7482,7 @@
         "RFDS-TR-001",
         "RFDS-PROTO-001"
       ],
-      "protocol_vector": "HP34401A-KW-107",
+      "protocol_vector": "HP34401A-KW-108",
       "tags": [
         "rfds:raw_io",
         "rfds:high_risk"
@@ -7497,7 +7552,7 @@
         "RFDS-TR-001",
         "RFDS-PROTO-001"
       ],
-      "protocol_vector": "HP34401A-KW-108",
+      "protocol_vector": "HP34401A-KW-109",
       "tags": [
         "rfds:raw_io",
         "rfds:high_risk"

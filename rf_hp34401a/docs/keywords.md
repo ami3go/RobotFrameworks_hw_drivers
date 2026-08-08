@@ -1,6 +1,6 @@
 # Public keyword reference — 26.06
 
-The authoritative public surface contains **108** explicitly exported Robot Framework keywords.
+The authoritative public surface contains **109** explicitly exported Robot Framework keywords.
 
 This Markdown index is generated from `api/public_api.yaml`. Generate the full official HTML/XML Libdoc with the packaged `generate_libdoc` scripts in an environment containing Robot Framework.
 
@@ -333,6 +333,17 @@ Close all sessions while continuing cleanup after individual failures.
 - Protocol vector: `HP34401A-KW-033`
 
 Transport-neutral alias for ``Close DMM``.
+
+## Export Diagnostic Bundle
+
+- Python method: `export_diagnostic_bundle`
+- Signature: `Export Diagnostic Bundle(destination=${NONE})`
+- Return: `str | None`
+- Device-facing: `false`
+- Protocol vector: `HP34401A-KW-109`
+
+Zip this library instance's RFDS-008 evidence run for troubleshooting. See
+`logging_and_evidence.md`.
 
 ## Export Driver Configuration
 

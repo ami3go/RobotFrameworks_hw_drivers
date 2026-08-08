@@ -1,5 +1,14 @@
 # Changelog
 
+## 26.07 — 2026-08-08
+
+- Added an RFDS-008 structured evidence engine (`hp34401a_dmm/evidence.py`): every public keyword call is now recorded with correlated arguments, duration, result/failure, and the literal SCPI commands/responses it caused on whichever of the three transports (VISA, RS-232, Prologix) or the simulator carried it, tagged per DMM alias, finalized into a SHA-256-hashed manifest under `results/session/rf_hp34401a/`.
+- Added the `Export Diagnostic Bundle` keyword (109th public keyword) to zip the current evidence run for troubleshooting; regenerated the RFDS-002/RFDS-017 AI contract, RFDS-019 keyword inventory/protocol vectors, and HIL coverage state to include it.
+- Added `docs/logging_and_evidence.md` and `guide/evidence_and_diagnostics.md` explaining how this relates to the existing `logging_utils.py` production logs and the `tests/hil/`/`tests/conformance/` conformance suites.
+- Added `schemas/evidence/*.schema.json` and `scripts/validate_evidence.{py,sh,bat,ps1}` (recomputes evidence-manifest hashes and JSONL sequence integrity).
+- Added `tests/evidence/test_evidence.py`.
+- Does not change SCPI behavior, measurement logic, or any existing public keyword's signature or return value.
+
 ## 26.06 — 2026-07-31
 
 - Fixed RFDS real-hardware all-API bookkeeping so executed public keywords are captured by an explicit file-backed Robot listener.

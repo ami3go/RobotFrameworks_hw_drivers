@@ -179,7 +179,7 @@ class RealHardwareApiCoverage:
         summary = {
             "schema_version": "1.0",
             "driver": "rf_hp34401a",
-            "driver_version": "26.06",
+            "driver_version": "26.07",
             "profile": self._profile,
             "started_utc": self._started_utc,
             "finished_utc": datetime.now(timezone.utc).isoformat(),
@@ -203,7 +203,7 @@ class RealHardwareApiCoverage:
             "operating_system": platform.platform(),
             "robot_framework_version": self._package_version("robotframework"),
             "driver_distribution_version": self._package_version("rf-hp34401a"),
-            "driver_source_version": "26.06",
+            "driver_source_version": "26.07",
             "profile": self._profile,
         }
         (self._output_dir / "environment.json").write_text(

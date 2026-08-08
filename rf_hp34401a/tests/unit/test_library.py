@@ -24,7 +24,7 @@ def test_identity_and_versions():
     lib = lib_with_reading()
     ident = lib.identify_dmm()
     assert ident["model"] == "34401A"
-    assert lib.get_robot_dmm_library_version() == "26.06"
+    assert lib.get_robot_dmm_library_version() == "26.07"
     assert lib.get_dmm_driver_version() == "1.2.8"
     lib.close_all_dmms()
 
@@ -35,7 +35,7 @@ def test_measurement_and_metadata():
     data = lib.get_last_dmm_reading()
     assert data["function"] == "VOLT:DC"
     assert data["alias"] == "default"
-    assert data["library_version"] == "26.06"
+    assert data["library_version"] == "26.07"
     lib.dmm_reading_should_be_between(12, 13)
     lib.dmm_reading_should_be_close_to(12.3, absolute_tolerance=0.1)
     lib.close_all_dmms()
@@ -264,7 +264,7 @@ def test_transport_neutral_connect_and_python_compatibility(monkeypatch):
 def test_disconnect_python_compatibility_and_metadata():
     lib = Hp34401ALibrary()
     disconnected = lib.get_driver_metadata()
-    assert disconnected["driver_version"] == "26.06"
+    assert disconnected["driver_version"] == "26.07"
     assert disconnected["state"] == "DISCONNECTED"
     capabilities = lib.get_driver_capabilities()
     assert "connection" in capabilities

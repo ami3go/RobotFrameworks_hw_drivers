@@ -116,10 +116,10 @@ def validate(contract_path: Path | None = None, lock_path: Path | None = None) -
     expected_api_hash = hashlib.sha256((ROOT / "api" / "public_api.yaml").read_bytes()).hexdigest()
     if lock.get("public_api_sha256") != expected_api_hash:
         errors.append("hp34401a_ai_contract.lock public_api hash mismatch")
-    if str(contract.get("identity", {}).get("driver_version")) != "26.6.0":
-        errors.append("AI contract driver version must be 26.6.0")
-    if public_api.get("library", {}).get("package_version") != "26.06":
-        errors.append("public_api package version must be 26.06")
+    if str(contract.get("identity", {}).get("driver_version")) != "26.7.0":
+        errors.append("AI contract driver version must be 26.7.0")
+    if public_api.get("library", {}).get("package_version") != "26.07":
+        errors.append("public_api package version must be 26.07")
     if sorted(public_api.get("capabilities", [])) != public_api.get("capabilities", []):
         errors.append("public_api capabilities must be sorted")
     if public_api.get("library", {}).get("auto_keywords") is not False:

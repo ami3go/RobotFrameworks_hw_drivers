@@ -13,6 +13,12 @@ history:
     subject: Normalize lowercase Robot CLI Boolean variables in the real-hardware
       all-API suite
     breaking: false
+- api_version: 1.1.0
+  package_version: '26.07'
+  changes:
+  - type: added_keyword
+    subject: RFDS-008 structured evidence engine and Export Diagnostic Bundle keyword
+    breaking: false
 aliases:
 - alias: Close All DMMs
   canonical: Disconnect All

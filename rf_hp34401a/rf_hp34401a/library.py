@@ -1,19 +1,33 @@
-"""Explicit Robot Framework keyword library for the HP 34401A."""
+"""Explicit Robot Framework keyword library for the HP 34401A.
+
+Every public keyword is wrapped (see ``_evidenced`` below) with an RFDS-008
+evidence operation record — arguments, duration, result/failure, correlated
+with the literal SCPI traffic that operation caused on whichever transport
+carried it. See ``hp34401a_dmm/evidence.py`` for what gets recorded and where;
+pass ``evidence_enabled=False`` to disable it. This complements, and does not
+replace, the existing ``tests/hil/`` real-hardware conformance suite and
+``tests/conformance/`` RFDS-019 protocol-vector suite, which remain the
+keyword/protocol coverage authority — this layer is about explaining one
+session's failure after the fact, not proving coverage.
+"""
 
 from __future__ import annotations
 
+import functools
+import inspect
 import math
 import platform
+from collections.abc import Callable
 from dataclasses import asdict, is_dataclass
 from datetime import datetime
-from importlib.metadata import PackageNotFoundError, version as package_version
-from typing import Any, Callable, Literal, cast
+from importlib.metadata import PackageNotFoundError
+from importlib.metadata import version as package_version
+from typing import Any, Literal, cast
 
 from robot.api import logger
 from robot.api.deco import keyword, library
 
 from hp34401a_dmm import (
-    __version__ as CORE_VERSION,
     DriverConfig,
     FakeTransport,
     Hp34401A,
@@ -24,7 +38,13 @@ from hp34401a_dmm import (
     StabilityProfile,
     VisaGpibConfig,
 )
+from hp34401a_dmm import (
+    __version__ as CORE_VERSION,
+)
+from hp34401a_dmm import evidence as _evidence
 
+from .capabilities import CapabilityRegistry
+from .configuration import ConfigurationManager
 from .converters import (
     as_ac_filter,
     as_aperture,
@@ -39,8 +59,6 @@ from .converters import (
     as_terminal,
     as_trigger_source,
 )
-from .capabilities import CapabilityRegistry
-from .configuration import ConfigurationManager
 from .exceptions import (
     DriverCleanupError,
     DriverConnectionError,
@@ -48,7 +66,6 @@ from .exceptions import (
     DriverProtocolError,
     DriverStateError,
     DriverTimeoutError,
-    DriverUnsupportedOperationError,
     DriverValidationError,
     Hp34401ARobotError,
     RFDSDriverError,
@@ -61,6 +78,62 @@ try:
 except PackageNotFoundError:  # import-safe metadata inspection in source checkouts
     ROBOT_FRAMEWORK_VERSION = "NOT_INSTALLED"
 
+# Keywords that close DMM session(s). After any of these runs, if zero
+# sessions remain open, the evidence run is finalized (see _evidenced below) —
+# covers both single-alias teardown (Disconnect/Close DMM on the last open
+# alias) and whole-library teardown (Disconnect All/Close All DMMs).
+_DISCONNECT_CAPABILITIES = {"Disconnect", "Close DMM", "Disconnect DMM", "Disconnect All", "Close All DMMs"}
+
+
+def _evidenced(func: Callable) -> Callable:
+    """Wrap a keyword method with an RFDS-008 evidence operation record.
+
+    Reads ``self._evidence``/``self._sessions`` on the bound instance, binds
+    ``*args``/``**kwargs`` to parameter names for a readable argument record,
+    and records success/failure/duration around the call. Finalizes the run
+    (writes ``run_summary.json`` + ``evidence_manifest.json``) once a
+    disconnect-family keyword leaves zero sessions open — see
+    ``_DISCONNECT_CAPABILITIES``.
+
+    Must sit *below* ``@keyword(...)`` in the decorator stack (closest to
+    ``def``) — it reads ``wrapper.robot_name`` at call time via closure, which
+    ``@keyword`` sets on the object this function returns once the class body
+    finishes executing, well before any instance method call happens.
+    """
+    signature = inspect.signature(func)
+
+    @functools.wraps(func)
+    def wrapper(self: Hp34401ALibrary, *args: Any, **kwargs: Any) -> Any:
+        capability = getattr(wrapper, "robot_name", None) or func.__name__.replace("_", " ").title()
+        run = self._ensure_evidence()
+        bound = signature.bind_partial(self, *args, **kwargs)
+        bound.apply_defaults()
+        arguments = {key: value for key, value in bound.arguments.items() if key != "self"}
+        status = "PASS"
+        try:
+            with run.record_operation(capability, arguments=arguments) as op:
+                result = func(self, *args, **kwargs)
+                op.set_result(result)
+            return result
+        except Exception:
+            status = "FAIL"
+            raise
+        finally:
+            if capability in _DISCONNECT_CAPABILITIES:
+                # Defensive: evidence bookkeeping must never mask the real
+                # exception from a disconnect-family keyword (or the AttributeError
+                # from a test double standing in for self._sessions) by raising
+                # its own error out of this finally block.
+                try:
+                    sessions_remaining = bool(self._sessions.aliases())
+                except Exception:
+                    sessions_remaining = True
+                if not sessions_remaining:
+                    run.finalize(status=status)
+                    self._evidence = None
+
+    return wrapper
+
 
 @library(scope="SUITE", auto_keywords=False, version=__version__)
 class Hp34401ALibrary:
@@ -69,6 +142,12 @@ class Hp34401ALibrary:
     The library delegates all SCPI operations to ``hp34401a_dmm.Hp34401A``.
     Measurement keywords reject overload, invalid, missing, or unstable readings
     rather than returning a fabricated scalar.
+
+    Every public keyword call is recorded as RFDS-008 evidence (arguments,
+    duration, the underlying SCPI traffic, failures) under
+    ``results/session/rf_hp34401a/`` for troubleshooting — one evidence run
+    per library instance (this class is ``SUITE``-scoped), tagged per DMM
+    alias. See ``hp34401a_dmm/evidence.py`` and ``docs/logging_and_evidence.md``.
     """
 
     ROBOT_LIBRARY_SCOPE = "SUITE"
@@ -79,13 +158,29 @@ class Hp34401ALibrary:
         self,
         default_timeout_s: object = 10.0,
         allow_raw_io: object = False,
+        evidence_enabled: object = True,
     ) -> None:
         self._sessions = SessionManager()
         self._default_timeout_s = as_seconds(default_timeout_s, name="default_timeout_s")
         self._allow_raw_io = as_bool(allow_raw_io, name="allow_raw_io")
         self._configuration = ConfigurationManager()
         self._capabilities = CapabilityRegistry()
+        self._evidence_enabled = as_bool(evidence_enabled, name="evidence_enabled")
+        self._evidence: Any = None
         self.ROBOT_LIBRARY_LISTENER = self
+
+    def _ensure_evidence(self) -> Any:
+        """Lazily create (or return) this library instance's :class:`evidence.EvidenceRun`.
+
+        Created on first keyword call rather than in ``__init__`` so
+        constructing the library alone never touches disk.
+        """
+        if self._evidence is None:
+            if self._evidence_enabled:
+                self._evidence = _evidence.EvidenceRun(driver_id="rf_hp34401a", activity="session")
+            else:
+                self._evidence = _evidence.NullEvidenceRun()
+        return self._evidence
 
     # ------------------------------- internal helpers
     def _execute(self, operation: str, call: Callable[[], Any], alias: object | None = None) -> Any:
@@ -160,6 +255,14 @@ class Hp34401ALibrary:
         timeout_s: float | None = None,
         options: dict[str, Any] | None = None,
     ) -> str:
+        normalized_alias = SessionManager.normalize_alias(alias)
+        evidence_run = self._ensure_evidence()
+        # Wired before driver.connect() so connection-time SCPI traffic
+        # (*IDN?, error-queue drain, etc.) is captured too, not just
+        # traffic from keywords called after this session is registered.
+        driver.trace_callback = lambda direction, text, _run=evidence_run, _alias=normalized_alias, _kind=transport_kind: _run.log_protocol(
+            direction, _kind, text, session_alias=_alias
+        )
         try:
             driver.connect()
             identity = driver.identity_cached
@@ -185,6 +288,15 @@ class Hp34401ALibrary:
             logger.info(
                 f"Opened HP34401A session {alias!r}: {identity.manufacturer} "
                 f"{identity.model}, serial={identity.serial or 'unknown'}"
+            )
+            evidence_run.record_device_identity(
+                normalized_alias,
+                manufacturer=identity.manufacturer,
+                model=identity.model,
+                serial_number=identity.serial,
+                firmware_version=identity.firmware,
+                transport=transport_kind,
+                resource=resource,
             )
         return str(alias)
 
@@ -256,6 +368,7 @@ class Hp34401ALibrary:
 
     # ------------------------------- RFDS-002 canonical lifecycle API
     @keyword("Connect", tags=["rfds:connection", "rfds:low_risk"])
+    @_evidenced
     def connect(
         self,
         resource: str | None = None,
@@ -329,12 +442,14 @@ class Hp34401ALibrary:
         return self.get_connection_state(alias=alias, refresh=True)
 
     @keyword("Is Connected", tags=["rfds:query", "rfds:low_risk"])
+    @_evidenced
     def is_connected(self, alias: object | None = None) -> bool:
         """Return cached connection state without raising for an unknown alias."""
         session = self._sessions.find(alias)
         return bool(session and session.connected)
 
     @keyword("Get Connection State", tags=["rfds:query", "rfds:low_risk"])
+    @_evidenced
     def get_connection_state(
         self,
         alias: object | None = None,
@@ -366,6 +481,7 @@ class Hp34401ALibrary:
         )
 
     @keyword("Check Communication", tags=["rfds:diagnostic", "rfds:low_risk"])
+    @_evidenced
     def check_communication(self, alias: object | None = None) -> bool:
         """Perform a bounded, non-destructive identity query and return ``True``."""
         session = self._session(alias)
@@ -384,6 +500,7 @@ class Hp34401ALibrary:
         return True
 
     @keyword("Get Identity", tags=["rfds:identity", "rfds:low_risk"])
+    @_evidenced
     def get_identity(
         self,
         alias: object | None = None,
@@ -403,6 +520,7 @@ class Hp34401ALibrary:
         return session.identity_text
 
     @keyword("Get Driver Information", tags=["rfds:query", "rfds:low_risk"])
+    @_evidenced
     def get_driver_information(self) -> dict[str, Any]:
         """Return connection-independent driver identity and compatibility metadata."""
         return {
@@ -427,7 +545,25 @@ class Hp34401ALibrary:
             "supported_os": ["Windows", "Linux"],
         }
 
+    @keyword("Export Diagnostic Bundle", tags=["rfds:diagnostic", "rfds:low_risk"])
+    @_evidenced
+    def export_diagnostic_bundle(self, destination: object = None) -> str | None:
+        """Zip this library instance's RFDS-008 evidence run for troubleshooting.
+
+        Works whether or not any DMM session is currently connected, and does
+        not finalize the run — a disconnect-family keyword that leaves zero
+        open sessions remains the point at which ``run_summary.json``/
+        ``evidence_manifest.json`` are written for the last time. Returns the
+        archive path, or ``None`` if ``evidence_enabled=False`` was passed to
+        this library instance. ``destination`` defaults to
+        ``<result_root>_diagnostic_bundle.zip`` next to the run's own result
+        directory.
+        """
+        run = self._ensure_evidence()
+        return run.export_diagnostic_bundle(None if destination in (None, "") else str(destination))
+
     @keyword("Set Communication Timeout", tags=["rfds:configuration", "rfds:low_risk"])
+    @_evidenced
     def set_communication_timeout(
         self,
         timeout_s: object,
@@ -454,6 +590,7 @@ class Hp34401ALibrary:
         return value
 
     @keyword("Get Communication Timeout", tags=["rfds:query", "rfds:low_risk"])
+    @_evidenced
     def get_communication_timeout(self, alias: object | None = None) -> float:
         """Return the effective timeout for the selected session or driver default."""
         session = self._sessions.find(alias)
@@ -469,11 +606,13 @@ class Hp34401ALibrary:
 
     # ------------------------------- RFDS-002 conditional connection group
     @keyword("List Connections", tags=["rfds:query", "rfds:low_risk"])
+    @_evidenced
     def list_connections(self) -> list[dict[str, Any]]:
         """Return one connection-state dictionary per open alias."""
         return self._sessions.states()
 
     @keyword("Select Connection", tags=["rfds:connection", "rfds:low_risk"])
+    @_evidenced
     def select_connection(self, alias: str) -> dict[str, Any]:
         """Select an existing connection and return its state."""
         session = self._execute(
@@ -482,6 +621,7 @@ class Hp34401ALibrary:
         return session.to_connection_state(active=True)
 
     @keyword("Disconnect All", tags=["rfds:connection", "rfds:low_risk"])
+    @_evidenced
     def disconnect_all(self) -> None:
         """Close all sessions while continuing cleanup after individual failures."""
         errors = self._sessions.close_all()
@@ -493,17 +633,20 @@ class Hp34401ALibrary:
             )
 
     @keyword("Get Active Connection", tags=["rfds:query", "rfds:low_risk"])
+    @_evidenced
     def get_active_connection(self) -> str | None:
         """Return the active alias or ``None`` when no session exists."""
         return self._sessions.active_alias
 
     # ------------------------------- RFDS-002 error-queue aliases
     @keyword("Get Device Error", tags=["rfds:diagnostic", "rfds:low_risk"])
+    @_evidenced
     def get_device_error(self, alias: object | None = None) -> dict[str, Any]:
         """Read one device error record."""
         return self.read_dmm_error(alias)
 
     @keyword("Get All Device Errors", tags=["rfds:diagnostic", "rfds:low_risk"])
+    @_evidenced
     def get_all_device_errors(
         self,
         max_count: object = 25,
@@ -513,17 +656,20 @@ class Hp34401ALibrary:
         return self.get_dmm_error_queue(max_errors=max_count, alias=alias)
 
     @keyword("Clear Device Errors", tags=["rfds:diagnostic", "rfds:low_risk"])
+    @_evidenced
     def clear_device_errors(self, alias: object | None = None) -> None:
         """Clear status and drain any remaining device error records."""
         self.clear_dmm_status(alias)
         self.get_dmm_error_queue(alias=alias)
 
     @keyword("Device Error Queue Should Be Empty", tags=["rfds:assertion", "rfds:low_risk"])
+    @_evidenced
     def device_error_queue_should_be_empty(self, alias: object | None = None) -> None:
         """Fail unless the device error queue reports no error."""
         self.dmm_error_queue_should_be_empty(alias)
 
     @keyword("Reset Device", tags=["rfds:configuration", "rfds:high_risk"])
+    @_evidenced
     def reset_device(
         self,
         alias: object | None = None,
@@ -559,6 +705,7 @@ class Hp34401ALibrary:
         return connected, identity
 
     @keyword("Get Driver Capability Model", tags=["rfds:query", "rfds:low_risk"])
+    @_evidenced
     def get_driver_capability_model(self, mode: str = "effective") -> dict[str, Any]:
         """Return the full RFDS-013 capability model.
 
@@ -570,6 +717,7 @@ class Hp34401ALibrary:
         return self._capabilities.model(connected=connected, identity=identity, mode=mode)
 
     @keyword("Get Driver Capability", tags=["rfds:query", "rfds:low_risk"])
+    @_evidenced
     def get_driver_capability(
         self,
         capability_id: str,
@@ -582,6 +730,7 @@ class Hp34401ALibrary:
         )
 
     @keyword("Find Driver Capabilities", tags=["rfds:query", "rfds:low_risk"])
+    @_evidenced
     def find_driver_capabilities(
         self,
         capability_id: str | None = None,
@@ -602,16 +751,19 @@ class Hp34401ALibrary:
         )
 
     @keyword("Get Driver Features", tags=["rfds:query", "rfds:low_risk"])
+    @_evidenced
     def get_driver_features(self, mode: str = "effective") -> dict[str, Any]:
         """Return normalized feature information from the capability model."""
         return self.get_driver_capability_model(mode)["features"]
 
     @keyword("Refresh Driver Capabilities", tags=["rfds:query", "rfds:low_risk"])
+    @_evidenced
     def refresh_driver_capabilities(self, mode: str = "effective") -> dict[str, Any]:
         """Re-evaluate capability availability and connected identity."""
         return self.get_driver_capability_model(mode)
 
     @keyword("Validate Driver Capabilities", tags=["rfds:diagnostic", "rfds:low_risk"])
+    @_evidenced
     def validate_driver_capabilities(self) -> dict[str, Any]:
         """Validate static capability bindings against the intended public keywords."""
         bound = [
@@ -622,16 +774,19 @@ class Hp34401ALibrary:
 
     # ------------------------------- RFDS-014 configuration API
     @keyword("Get Driver Configuration Schema", tags=["rfds:configuration", "rfds:low_risk"])
+    @_evidenced
     def get_driver_configuration_schema(self) -> dict[str, Any]:
         """Return the canonical RFDS-014 JSON Schema without device I/O."""
         return self._configuration.schema()
 
     @keyword("Get Driver Default Configuration", tags=["rfds:configuration", "rfds:low_risk"])
+    @_evidenced
     def get_driver_default_configuration(self) -> dict[str, Any]:
         """Return a copy of the safe package default configuration."""
         return self._configuration.default()
 
     @keyword("Get Driver Configuration", tags=["rfds:configuration", "rfds:low_risk"])
+    @_evidenced
     def get_driver_configuration(
         self,
         scope: str = "EFFECTIVE",
@@ -653,6 +808,7 @@ class Hp34401ALibrary:
         return result
 
     @keyword("Validate Driver Configuration", tags=["rfds:configuration", "rfds:low_risk"])
+    @_evidenced
     def validate_driver_configuration(
         self,
         configuration: Any,
@@ -667,6 +823,7 @@ class Hp34401ALibrary:
         return {"valid": True, "configuration": validated, "errors": [], "warnings": []}
 
     @keyword("Import Driver Configuration", tags=["rfds:configuration", "rfds:low_risk"])
+    @_evidenced
     def import_driver_configuration(
         self,
         source: Any,
@@ -681,6 +838,7 @@ class Hp34401ALibrary:
         )
 
     @keyword("Export Driver Configuration", tags=["rfds:configuration", "rfds:low_risk"])
+    @_evidenced
     def export_driver_configuration(
         self,
         destination: str | None = None,
@@ -693,6 +851,7 @@ class Hp34401ALibrary:
         )
 
     @keyword("Save Driver Configuration", tags=["rfds:configuration", "rfds:low_risk"])
+    @_evidenced
     def save_driver_configuration(
         self,
         profile_name: str,
@@ -705,6 +864,7 @@ class Hp34401ALibrary:
         )
 
     @keyword("Load Driver Configuration", tags=["rfds:configuration", "rfds:low_risk"])
+    @_evidenced
     def load_driver_configuration(
         self,
         profile_name: str,
@@ -717,33 +877,39 @@ class Hp34401ALibrary:
         )
 
     @keyword("List Driver Configuration Profiles", tags=["rfds:configuration", "rfds:low_risk"])
+    @_evidenced
     def list_driver_configuration_profiles(self) -> list[str]:
         """List explicitly persisted user profile names."""
         return self._configuration.list_profiles()
 
     @keyword("Delete Driver Configuration Profile", tags=["rfds:configuration", "rfds:low_risk"])
+    @_evidenced
     def delete_driver_configuration_profile(self, profile_name: str) -> None:
         """Delete one named host profile; packaged defaults cannot be deleted."""
         self._configuration.delete_profile(profile_name)
 
     @keyword("Reset Driver Configuration", tags=["rfds:configuration", "rfds:low_risk"])
+    @_evidenced
     def reset_driver_configuration(self) -> dict[str, Any]:
         """Reset runtime host configuration to the safe package default."""
         return self._configuration.reset()
 
     # ------------------------------- explicit raw I/O authorization
     @keyword("Set Raw I/O Enabled", tags=["rfds:configuration", "rfds:high_risk"])
+    @_evidenced
     def set_raw_io_enabled(self, enabled: object) -> bool:
         """Explicitly enable or disable guarded raw SCPI access for this instance."""
         self._allow_raw_io = as_bool(enabled, name="enabled")
         return self._allow_raw_io
 
     @keyword("Write Raw Command", tags=["rfds:raw_io", "rfds:high_risk"])
+    @_evidenced
     def write_raw_command(self, command: str, alias: object | None = None) -> None:
         """Write a guarded raw SCPI command after explicit raw-I/O opt-in."""
         self.write_dmm_command(command, alias)
 
     @keyword("Query Raw Command", tags=["rfds:raw_io", "rfds:high_risk"])
+    @_evidenced
     def query_raw_command(
         self,
         command: str,
@@ -756,6 +922,7 @@ class Hp34401ALibrary:
         return self.query_dmm_command(command, alias)
 
     @keyword("Read Raw Response", tags=["rfds:raw_io", "rfds:high_risk"])
+    @_evidenced
     def read_raw_response(
         self,
         alias: object | None = None,
@@ -779,6 +946,7 @@ class Hp34401ALibrary:
 
     # ------------------------------- connection/session
     @keyword("Connect DMM", tags=['rfds:connection', 'rfds:low_risk'])
+    @_evidenced
     def connect_dmm(
         self,
         resource: str,
@@ -865,6 +1033,7 @@ class Hp34401ALibrary:
         return self.connect_dmm(resource, **kwargs)
 
     @keyword("Open DMM Via VISA", tags=['rfds:connection', 'rfds:low_risk'])
+    @_evidenced
     def open_dmm_via_visa(
         self,
         resource: str,
@@ -911,6 +1080,7 @@ class Hp34401ALibrary:
         return self._execute("Open DMM via VISA", action, alias)
 
     @keyword("Open DMM Via Serial", tags=['rfds:connection', 'rfds:low_risk'])
+    @_evidenced
     def open_dmm_via_serial(
         self,
         port: str,
@@ -965,6 +1135,7 @@ class Hp34401ALibrary:
         return self._execute("Open DMM via serial", action, alias)
 
     @keyword("Open Simulated DMM", tags=['rfds:simulation', 'rfds:low_risk'])
+    @_evidenced
     def open_simulated_dmm(
         self,
         alias: str = "default",
@@ -999,6 +1170,7 @@ class Hp34401ALibrary:
         return self._execute("Open simulated DMM", action, alias)
 
     @keyword("List VISA Resources", tags=['rfds:query', 'rfds:low_risk'])
+    @_evidenced
     def list_visa_resources(self, visa_library: str | None = None) -> list[str]:
         def action() -> list[str]:
             try:
@@ -1014,33 +1186,40 @@ class Hp34401ALibrary:
         return self._execute("List VISA resources", action)
 
     @keyword("Select DMM", tags=['rfds:connection', 'rfds:low_risk'])
+    @_evidenced
     def select_dmm(self, alias: str) -> str:
         return self._execute("Select DMM", lambda: self._sessions.select(alias).alias, alias)
 
     @keyword("Get Active DMM Alias", tags=['rfds:query', 'rfds:low_risk'])
+    @_evidenced
     def get_active_dmm_alias(self) -> str | None:
         return self._sessions.active_alias
 
     @keyword("Get Open DMM Aliases", tags=['rfds:query', 'rfds:low_risk'])
+    @_evidenced
     def get_open_dmm_aliases(self) -> list[str]:
         return self._sessions.aliases()
 
     @keyword("DMM Should Be Connected", tags=['rfds:assertion', 'rfds:low_risk'])
+    @_evidenced
     def dmm_should_be_connected(self, alias: object | None = None) -> None:
         session = self._session(alias)
         if not session.driver.is_connected():
             raise Hp34401ARobotError(f"DMM is not connected [alias={session.alias}]")
 
     @keyword("Close DMM", tags=['rfds:connection', 'rfds:low_risk'])
+    @_evidenced
     def close_dmm(self, alias: object | None = None) -> None:
         self._execute("Close DMM", lambda: self._sessions.close(alias), alias)
 
     @keyword("Disconnect DMM", tags=['rfds:connection', 'rfds:low_risk'])
+    @_evidenced
     def disconnect_dmm(self, alias: object | None = None) -> None:
         """Transport-neutral alias for ``Close DMM``."""
         self.close_dmm(alias)
 
     @keyword("Disconnect", tags=["rfds:connection", "rfds:low_risk"])
+    @_evidenced
     def disconnect(self, alias: object | None = None) -> None:
         """Close one session idempotently and release its transport resources."""
         self._execute(
@@ -1054,6 +1233,7 @@ class Hp34401ALibrary:
         self.close_dmm(alias)
 
     @keyword("Close All DMMs", tags=['rfds:connection', 'rfds:low_risk'])
+    @_evidenced
     def close_all_dmms(self) -> None:
         errors = self._sessions.close_all()
         if errors:
@@ -1067,6 +1247,7 @@ class Hp34401ALibrary:
 
     # ------------------------------- identity/health
     @keyword("Identify DMM", tags=['rfds:query', 'rfds:low_risk'])
+    @_evidenced
     def identify_dmm(self, alias: object | None = None) -> dict[str, Any]:
         session = self._session(alias)
         return self._execute(
@@ -1074,12 +1255,14 @@ class Hp34401ALibrary:
         )
 
     @keyword("DMM Model Should Be 34401A", tags=['rfds:assertion', 'rfds:low_risk'])
+    @_evidenced
     def dmm_model_should_be_34401a(self, alias: object | None = None) -> None:
         identity = self.identify_dmm(alias)
         if "34401A" not in str(identity["model"]).upper():
             raise AssertionError(f"Expected model 34401A but received {identity['model']!r}")
 
     @keyword("Run DMM Self Test", tags=['rfds:diagnostic', 'rfds:medium_risk'])
+    @_evidenced
     def run_dmm_self_test(self, alias: object | None = None) -> dict[str, Any]:
         session = self._session(alias)
         return self._execute(
@@ -1089,6 +1272,7 @@ class Hp34401ALibrary:
         )
 
     @keyword("DMM Self Test Should Pass", tags=['rfds:assertion', 'rfds:low_risk'])
+    @_evidenced
     def dmm_self_test_should_pass(self, alias: object | None = None) -> None:
         result = self.run_dmm_self_test(alias)
         if not result["passed"]:
@@ -1097,6 +1281,7 @@ class Hp34401ALibrary:
             )
 
     @keyword("Get DMM Health", tags=['rfds:diagnostic', 'rfds:low_risk'])
+    @_evidenced
     def get_dmm_health(self, alias: object | None = None) -> dict[str, Any]:
         session = self._session(alias)
         return self._execute(
@@ -1104,6 +1289,7 @@ class Hp34401ALibrary:
         )
 
     @keyword("Recover DMM", tags=['rfds:diagnostic', 'rfds:medium_risk'])
+    @_evidenced
     def recover_dmm(self, alias: object | None = None) -> dict[str, Any]:
         session = self._session(alias)
         return self._execute(
@@ -1111,11 +1297,13 @@ class Hp34401ALibrary:
         )
 
     @keyword("Clear DMM Status", tags=['rfds:diagnostic', 'rfds:low_risk'])
+    @_evidenced
     def clear_dmm_status(self, alias: object | None = None) -> None:
         session = self._session(alias)
         self._execute("Clear DMM status", session.driver.clear_status, session.alias)
 
     @keyword("Read DMM Error", tags=['rfds:diagnostic', 'rfds:low_risk'])
+    @_evidenced
     def read_dmm_error(self, alias: object | None = None) -> dict[str, Any]:
         session = self._session(alias)
         return self._execute(
@@ -1125,6 +1313,7 @@ class Hp34401ALibrary:
         )
 
     @keyword("Get DMM Error Queue", tags=['rfds:diagnostic', 'rfds:low_risk'])
+    @_evidenced
     def get_dmm_error_queue(
         self, max_errors: object = 25, alias: object | None = None
     ) -> list[dict[str, Any]]:
@@ -1138,12 +1327,14 @@ class Hp34401ALibrary:
         )
 
     @keyword("DMM Error Queue Should Be Empty", tags=['rfds:assertion', 'rfds:low_risk'])
+    @_evidenced
     def dmm_error_queue_should_be_empty(self, alias: object | None = None) -> None:
         errors = [item for item in self.get_dmm_error_queue(alias=alias) if item["code"] != 0]
         if errors:
             raise AssertionError(f"DMM error queue is not empty: {errors}")
 
     @keyword("Get DMM Input Terminal", tags=['rfds:query', 'rfds:low_risk'])
+    @_evidenced
     def get_dmm_input_terminal(self, alias: object | None = None) -> str:
         session = self._session(alias)
         return self._execute(
@@ -1151,6 +1342,7 @@ class Hp34401ALibrary:
         )
 
     @keyword("Require DMM Input Terminal", tags=['rfds:query', 'rfds:low_risk'])
+    @_evidenced
     def require_dmm_input_terminal(self, expected: object, alias: object | None = None) -> None:
         session = self._session(alias)
         terminal = as_terminal(expected)
@@ -1161,23 +1353,28 @@ class Hp34401ALibrary:
         )
 
     @keyword("Get DMM State", tags=['rfds:query', 'rfds:low_risk'])
+    @_evidenced
     def get_dmm_state(self, alias: object | None = None) -> str:
         return self._session(alias).driver.state.value
 
     @keyword("Get DMM Driver Version", tags=['rfds:query', 'rfds:low_risk'])
+    @_evidenced
     def get_dmm_driver_version(self) -> str:
         return CORE_VERSION
 
     @keyword("Get Robot DMM Library Version", tags=['rfds:query', 'rfds:low_risk'])
+    @_evidenced
     def get_robot_dmm_library_version(self) -> str:
         return __version__
 
     @keyword("Get Driver Capabilities", tags=["rfds:query", "rfds:low_risk"])
+    @_evidenced
     def get_driver_capabilities(self) -> list[str]:
         """Return the sorted RFDS-002 capability identifiers without device I/O."""
         return self._capabilities.ids()
 
     @keyword("Get Driver Metadata", tags=['rfds:query', 'rfds:low_risk'])
+    @_evidenced
     def get_driver_metadata(self, alias: object | None = None) -> dict[str, Any]:
         """Return driver, runtime, transport, and connected-instrument metadata."""
         metadata: dict[str, Any] = {
@@ -1218,6 +1415,7 @@ class Hp34401ALibrary:
 
     # ------------------------------- configuration
     @keyword("Configure DC Voltage", tags=['rfds:configuration', 'rfds:low_risk'])
+    @_evidenced
     def configure_dc_voltage(
         self,
         range_value: object = "DEF",
@@ -1235,6 +1433,7 @@ class Hp34401ALibrary:
         )
 
     @keyword("Configure AC Voltage", tags=['rfds:configuration', 'rfds:low_risk'])
+    @_evidenced
     def configure_ac_voltage(
         self, range_value: object = "DEF", ac_filter_hz: object = 20, alias: object | None = None
     ) -> None:
@@ -1248,6 +1447,7 @@ class Hp34401ALibrary:
         )
 
     @keyword("Configure DC Current", tags=['rfds:configuration', 'rfds:low_risk'])
+    @_evidenced
     def configure_dc_current(
         self,
         range_value: object = "DEF",
@@ -1265,6 +1465,7 @@ class Hp34401ALibrary:
         )
 
     @keyword("Configure AC Current", tags=['rfds:configuration', 'rfds:low_risk'])
+    @_evidenced
     def configure_ac_current(
         self, range_value: object = "DEF", ac_filter_hz: object = 20, alias: object | None = None
     ) -> None:
@@ -1278,6 +1479,7 @@ class Hp34401ALibrary:
         )
 
     @keyword("Configure 2 Wire Resistance", tags=['rfds:configuration', 'rfds:low_risk'])
+    @_evidenced
     def configure_2wire_resistance(
         self,
         range_value: object = "DEF",
@@ -1295,6 +1497,7 @@ class Hp34401ALibrary:
         )
 
     @keyword("Configure 4 Wire Resistance", tags=['rfds:configuration', 'rfds:low_risk'])
+    @_evidenced
     def configure_4wire_resistance(
         self,
         range_value: object = "DEF",
@@ -1312,6 +1515,7 @@ class Hp34401ALibrary:
         )
 
     @keyword("Configure Frequency", tags=['rfds:configuration', 'rfds:low_risk'])
+    @_evidenced
     def configure_frequency(
         self, voltage_range: object = "DEF", aperture: object = 0.1, alias: object | None = None
     ) -> None:
@@ -1323,6 +1527,7 @@ class Hp34401ALibrary:
         )
 
     @keyword("Configure Period", tags=['rfds:configuration', 'rfds:low_risk'])
+    @_evidenced
     def configure_period(
         self, voltage_range: object = "DEF", aperture: object = 0.1, alias: object | None = None
     ) -> None:
@@ -1334,21 +1539,25 @@ class Hp34401ALibrary:
         )
 
     @keyword("Configure Continuity", tags=['rfds:configuration', 'rfds:low_risk'])
+    @_evidenced
     def configure_continuity(self, alias: object | None = None) -> None:
         s = self._session(alias)
         self._execute("Configure continuity", s.driver.configure_continuity, s.alias)
 
     @keyword("Configure Diode", tags=['rfds:configuration', 'rfds:low_risk'])
+    @_evidenced
     def configure_diode(self, alias: object | None = None) -> None:
         s = self._session(alias)
         self._execute("Configure diode", s.driver.configure_diode, s.alias)
 
     # ------------------------------- measurement
     @keyword("Read DMM", tags=['rfds:measurement', 'rfds:low_risk'])
+    @_evidenced
     def read_dmm(self, alias: object | None = None) -> float:
         return self._measure("Read DMM", lambda d: d.read_once(), alias)
 
     @keyword("Measure DC Voltage", tags=['rfds:measurement', 'rfds:low_risk'])
+    @_evidenced
     def measure_dc_voltage(
         self, range_value: object = "DEF", nplc: object = 10, alias: object | None = None
     ) -> float:
@@ -1359,6 +1568,7 @@ class Hp34401ALibrary:
         )
 
     @keyword("Measure AC Voltage", tags=['rfds:measurement', 'rfds:low_risk'])
+    @_evidenced
     def measure_ac_voltage(
         self, range_value: object = "DEF", ac_filter_hz: object = 20, alias: object | None = None
     ) -> float:
@@ -1369,6 +1579,7 @@ class Hp34401ALibrary:
         )
 
     @keyword("Measure DC Current", tags=['rfds:measurement', 'rfds:low_risk'])
+    @_evidenced
     def measure_dc_current(
         self, range_value: object = "DEF", nplc: object = 10, alias: object | None = None
     ) -> float:
@@ -1379,6 +1590,7 @@ class Hp34401ALibrary:
         )
 
     @keyword("Measure AC Current", tags=['rfds:measurement', 'rfds:low_risk'])
+    @_evidenced
     def measure_ac_current(
         self, range_value: object = "DEF", ac_filter_hz: object = 20, alias: object | None = None
     ) -> float:
@@ -1389,6 +1601,7 @@ class Hp34401ALibrary:
         return self._measure("Measure AC current", producer, alias)
 
     @keyword("Measure 2 Wire Resistance", tags=['rfds:measurement', 'rfds:low_risk'])
+    @_evidenced
     def measure_2wire_resistance(
         self, range_value: object = "DEF", nplc: object = 10, alias: object | None = None
     ) -> float:
@@ -1399,6 +1612,7 @@ class Hp34401ALibrary:
         )
 
     @keyword("Measure 4 Wire Resistance", tags=['rfds:measurement', 'rfds:low_risk'])
+    @_evidenced
     def measure_4wire_resistance(
         self, range_value: object = "DEF", nplc: object = 10, alias: object | None = None
     ) -> float:
@@ -1409,6 +1623,7 @@ class Hp34401ALibrary:
         )
 
     @keyword("Measure Frequency", tags=['rfds:measurement', 'rfds:low_risk'])
+    @_evidenced
     def measure_frequency(
         self, voltage_range: object = "DEF", aperture: object = 0.1, alias: object | None = None
     ) -> float:
@@ -1419,6 +1634,7 @@ class Hp34401ALibrary:
         return self._measure("Measure frequency", producer, alias)
 
     @keyword("Measure Period", tags=['rfds:measurement', 'rfds:low_risk'])
+    @_evidenced
     def measure_period(
         self, voltage_range: object = "DEF", aperture: object = 0.1, alias: object | None = None
     ) -> float:
@@ -1429,6 +1645,7 @@ class Hp34401ALibrary:
         return self._measure("Measure period", producer, alias)
 
     @keyword("Measure Continuity", tags=['rfds:measurement', 'rfds:low_risk'])
+    @_evidenced
     def measure_continuity(self, alias: object | None = None) -> float:
         def producer(d: Hp34401A) -> MeasurementReading:
             d.configure_continuity()
@@ -1437,6 +1654,7 @@ class Hp34401ALibrary:
         return self._measure("Measure continuity", producer, alias)
 
     @keyword("Measure Diode", tags=['rfds:measurement', 'rfds:low_risk'])
+    @_evidenced
     def measure_diode(self, alias: object | None = None) -> float:
         def producer(d: Hp34401A) -> MeasurementReading:
             d.configure_diode()
@@ -1482,6 +1700,7 @@ class Hp34401ALibrary:
         )
 
     @keyword("Try Read Stable Resistance", tags=['rfds:measurement', 'rfds:low_risk'])
+    @_evidenced
     def try_read_stable_resistance(
         self,
         expected_ohm: object | None = None,
@@ -1527,6 +1746,7 @@ class Hp34401ALibrary:
         return data
 
     @keyword("Read Stable Resistance", tags=['rfds:measurement', 'rfds:low_risk'])
+    @_evidenced
     def read_stable_resistance(
         self,
         expected_ohm: object | None = None,
@@ -1564,6 +1784,7 @@ class Hp34401ALibrary:
         return float(result["value"])
 
     @keyword("Get Last DMM Reading", tags=['rfds:query', 'rfds:low_risk'])
+    @_evidenced
     def get_last_dmm_reading(self, alias: object | None = None) -> dict[str, Any]:
         session = self._session(alias)
         if session.last_reading is None:
@@ -1571,6 +1792,7 @@ class Hp34401ALibrary:
         return self._reading_to_dict(session.last_reading, session)
 
     @keyword("Get Last DMM Reading Value", tags=['rfds:query', 'rfds:low_risk'])
+    @_evidenced
     def get_last_dmm_reading_value(self, alias: object | None = None) -> float:
         data = self.get_last_dmm_reading(alias)
         if not data["is_valid"] or data["is_overload"] or data["value"] is None:
@@ -1579,6 +1801,7 @@ class Hp34401ALibrary:
 
     # ------------------------------- triggers
     @keyword("Set DMM Trigger Source", tags=['rfds:configuration', 'rfds:low_risk'])
+    @_evidenced
     def set_dmm_trigger_source(self, source: object, alias: object | None = None) -> None:
         s = self._session(alias)
         self._execute(
@@ -1588,16 +1811,19 @@ class Hp34401ALibrary:
         )
 
     @keyword("Initiate DMM Measurement", tags=['rfds:configuration', 'rfds:low_risk'])
+    @_evidenced
     def initiate_dmm_measurement(self, alias: object | None = None) -> None:
         s = self._session(alias)
         self._execute("Initiate DMM measurement", s.driver.initiate, s.alias)
 
     @keyword("Send DMM Bus Trigger", tags=['rfds:configuration', 'rfds:low_risk'])
+    @_evidenced
     def send_dmm_bus_trigger(self, alias: object | None = None) -> None:
         s = self._session(alias)
         self._execute("Send DMM bus trigger", s.driver.trigger_bus, s.alias)
 
     @keyword("Fetch DMM Readings", tags=['rfds:measurement', 'rfds:low_risk'])
+    @_evidenced
     def fetch_dmm_readings(self, alias: object | None = None) -> list[dict[str, Any]]:
         s = self._session(alias)
         readings = self._execute("Fetch DMM readings", s.driver.fetch, s.alias)
@@ -1606,17 +1832,20 @@ class Hp34401ALibrary:
         return [self._reading_to_dict(r, s) for r in readings]
 
     @keyword("Read DMM Once With Bus Trigger", tags=['rfds:measurement', 'rfds:low_risk'])
+    @_evidenced
     def read_dmm_once_with_bus_trigger(self, alias: object | None = None) -> float:
         return self._measure("Read DMM once with bus trigger", lambda d: d.read_once_bus(), alias)
 
     # ------------------------------- assertions
     @keyword("DMM Reading Should Be Valid", tags=['rfds:assertion', 'rfds:low_risk'])
+    @_evidenced
     def dmm_reading_should_be_valid(self, alias: object | None = None) -> None:
         data = self.get_last_dmm_reading(alias)
         if not data["is_valid"] or data["value"] is None:
             raise AssertionError(f"Invalid DMM reading: {data}")
 
     @keyword("DMM Reading Should Not Be Overload", tags=['rfds:assertion', 'rfds:low_risk'])
+    @_evidenced
     def dmm_reading_should_not_be_overload(self, alias: object | None = None) -> None:
         data = self.get_last_dmm_reading(alias)
         if data["is_overload"]:
@@ -1629,6 +1858,7 @@ class Hp34401ALibrary:
         return float(data["value"]), data
 
     @keyword("DMM Reading Should Be Between", tags=['rfds:assertion', 'rfds:low_risk'])
+    @_evidenced
     def dmm_reading_should_be_between(
         self, minimum: object, maximum: object, alias: object | None = None
     ) -> None:
@@ -1642,6 +1872,7 @@ class Hp34401ALibrary:
             )
 
     @keyword("DMM Reading Should Be Close To", tags=['rfds:assertion', 'rfds:low_risk'])
+    @_evidenced
     def dmm_reading_should_be_close_to(
         self,
         expected: object,
@@ -1661,6 +1892,7 @@ class Hp34401ALibrary:
             )
 
     @keyword("DMM Reading Should Be Greater Than", tags=['rfds:assertion', 'rfds:low_risk'])
+    @_evidenced
     def dmm_reading_should_be_greater_than(
         self, minimum: object, alias: object | None = None
     ) -> None:
@@ -1672,6 +1904,7 @@ class Hp34401ALibrary:
             )
 
     @keyword("DMM Reading Should Be Less Than", tags=['rfds:assertion', 'rfds:low_risk'])
+    @_evidenced
     def dmm_reading_should_be_less_than(self, maximum: object, alias: object | None = None) -> None:
         value, data = self._value_for_assertion(alias)
         limit = as_float(maximum, name="maximum")
@@ -1681,6 +1914,7 @@ class Hp34401ALibrary:
             )
 
     @keyword("Stable Resistance Should Be Between", tags=['rfds:assertion', 'rfds:low_risk'])
+    @_evidenced
     def stable_resistance_should_be_between(
         self, result: dict[str, Any], minimum: object, maximum: object
     ) -> None:
@@ -1692,6 +1926,7 @@ class Hp34401ALibrary:
             raise AssertionError(f"Stable resistance {value} Ohm is outside [{low}, {high}]")
 
     @keyword("DMM Should Have No Errors", tags=['rfds:assertion', 'rfds:low_risk'])
+    @_evidenced
     def dmm_should_have_no_errors(self, context: str = "", alias: object | None = None) -> None:
         s = self._session(alias)
         self._execute(
@@ -1700,6 +1935,7 @@ class Hp34401ALibrary:
 
     # ------------------------------- controlled raw SCPI
     @keyword("Write DMM Command", tags=['rfds:raw_io', 'rfds:high_risk'])
+    @_evidenced
     def write_dmm_command(self, command: str, alias: object | None = None) -> None:
         self._require_raw_io("Write DMM Command")
         s = self._session(alias)
@@ -1707,6 +1943,7 @@ class Hp34401ALibrary:
         self._execute("Write DMM command", lambda: s.driver.write(str(command)), s.alias)
 
     @keyword("Query DMM Command", tags=['rfds:raw_io', 'rfds:high_risk'])
+    @_evidenced
     def query_dmm_command(self, command: str, alias: object | None = None) -> str:
         self._require_raw_io("Query DMM Command")
         s = self._session(alias)

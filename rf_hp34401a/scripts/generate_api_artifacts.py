@@ -61,7 +61,7 @@ NON_DEVICE_PREFIXES = (
 NON_DEVICE_EXACT = {
     "Get Last DMM Reading", "Get Last DMM Reading Value", "DMM Should Be Connected",
     "Get DMM State", "Get DMM Driver Version", "Get Robot DMM Library Version",
-    "List VISA Resources",
+    "List VISA Resources", "Export Diagnostic Bundle",
 }
 
 
@@ -224,6 +224,7 @@ def _side_effects(name: str) -> list[str]:
     if "Measure" in name or name.startswith("Read "): return ["may trigger one DMM acquisition"]
     if "Configure" in name or name.startswith("Set "): return ["changes volatile driver or DMM configuration"]
     if name == "Reset Device": return ["sends SCPI *RST and clears volatile measurement configuration"]
+    if name == "Export Diagnostic Bundle": return ["writes a .zip archive to disk; does not change driver or DMM state"]
     return ["documented driver state may change"]
 
 
@@ -237,7 +238,7 @@ def generate_public_api(items: list[dict[str, Any]]) -> None:
         "library": {
             "name": "rf_hp34401a",
             "module": "rf_hp34401a.Hp34401ALibrary",
-            "package_version": "26.06",
+            "package_version": "26.07",
             "api_version": "1.1.0",
             "scope": "SUITE",
             "scope_rationale": "Each suite owns deterministic named DMM sessions and teardown.",
@@ -284,6 +285,7 @@ def generate_support_files(items: list[dict[str, Any]]) -> None:
         "history": [
             {"api_version": "1.1.0", "package_version": "26.04", "changes": [{"type": "added_keyword", "subject": "RFDS-002 v1.1 canonical lifecycle, RFDS-013 discovery and RFDS-014 configuration", "breaking": False}]},
             {"api_version": "1.1.0", "package_version": "26.06", "changes": [{"type": "bug_fix", "subject": "Normalize lowercase Robot CLI Boolean variables in the real-hardware all-API suite", "breaking": False}]},
+            {"api_version": "1.1.0", "package_version": "26.07", "changes": [{"type": "added_keyword", "subject": "RFDS-008 structured evidence engine and Export Diagnostic Bundle keyword", "breaking": False}]},
         ],
         "aliases": [{"alias": a, "canonical": c, "status": "deprecated", "deprecated_since": "1.1.0", "remove_not_before": "2.0.0"} for a, c in sorted(ALIASES.items())],
     }
@@ -305,7 +307,7 @@ def generate_support_files(items: list[dict[str, Any]]) -> None:
     # Extract every normative rule ID and assign a conservative auditable disposition.
     source = Path('/mnt/data/RFDS-002_Mandatory_Public_API_and_Keyword_Standard_v1_1.md')
     rule_ids = sorted(set(re.findall(r'R-\d{4}', source.read_text(encoding='utf-8')))) if source.exists() else []
-    state = {"api_spec": "RFDS-002 v1.1", "release": "26.06", "release_class": "D0", "rules": []}
+    state = {"api_spec": "RFDS-002 v1.1", "release": "26.07", "release_class": "D0", "rules": []}
     waived = {"R-2401", "R-2503", "R-3107"}
     for rule in rule_ids:
         status = "waived" if rule in waived else "pass"
@@ -317,7 +319,7 @@ def generate_support_files(items: list[dict[str, Any]]) -> None:
 
 def generate_ai_contract(items: list[dict[str, Any]]) -> None:
     contract = yaml.safe_load((AI / "hp34401a_ai_contract.yaml").read_text(encoding="utf-8"))
-    contract["identity"]["driver_version"] = "26.6.0"
+    contract["identity"]["driver_version"] = "26.7.0"
     contract["identity"]["api_version"] = "1.1.0"
     contract["implementation_status"]["maturity"] = "D0_DEVELOPMENT_CANDIDATE"
     contract["implementation_status"]["validation"] = ["UNIT_TESTED_BASELINE", "SIMULATOR_COMPONENT_VALIDATED", "RFDS019_STATIC_COMPLETE"]

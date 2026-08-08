@@ -47,7 +47,7 @@ Diode Measurement
 Metadata Is Complete
     ${reading}=    Get Last DMM Reading
     Should Be Equal    ${reading}[alias]    default
-    Should Be Equal    ${reading}[library_version]    26.06
+    Should Be Equal    ${reading}[library_version]    26.07
     Should Be Equal    ${reading}[driver_version]    1.2.8
     Should Be True    ${reading}[is_valid]
 

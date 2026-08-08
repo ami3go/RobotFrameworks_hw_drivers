@@ -1,4 +1,4 @@
-site_name: RF HP34401A 26.06
+site_name: RF HP34401A 26.07
 site_description: Robot Framework driver for HP/Agilent/Keysight 34401A
 nav:
   - Home: index.md
@@ -9,6 +9,7 @@ nav:
   - Configuration: configuration.md
   - Plugin integration: plugin_integration.md
   - Real hardware API verification: real_hardware_api_verification.md
+  - Logging and evidence: logging_and_evidence.md
   - Examples: examples.md
   - Architecture: architecture.md
   - AI contracts: ai_contract.md

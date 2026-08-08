@@ -18,7 +18,7 @@ tests/conformance/
 └── support/ConformanceHarness.py
 ```
 
-The inventory contains all 108 exported Robot keywords. Each keyword has one primary callability vector. Fifty device-facing keywords have outbound SCPI or transport-boundary oracles. Four additional vectors verify timeout handling, malformed measurement responses, SCPI error reporting, calibration-command blocking, and post-failure recovery.
+The inventory contains all 109 exported Robot keywords. Each keyword has one primary callability vector. Fifty device-facing keywords have outbound SCPI or transport-boundary oracles. Four additional vectors verify timeout handling, malformed measurement responses, SCPI error reporting, calibration-command blocking, and post-failure recovery.
 
 ## Observation point
 

@@ -4,7 +4,7 @@
   "display_name": "HP/Agilent/Keysight 34401A DMM",
   "provider": "rf_hp34401a.plugin:Hp34401APluginProvider",
   "library": "rf_hp34401a.Hp34401ALibrary",
-  "driver_version": "26.06",
+  "driver_version": "26.07",
   "plugin_api_version": "1.0",
   "supported_models": ["34401A"],
   "supported_transports": ["VISA_GPIB", "SERIAL_RS232", "FAKE"],

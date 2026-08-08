@@ -1,7 +1,7 @@
 algorithm: SHA-256
-sha256: 7244992ef630c4e3d76bad42250e71d3ed334734fce5bc6a31e52b82c3de27e7
-public_api_sha256: dd9dd9abced37410fd9c7848a8903cb3e17b3f0d9345797944d4d1d41e3c338d
-keyword_count: 108
+sha256: b5acf460e08262ea57ab3ee7ddf4cb378cd90c6b5ff11d0b05af4df7edf26439
+public_api_sha256: 39e0a018a8207affd6b943770ac40fd7d78816c4ca04139ccee51955c1411bd7
+keyword_count: 109
 surface:
 - Check Communication(alias=${NONE})
 - Clear DMM Status(alias=${NONE})
@@ -38,6 +38,7 @@ surface:
 - Disconnect(alias=${NONE})
 - Disconnect All()
 - Disconnect DMM(alias=${NONE})
+- Export Diagnostic Bundle(destination=${NONE})
 - Export Driver Configuration(destination=${NONE}, indent=2)
 - Fetch DMM Readings(alias=${NONE})
 - Find Driver Capabilities(capability_id=${NONE}, keyword_name=${NONE}, maximum_risk=${NONE}, available_only=${FALSE}, mode=effective)

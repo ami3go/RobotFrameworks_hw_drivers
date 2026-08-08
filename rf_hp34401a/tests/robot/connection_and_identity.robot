@@ -27,13 +27,13 @@ Terminal Can Be Verified
 Versions Are Exposed
     ${library_version}=    Get Robot DMM Library Version
     ${driver_version}=    Get DMM Driver Version
-    Should Be Equal    ${library_version}    26.06
+    Should Be Equal    ${library_version}    26.07
     Should Be Equal    ${driver_version}    1.2.8
 
 Runtime Metadata Is Exposed
     ${metadata}=    Get Driver Metadata
     Should Be Equal    ${metadata}[model]    34401A
-    Should Be Equal    ${metadata}[driver_version]    26.06
+    Should Be Equal    ${metadata}[driver_version]    26.07
     ${capabilities}=    Get Driver Capabilities
     Should Be Equal    ${capabilities}[instrument_class]    DMM
 

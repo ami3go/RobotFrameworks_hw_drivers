@@ -23,7 +23,7 @@ def test_rfds019_static_inventory_and_vectors_are_complete():
     validator = _module("validate_call_protocol_conformance")
     errors = validator.validate()
     assert errors == []
-    assert len(validator.live_surface()) == 108
+    assert len(validator.live_surface()) == 109
 
 
 def test_every_keyword_has_exactly_one_primary_vector():
@@ -33,9 +33,9 @@ def test_every_keyword_has_exactly_one_primary_vector():
     vectors = yaml.safe_load(
         (ROOT / "tests/conformance/data/protocol_vectors.yaml").read_text(encoding="utf-8")
     )["vectors"]
-    assert len(inventory) == len(vectors) == 108
+    assert len(inventory) == len(vectors) == 109
     assert {row["keyword"] for row in inventory} == {row["keyword"] for row in vectors}
-    assert len({row["id"] for row in vectors}) == 108
+    assert len({row["id"] for row in vectors}) == 109
     assert all(row.get("expected_return") is not None for row in vectors)
     assert all(
         (not row["device_facing"]) or row.get("expected_outbound") is not None

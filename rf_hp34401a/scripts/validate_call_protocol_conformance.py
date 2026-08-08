@@ -74,8 +74,8 @@ def validate() -> list[str]:
             errors.append(f"{name}: protocol_vector reference is stale")
         if by_name.get(name, {}).get("device_facing") and not vector_by_name.get(name, {}).get("expected_outbound"):
             errors.append(f"{name}: device-facing vector has no outbound oracle")
-    if str(inventory.get("driver_version")) != "26.06":
-        errors.append("keyword_inventory driver_version must be 26.06")
+    if str(inventory.get("driver_version")) != "26.07":
+        errors.append("keyword_inventory driver_version must be 26.07")
     if str(inventory.get("rfds019_version")) != "1.1":
         errors.append("keyword_inventory rfds019_version must be 1.1")
     if str(vectors.get("rfds019_version")) != "1.1":

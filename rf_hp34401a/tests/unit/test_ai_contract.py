@@ -23,9 +23,9 @@ def test_rfds017_contract_matches_all_public_keywords():
     assert errors == []
     contract = yaml.safe_load((ROOT / "ai" / "hp34401a_ai_contract.yaml").read_text(encoding="utf-8"))
     assert contract["rfds017_version"] == "3.0"
-    assert contract["identity"]["driver_version"] == "26.6.0"
-    assert len(contract["capabilities"]) == 108
-    assert len({item["keyword"] for item in contract["capabilities"]}) == 108
+    assert contract["identity"]["driver_version"] == "26.7.0"
+    assert len(contract["capabilities"]) == 109
+    assert len({item["keyword"] for item in contract["capabilities"]}) == 109
 
 
 def test_lock_detects_stale_interface(tmp_path):
