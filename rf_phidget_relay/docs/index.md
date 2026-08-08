@@ -1,7 +1,8 @@
-# RF Phidget Relay 26.02
+# RF Phidget Relay 26.03
 
 This package exposes two PhidgetInterfaceKit 0/0/4 boards as one logical
-eight-channel relay bank in Robot Framework.
+eight-channel relay bank in Robot Framework. Every keyword call is recorded
+as RFDS-008 structured evidence — see [Logging and Evidence](logging_and_evidence.md).
 
 This release implements RFDS-017 v3.0 and includes an RFDS-018 v1.0 bench
 template. See `ai/` and `system_ai_contract.yaml`. Automated relay closure is

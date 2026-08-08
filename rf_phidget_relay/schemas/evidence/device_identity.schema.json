@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://rfds.local/schemas/rf_phidget_relay/device_identity.schema.json",
+  "title": "rfds.device_identity",
+  "description": "device_identity.json — recorded once Connect Relays attaches both Phidget boards.",
+  "type": "object",
+  "required": ["schema", "schema_version", "run_id", "timestamp_utc"],
+  "properties": {
+    "schema": {"const": "rfds.device_identity"},
+    "schema_version": {"type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$"},
+    "run_id": {"type": "string"},
+    "timestamp_utc": {"type": "string", "format": "date-time"},
+    "manufacturer": {"type": "string"},
+    "device_family": {"type": "string"},
+    "device_a_serial": {"type": "integer"},
+    "device_b_serial": {"type": "integer"},
+    "channel_count": {"type": "integer"},
+    "active_high": {"type": "boolean"},
+    "device_a_name": {"type": ["string", "null"]},
+    "device_b_name": {"type": ["string", "null"]}
+  },
+  "additionalProperties": true
+}

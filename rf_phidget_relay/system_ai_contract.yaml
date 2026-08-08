@@ -2,7 +2,7 @@ schema: RFDS-018
 schema_version: "1.0"
 contract_status: TEMPLATE_REQUIRES_BENCH_OWNER_COMPLETION
 available_drivers:
-  - {driver_id: rf_phidget_relay, version: "26.2", contract: ai/phidget_relay_ai_contract.yaml}
+  - {driver_id: rf_phidget_relay, version: "26.3", contract: ai/phidget_relay_ai_contract.yaml}
 physical_topology: UNKNOWN
 shared_resources:
   - {id: USB_PHIDGET_DEVICE_A, exclusive: true, identity: UNKNOWN}

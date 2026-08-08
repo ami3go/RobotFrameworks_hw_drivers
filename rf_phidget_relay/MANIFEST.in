@@ -3,7 +3,9 @@ recursive-include guide *.md
 recursive-include history *.md
 recursive-include review *.md
 recursive-include docs *.md
-recursive-include scripts *.bat *.sh
+recursive-include scripts *.bat *.sh *.ps1 *.py
+recursive-include schemas *.json
+recursive-include tests *.robot
 recursive-include ai *.yaml *.lock
 include system_ai_contract.yaml
 include LICENSE mkdocs.yml

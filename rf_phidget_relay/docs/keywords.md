@@ -20,6 +20,10 @@ are authoritative in `ai/phidget_relay_ai_contract.yaml`.
 | Get Connection Status | Report whether all eight handles are registered |
 | Get Driver Information | Return version, serials, polarity, and state evidence |
 | Emergency Open All Relays | Best-effort software safe-state action |
+| Export Diagnostic Bundle | Zip the current session's RFDS-008 evidence run for troubleshooting |
+
+Every keyword above is also recorded as RFDS-008 structured evidence — see
+`logging_and_evidence.md` and `../guide/evidence_and_diagnostics.md`.
 
 Robot Framework's Libdoc can generate the authoritative API from docstrings:
 

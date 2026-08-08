@@ -1,8 +1,8 @@
 schema: RFDS-017-lock
 schema_version: "1.0"
 contract_file: ai/phidget_relay_ai_contract.yaml
-contract_sha256: 18b07c144e3cfe8d56a0a2c1b7ef2b23ce81696a1f7b05955dd8f7a9a85c0001
+contract_sha256: 69d5ddd7ccd77a882f5b3cdb3dbcc6062e2d3f3c6c1710dd4f612f8cb38bdeb6
 driver_id: rf_phidget_relay
-driver_version: "26.2"
-capability_count: 18
-generated_utc: "2026-07-22T00:00:00Z"
+driver_version: "26.3"
+capability_count: 19
+generated_utc: "2026-08-06T09:34:04Z"

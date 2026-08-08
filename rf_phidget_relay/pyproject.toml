@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "rf-phidget-relay"
-version = "26.2"
+version = "26.3"
 description = "Robot Framework library for two PhidgetInterfaceKit 0/0/4 relay boards"
 readme = "README.md"
 requires-python = ">=3.9"

@@ -103,7 +103,7 @@ def test_disconnect_opens_and_closes_handles(relay):
 def test_connection_status_and_driver_information(relay):
     assert relay.get_connection_status() == "CONNECTED"
     info = relay.get_driver_information()
-    assert info["version"] == "26.2"
+    assert info["version"] == "26.3"
     assert info["device_serials"] == [111111, 222222]
     relay.disconnect_relays()
     assert relay.get_connection_status() == "DISCONNECTED"

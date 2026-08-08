@@ -1,10 +1,10 @@
 schema: RFDS-017
 schema_version: "3.0"
-contract_version: "26.02"
+contract_version: "26.03"
 identity:
   driver_id: rf_phidget_relay
   library_import: rf_phidget_relay.PhidgetRelayLibrary
-  library_version: "26.2"
+  library_version: "26.3"
   instrument: "Two PhidgetInterfaceKit 0/0/4 devices forming one 8-channel switch bank"
 mental_model:
   summary: "Eight independent logical dry-contact paths controlled through DigitalOutput channels."
@@ -198,6 +198,18 @@ capabilities:
     side_effects: []
     risk: low
     timing: {typical_seconds: 0.001}
+    stabilization_delay_seconds: 0
+    <<: *defaults
+  - name: Export Diagnostic Bundle
+    signature: "Export Diagnostic Bundle(destination=None) -> path_or_none"
+    purpose: "Zip the current RFDS-008 evidence run (events, protocol trace, device identity, manifest) for offline troubleshooting."
+    inputs: {destination: "optional file path; defaults next to the run's own result directory"}
+    outputs: {path: "string path to the written .zip, or null when evidence_enabled=False"}
+    preconditions: []
+    postconditions: ["evidence_manifest.json inside the run directory is refreshed"]
+    side_effects: ["writes a .zip file to disk"]
+    risk: low
+    timing: {typical_seconds: 0.05}
     stabilization_delay_seconds: 0
     <<: *defaults
 error_catalogue:
