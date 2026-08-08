@@ -4,7 +4,9 @@
       "Bash(git checkout *)",
       "Bash(python3 -c ' *)",
       "Bash(pip show *)",
-      "Bash(python3 -c \"import robot\")"
+      "Bash(python3 -c \"import robot\")",
+      "Bash(gh auth *)",
+      "Bash(curl -sI https://github.com)"
     ]
   }
 }
