@@ -25,9 +25,11 @@ class SuiteLifecycleListener:
         self,
         registry: SessionRegistry,
         safe_shutdown_policy: Callable[[], bool] | None = None,
+        evidence_finalizer: Callable[[], None] | None = None,
     ) -> None:
         self._registry = registry
         self._safe_shutdown_policy = safe_shutdown_policy or (lambda: True)
+        self._evidence_finalizer = evidence_finalizer
 
     def end_suite(self, data: Any, result: Any) -> None:
         """Close all sessions without hiding the original suite result."""
@@ -38,3 +40,10 @@ class SuiteLifecycleListener:
             )
         except Exception:  # pragma: no cover - emergency cleanup must not mask suite result.
             _LOG.exception("Suite-end climate-chamber cleanup failed")
+        if self._evidence_finalizer is not None:
+            try:
+                self._evidence_finalizer()
+            except (
+                Exception
+            ):  # pragma: no cover - evidence finalization must not mask suite result.
+                _LOG.exception("Suite-end evidence finalization failed")

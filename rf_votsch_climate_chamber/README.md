@@ -1,8 +1,14 @@
 # RFDS Vötsch Climate Chamber Driver
 
-Release **v26.08** (`26.8` in Python metadata) hardens the canonical API 3.0 driver using evidence from real-chamber smoke execution.
+Release **v26.09** (`26.9` in Python metadata) adds an RFDS-008 live evidence engine on top of the v26.08 real-chamber hardening.
 
 > Release class: **D0 / D1 candidate**. Python, simulator, metadata, packaging, and clean-install gates are automated. Native Robot RFDS-019 execution and representative real-device qualification remain required before D1/D2/P1 acceptance.
+
+## What changed in v26.09
+
+- Added a live RFDS-008 evidence engine (`evidence.py`): every keyword call and every SimServ protocol frame (via the existing `TraceObserver` mechanism) is recorded to a correlated, SHA-256-integrity-checked run under `results/session/rf_votsch_climate_chamber/`. See [Evidence and diagnostics](docs/TROUBLESHOOTING.md#evidence-and-diagnostics-which-one-do-i-want) for how this differs from the pre-existing `Get/Export Diagnostics` snapshot.
+- Added the `Export Diagnostic Bundle` keyword (58th canonical keyword).
+- Added `scripts/validate_evidence.py` (+ `.sh`/`.bat`/`.ps1`) to verify a run's integrity offline.
 
 ## What changed in v26.08
 
@@ -94,6 +100,22 @@ When Robot Framework is installed:
 python scripts/run_conformance.py
 python scripts/run_all_examples.py --dry-run
 ```
+
+Validate the integrity of an evidence run produced by any of the above (or by real hardware):
+
+```console
+python scripts/validate_evidence.py results/session/rf_votsch_climate_chamber/<run>/
+```
+
+## Hardware tests
+
+`tests/hardware/verify_all_api.robot` (RFDS-019-hil, real chamber required) and `tests/hardware/smoke_test.robot` cover the real-hardware surface; `tests/conformance/driver_call_protocol_conformance.robot` covers RFDS-019 protocol conformance against the simulator. Run against a real chamber:
+
+```console
+python -m robot --outputdir results -v CHAMBER_IP:192.168.0.50 tests/hardware/verify_all_api.robot
+```
+
+State-changing profiles (`ALLOW_CHAMBER_CONTROL`, `ALLOW_AUXILIARY_OUTPUTS`) default to `${FALSE}` — see the suite's own `Documentation` and `docs/safety.md` before enabling either.
 
 ## Documentation
 

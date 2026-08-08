@@ -7,8 +7,8 @@
     "communication_ok": true,
     "identity": "V\u00f6tsch climate chamber, VT4002EMC-SIM, serial SIM-2604, manufactured 2026",
     "timeout_s": 5.0,
-    "connected_at": "2026-07-31T16:05:30.838Z",
-    "last_communication_at": "2026-07-31T16:05:30.838Z",
+    "connected_at": "2026-08-07T20:32:49.006Z",
+    "last_communication_at": "2026-08-07T20:32:49.006Z",
     "generation": 1,
     "last_error": null
   },
@@ -32,13 +32,13 @@
       }
     ],
     "failures": [],
-    "elapsed_s": 0.00023316600072575966,
+    "elapsed_s": 0.0028449300152715296,
     "confirmed": true
   },
   "status": "PASS",
   "environment": {
-    "python": "3.13.5",
-    "platform": "Linux-6.12.13-x86_64-with-glibc2.41",
-    "duration_s": 0.01138960699972813
+    "python": "3.14.6",
+    "platform": "Linux-7.1.5-070105-generic-x86_64-with-glibc2.43",
+    "duration_s": 0.02411595798912458
   }
 }

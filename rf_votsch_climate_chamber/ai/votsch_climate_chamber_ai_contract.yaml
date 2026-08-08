@@ -1,9 +1,9 @@
 schema_version: '3.0'
 contract_id: rf_votsch_climate_chamber
-contract_version: '26.08'
+contract_version: '26.09'
 driver:
   name: rf_votsch_climate_chamber
-  version: '26.08'
+  version: '26.09'
   api_version: 3.0.0
   release_class: D0
   transport:
@@ -165,6 +165,20 @@ capabilities:
   resources:
   - climate_chamber_session
   side_effects: device_or_connection_state_may_change
+  timeout: finite; see signature/configuration
+  errors: RFDS-007 DriverError hierarchy
+- id: keyword.export_diagnostic_bundle
+  keyword: Export Diagnostic Bundle
+  canonical_keyword: Export Diagnostic Bundle
+  signature: '(self, destination: ''str | None'' = None) -> ''str | None'''
+  return_type: str | None
+  device_facing: false
+  protocol_vector: null
+  deprecated: false
+  risk: low_risk
+  preconditions: []
+  resources: []
+  side_effects: none_intended
   timeout: finite; see signature/configuration
   errors: RFDS-007 DriverError hierarchy
 - id: keyword.export_diagnostics

@@ -25,5 +25,5 @@ def test_conformance_inventory_matches_runtime():
 
 def test_plugin_manifest_matches_provider():
     descriptor=VotschClimateChamberPlugin.get_descriptor()
-    assert descriptor['distribution_version'] == '26.8'
+    assert descriptor['distribution_version'] == '26.9'
     assert descriptor['provider'] == 'rf_votsch_climate_chamber.plugin:VotschClimateChamberPlugin'

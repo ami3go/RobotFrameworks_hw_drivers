@@ -1,5 +1,5 @@
 schema_version: '1.0'
-release: '26.08'
+release: '26.09'
 previous_release: '26.07'
 classification: behavioral_hardening
 previous_api_version: 3.0.0

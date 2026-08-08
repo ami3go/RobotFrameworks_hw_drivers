@@ -1,6 +1,6 @@
 schema_version: '1.0'
 driver: rf_votsch_climate_chamber
-release_version: '26.08'
+release_version: '26.09'
 api_version: 3.0.0
 authority: RFDS-002 v1.1
 library:
@@ -210,6 +210,42 @@ keywords:
   introduced_in: '26.04'
   protocol_vector: VCC-DISCONNECT_ALL-001
   documentation: See generated Libdoc.
+- keyword: Export Diagnostic Bundle
+  canonical_keyword: Export Diagnostic Bundle
+  python_method: export_diagnostic_bundle
+  signature: '(self, destination: ''str | None'' = None) -> ''str | None'''
+  arguments:
+  - name: destination
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: str | None
+  tags:
+  - rfds:diagnostics
+  - rfds:low_risk
+  device_facing: false
+  deprecated: false
+  introduced_in: '26.04'
+  protocol_vector: null
+  documentation: 'Zip this session''s RFDS-008 live evidence run for troubleshooting.
+
+
+    Different from ``Export Diagnostics``: that keyword writes one
+
+    point-in-time state snapshot; this zips the whole append-only
+
+    evidence run recorded so far (every keyword call, every SimServ
+
+    protocol frame, every error, correlated and integrity-hashed) —
+
+    see ``evidence.py`` and the "Evidence and Diagnostics" section of
+
+    ``docs/TROUBLESHOOTING.md``. Safe to call whether or not any alias is
+
+    currently connected; does not finalize the run (suite end does).
+
+    Returns the archive path, or ``None`` if evidence is disabled.'
 - keyword: Export Diagnostics
   canonical_keyword: Export Diagnostics
   python_method: export_diagnostics

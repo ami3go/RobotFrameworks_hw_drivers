@@ -1,8 +1,8 @@
 """Single source of truth for release and API version identities."""
 
-RELEASE_VERSION = "26.08"
-RELEASE_LABEL = "v26.08"
-PEP440_VERSION = "26.8"
+RELEASE_VERSION = "26.09"
+RELEASE_LABEL = "v26.09"
+PEP440_VERSION = "26.9"
 API_VERSION = "3.0.0"
 API_SPEC = "RFDS-002"
 API_SPEC_VERSION = "1.1"

@@ -44,7 +44,7 @@ def test_all_inventory_keywords_are_isolated_and_callable(monkeypatch, tmp_path:
     harness = RFDSConformanceHarness(str(root), str(tmp_path / "evidence"))
     harness.execute_all_public_keywords_through_robot()
 
-    assert len(harness.rows) == 57
+    assert len(harness.rows) == 58
     assert {row["result"] for row in harness.rows} == {"PASS"}
     assert all("RFDS-CON-002" not in str(row["error"]) for row in harness.rows)
 

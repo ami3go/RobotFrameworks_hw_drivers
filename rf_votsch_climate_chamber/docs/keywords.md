@@ -1,6 +1,6 @@
-# Canonical Robot Framework Keywords — v26.08
+# Canonical Robot Framework Keywords — v26.09
 
-This API contains **57 canonical keywords**. API 2 compatibility aliases
+This API contains **58 canonical keywords**. API 2 compatibility aliases
 were removed in v26.07; see [migration.md](migration.md).
 
 ## Cancel Current Operation
@@ -107,6 +107,26 @@ The operation is idempotent.  It is bounded by a 20 s cleanup budget.
 - Tags: `rfds:connection, rfds:high_risk`
 
 See generated Libdoc.
+
+## Export Diagnostic Bundle
+
+- Python method: `export_diagnostic_bundle`
+- Signature: `(self, destination: 'str | None' = None) -> 'str | None'`
+- Return type: `str | None`
+- Device-facing: `no`
+- Protocol vector: `N/A`
+- Tags: `rfds:diagnostics, rfds:low_risk`
+
+Zip this session's RFDS-008 live evidence run for troubleshooting.
+
+Different from ``Export Diagnostics``: that keyword writes one
+point-in-time state snapshot; this zips the whole append-only
+evidence run recorded so far (every keyword call, every SimServ
+protocol frame, every error, correlated and integrity-hashed) —
+see ``evidence.py`` and the "Evidence and Diagnostics" section of
+``docs/TROUBLESHOOTING.md``. Safe to call whether or not any alias is
+currently connected; does not finalize the run (suite end does).
+Returns the archive path, or ``None`` if evidence is disabled.
 
 ## Export Diagnostics
 

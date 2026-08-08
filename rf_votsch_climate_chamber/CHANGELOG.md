@@ -1,5 +1,14 @@
 # Changelog
 
+## v26.09 — 2026-08-07
+
+- Added an RFDS-008 live evidence engine (`rf_votsch_climate_chamber/evidence.py`): every public keyword call is recorded as a correlated operation (arguments, duration, result/failure), and `Connect` attaches the run as an additional `TraceObserver` on that session's transport, capturing every SimServ protocol frame — no transport or protocol code changed to add this.
+- Added `Export Diagnostic Bundle` keyword, distinct from the pre-existing `Export Diagnostics` snapshot: zips the whole append-only evidence run (events, protocol trace, device identity, SHA-256 manifest) for troubleshooting.
+- Added `schemas/evidence/*.schema.json`, `scripts/validate_evidence.{py,sh,bat,ps1}`, and `tests/evidence/` covering manifest integrity, JSONL sequencing, redaction, and this driver's own exception-category mapping.
+- Documented the evidence system in `docs/TROUBLESHOOTING.md` ("Evidence and diagnostics") and `docs/ARCHITECTURE.md`.
+- Regenerated `api/public_api.yaml`, `ai/votsch_climate_chamber_ai_contract.yaml`/`.lock`, `generated/api_manifest/public_api.json`, `tests/conformance/data/keyword_inventory.yaml`, and `docs/keywords.md` via `scripts/generate_rfds_metadata.py` for the new keyword (57 → 58 canonical keywords).
+- Fixed a stray case-mismatched duplicate: `docs/KEYWORDS.md` (tracked, uppercase) vs `docs/keywords.md` (what `mkdocs.yml`'s nav and the generator actually target) — removed the stale uppercase copy. `docs/ARCHITECTURE.md`, `docs/EXAMPLES.md`, and `docs/SAFETY.md` have the same nav-vs-filename case mismatch on case-sensitive filesystems and were left as pre-existing, unrelated issues.
+
 ## v26.08 — 2026-07-31
 
 - Added bounded polling for delayed setpoint readback.

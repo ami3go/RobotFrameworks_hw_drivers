@@ -16,7 +16,7 @@ def test_plugin_descriptor_and_unconnected_library(tmp_path):
 def test_driver_metadata_is_static():
     lib=VotschClimateChamberLibrary()
     info=lib.get_driver_information()
-    assert info["package_version"] == "26.08"
+    assert info["package_version"] == "26.09"
     assert info["release_class"] == "D0"
     assert "temperature_control" in lib.get_driver_capabilities()
     assert lib.get_capability_model()

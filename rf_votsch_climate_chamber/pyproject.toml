@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "rf-votsch-climate-chamber"
-version = "26.8"
+version = "26.9"
 description = "RFDS Robot Framework driver for Vötsch and SimServ-compatible climate chambers"
 readme = "README.md"
 requires-python = ">=3.11"

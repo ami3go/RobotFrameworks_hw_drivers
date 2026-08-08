@@ -134,6 +134,19 @@ keywords:
   device_facing: true
   protocol_vector: VCC-DISCONNECT_ALL-001
   deprecated: false
+- keyword: Export Diagnostic Bundle
+  canonical_keyword: Export Diagnostic Bundle
+  python_method: export_diagnostic_bundle
+  arguments:
+  - name: destination
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: str | None
+  device_facing: false
+  protocol_vector: null
+  deprecated: false
 - keyword: Export Diagnostics
   canonical_keyword: Export Diagnostics
   python_method: export_diagnostics

@@ -6,7 +6,7 @@
   "display_name": "Vötsch Climate Chamber Driver",
   "description": "RFDS Robot Framework driver for Vötsch and SimServ-compatible TCP climate chambers.",
   "distribution_name": "rf-votsch-climate-chamber",
-  "distribution_version": "26.8",
+  "distribution_version": "26.9",
   "provider": "rf_votsch_climate_chamber.plugin:VotschClimateChamberPlugin",
   "robot_library_import": "rf_votsch_climate_chamber.library",
   "robot_library_class": "VotschClimateChamberLibrary",
@@ -36,7 +36,7 @@
     "package": "rf_votsch_climate_chamber",
     "path": "resources/votsch_climate_chamber_ai_contract.yaml",
     "canonical_source": "ai/votsch_climate_chamber_ai_contract.yaml",
-    "sha256": "6b506f250d080f28984a982165b415fc8afba5dde05367c10a94d4bddc5b41a4"
+    "sha256": "99a0496640439817a718446813695080354bf1c8ba484bbbb89281ad8669f3d8"
   },
   "documentation": {
     "kind": "repository_path",
