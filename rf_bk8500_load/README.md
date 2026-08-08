@@ -112,25 +112,49 @@ Full profile, including input enable and persistent writes:
 ```
 
 Persistent mode overwrites settings register 25 and list file slot 8 by
-default. Expected complete result: **56 passed, 0 failed**.
+default. Expected complete result: **62 passed, 0 failed** (61 `KW-NNN`
+keyword tests plus the `WF-001` persistence workflow test; the final keyword
+test intentionally reuses the `KW-004 Close All Load Connections` number as
+the suite's teardown-proving closer — see the suite's own comments).
+
+Every keyword call this suite makes is also recorded as a live RFDS-008
+evidence run — see "Logging and evidence" below. This is separate from the
+one-off archived example in `evidence/hardware_conformance/`.
 
 ## Package contents
 
 | Path | Purpose |
 |---|---|
-| `bk8500_load/` | Protocol, transports, driver, and Robot keyword library |
+| `bk8500_load/` | Protocol, transports, driver, Robot keyword library, and the RFDS-008 evidence engine (`evidence.py`) |
 | `ai/` | RFDS-017 contract/lock, RFDS-018 example, RFDS-019 specification, lifecycle documents |
 | `examples/` | Thirteen safe-by-default Robot examples |
-| `hardware_tests/` | 55 keyword tests, persistence workflow, and serial diagnostic |
-| `evidence/` | Preserved physical conformance evidence and machine-readable indexes |
-| `scripts/` | Cross-platform setup and execution launchers |
+| `hardware_tests/` | 61 keyword tests, persistence workflow, and serial diagnostic |
+| `evidence/` | Preserved physical conformance evidence and machine-readable indexes (a one-off archived example; see "Logging and evidence" for the live, always-on system) |
+| `schemas/evidence/` | JSON Schemas for the RFDS-008 evidence engine's output files |
+| `scripts/` | Cross-platform setup, execution launchers, and `validate_evidence.py` |
 | `history/` | Release-by-release change descriptions |
 | `review/` | Code, evidence, compliance, and readiness reviews |
-| `guide/` | PyCharm, Robot Framework, hardware, and troubleshooting guides |
+| `guide/` | PyCharm, Robot Framework, hardware, troubleshooting, and logging/evidence guides |
 | `docs/` | GitHub Pages and user/developer documentation |
 
 The package uses a flat source layout: `rf_bk8500_load/bk8500_load/`. There is
 no intermediate `src/` directory.
+
+## Logging and evidence
+
+Every `BK8500Library` keyword call is recorded as structured, correlated
+RFDS-008 evidence — arguments, duration, result/failure, and every 26-byte
+frame sent to and received from the load — written to
+`results/session/bk8500_load/<run>/` (override with `RFDS_EVIDENCE_ROOT`).
+This is on by default; pass `evidence_enabled=${FALSE}` to disable it, or
+call the new `Export Diagnostic Bundle` keyword to zip the current run for a
+bug report. See `docs/logging_and_evidence.md` for the full layout and
+`guide/logging_and_evidence.md` for a task-oriented walkthrough. Validate a
+run's integrity (hashes, JSONL sequencing) with:
+
+```console
+python scripts/validate_evidence.py results/session/bk8500_load/<run>/
+```
 
 ## Driver capabilities
 

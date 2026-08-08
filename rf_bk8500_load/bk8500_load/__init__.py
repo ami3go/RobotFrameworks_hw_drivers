@@ -4,6 +4,11 @@ Public API::
 
     from bk8500_load import BK8500Library      # Robot Framework keywords
     from bk8500_load import BK8500Driver       # plain Python driver
+
+Every ``BK8500Library`` keyword call is recorded as RFDS-008 structured
+evidence (arguments, duration, result/failure, a frame-level protocol trace)
+under ``results/session/bk8500_load/`` -- see :mod:`bk8500_load.evidence` and
+``docs/logging_and_evidence.md``.
 """
 
 import os

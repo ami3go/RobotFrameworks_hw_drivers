@@ -1,8 +1,12 @@
 # Physical hardware conformance suite
 
 `01_all_library_keywords.robot` contains one independently reported test for
-each of the 55 public Robot Framework keywords plus one save/reconfigure/
-recall persistence workflow.
+each of the 62 public Robot Framework keywords (`Connect`/`Disconnect` share
+one test case, so there are 61 `KW-NNN` test cases) plus one
+save/reconfigure/recall persistence workflow. Since release 26.17 every
+keyword call this suite makes is also recorded as a live RFDS-008 evidence
+run (`bk8500_load/evidence.py`) — see `../docs/logging_and_evidence.md`. This
+is separate from the archived v26.14 evidence bundle described below.
 
 ## Verified result
 
@@ -20,7 +24,7 @@ Suite duration was 87.159538 seconds and safe teardown passed. Evidence is
 stored under
 `evidence/hardware_conformance/v26.14_com12_2026-07-28/`.
 
-Release 26.16 expects installed/source version `26.16.0` and optionally exercises read-only automatic baud detection before the same 55-keyword conformance sequence.
+Release 26.17 expects installed/source version `26.17.0` and optionally exercises read-only automatic baud detection before the same 62-keyword conformance sequence (61 `KW-NNN` cases + `WF-001`); expect **62 passed, 0 failed**.
 
 ## Run safe profile
 
@@ -41,7 +45,7 @@ Review the bench before enabling these flags.
 
 ## Result interpretation
 
-Expected complete result: **56 passed, 0 failed**.
+Expected complete result: **62 passed, 0 failed**.
 
 Two failure-level messages may appear while the suite deliberately verifies
 error handling for an unknown alias and for calls after all connections are

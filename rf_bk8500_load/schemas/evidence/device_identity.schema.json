@@ -1,0 +1,29 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://rfds.local/schemas/rf_bk8500_load/device_identity.schema.json",
+  "title": "rfds.device_identity",
+  "description": "device_identity.json -- one entry per open connection alias, since bk8500_load's ROBOT_LIBRARY_SCOPE=GLOBAL library can hold several simultaneous connections in one evidence run.",
+  "type": "object",
+  "required": ["schema", "schema_version", "run_id", "timestamp_utc", "connections"],
+  "properties": {
+    "schema": {"const": "rfds.device_identity"},
+    "schema_version": {"type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$"},
+    "run_id": {"type": "string"},
+    "timestamp_utc": {"type": "string", "format": "date-time"},
+    "connections": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "manufacturer": {"type": "string"},
+          "model": {"type": ["string", "null"]},
+          "serial_number": {"type": ["string", "null"]},
+          "firmware_version": {"type": ["string", "null"]},
+          "transport": {"type": "string"},
+          "simulated": {"type": "boolean"}
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}

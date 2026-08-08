@@ -6,6 +6,7 @@ Documentation     Full real-device conformance test for every public BK8500Libra
 ...               Persistent list/settings slots are untouched unless ALLOW_PERSISTENT_WRITES is true.
 Library           rf_bk8500_load.BK8500Library    auto_connect=${FALSE}
 Library           Collections
+Library           OperatingSystem
 Suite Setup       Initialize Hardware Conformance
 Suite Teardown    Final Safe Teardown
 Test Setup        Prepare Hardware For Keyword Test
@@ -36,7 +37,7 @@ ${SETTINGS_REGISTER}            25
 ${LIST_FILE_SLOT}               8
 ${ALLOW_INPUT_ON}               ${FALSE}
 ${ALLOW_PERSISTENT_WRITES}      ${FALSE}
-${EXPECTED_DRIVER_VERSION}       26.16.0
+${EXPECTED_DRIVER_VERSION}       26.17.0
 
 *** Test Cases ***
 KW-001 Open Load Connection
@@ -442,6 +443,15 @@ KW-060 Connect And Disconnect
     Disconnect    ${SECONDARY_ALIAS}
     Disconnect    ${SECONDARY_ALIAS}
     Switch Load Connection    ${HARDWARE_ALIAS}
+
+KW-061 Export Diagnostic Bundle
+    [Documentation]    Zips this run's RFDS-008 evidence directory (events, protocol frame trace,
+    ...    device identity, manifest) built up by the keywords above. Does not disturb the
+    ...    connection or the run's own finalization, which remains Close All Load Connections.
+    ${path}=    Export Diagnostic Bundle
+    Should Not Be Empty    ${path}
+    File Should Exist    ${path}
+    Log    Diagnostic bundle written to ${path}
 
 KW-004 Close All Load Connections
     [Documentation]    This final test closes every connection, verifies the disconnected state, then reopens hardware for suite teardown.

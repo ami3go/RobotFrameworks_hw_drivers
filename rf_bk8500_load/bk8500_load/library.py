@@ -15,8 +15,12 @@ at once; use ``Switch Load Connection`` with the alias given to
 
 from __future__ import annotations
 
-from typing import Any
+import functools
+import inspect
+from typing import Any, Callable
 
+from . import evidence as _evidence
+from . import protocol as _protocol
 from .driver import BK8500Driver
 from .enums import ListRepeat, LoadFunction, LoadMode, TransientOperation, TriggerSource, parse_enum
 from .exceptions import BK8500ConnectionError, BK8500VerificationError
@@ -59,6 +63,62 @@ except ImportError:  # pragma: no cover
     _rf_logger = _FallbackLogger()
 
 
+def _evidenced(func: Callable) -> Callable:
+    """Wrap one already-``@keyword``-decorated method with an RFDS-008 evidence
+    operation record (arguments, duration, result/failure).
+
+    Applied post-hoc to every keyword after the class body finishes executing
+    (see ``_wrap_public_keywords_with_evidence`` below) rather than stacked at
+    each ``def`` site, since this driver has 61 public keywords -- annotating
+    each individually would be repetitive and easy to miss on a future
+    addition. ``functools.wraps`` copies ``func.__dict__`` onto the returned
+    wrapper, which already carries ``robot_name``/``robot_tags`` set by
+    ``@keyword`` by the time this runs, so Robot Framework sees the same
+    keyword metadata as before.
+
+    Most keywords act on ``self._current`` (the active aliased connection)
+    with no explicit ``alias`` argument; a handful (``Connect``, ``Disconnect``,
+    ``Close Load Connection``, ...) do take one. ``session_alias`` is resolved
+    from a bound ``alias`` argument when present, else falls back to
+    ``self._current``.
+
+    Several keywords call other wrapped keywords internally (``Close All Load
+    Connections`` calls ``Close Load Connection``; both are wrapped). A naive
+    "finalize once self._connections is empty" check placed inside a keyword's
+    own body would run *before* an outer caller's own operation-completion
+    record is appended, leaving the finalized manifest silently missing that
+    outer record (RFDS-008 6.2, "no silent evidence loss") -- confirmed by
+    ``tests/evidence/test_evidence.py`` failing exactly this way during
+    development. ``self._evidence_call_depth`` tracks live nesting so the
+    finalize check only runs once, when the *outermost* wrapped call for this
+    Robot keyword invocation is about to return -- by which point every
+    operation record from every nesting level, including this one, has
+    already been written.
+    """
+    signature = inspect.signature(func)
+
+    @functools.wraps(func)
+    def wrapper(self: BK8500Library, *args: Any, **kwargs: Any) -> Any:
+        capability = getattr(func, "robot_name", None) or func.__name__.replace("_", " ").title()
+        run = self._ensure_evidence()
+        bound = signature.bind_partial(self, *args, **kwargs)
+        bound.apply_defaults()
+        arguments = {key: value for key, value in bound.arguments.items() if key != "self"}
+        session_alias = arguments.get("alias") or self._current or "unbound"
+        self._evidence_call_depth = getattr(self, "_evidence_call_depth", 0) + 1
+        try:
+            with run.record_operation(capability, arguments=arguments, session_alias=session_alias) as op:
+                result = func(self, *args, **kwargs)
+                op.set_result(result)
+                return result
+        finally:
+            self._evidence_call_depth -= 1
+            if self._evidence_call_depth == 0:
+                self._maybe_finalize_evidence()
+
+    return wrapper
+
+
 @library(scope="GLOBAL", version=VERSION, auto_keywords=False)
 class BK8500Library:
     """Robot Framework library for the B&K Precision 8500 series DC loads."""
@@ -81,9 +141,12 @@ class BK8500Library:
         baudrate_candidates: str = "4800,9600,19200,38400",
         probe_timeout: float = 0.75,
         confirm_baudrate_identity: bool = True,
+        evidence_enabled: bool = True,
     ) -> None:
         self._connections: dict[str, BK8500Driver] = {}
         self._current: str | None = None
+        self._evidence_enabled = bool(evidence_enabled)
+        self._evidence: _evidence.EvidenceRun | _evidence.NullEvidenceRun | None = None
         self._defaults = {
             "baudrate": baudrate,
             "model": model,
@@ -116,6 +179,64 @@ class BK8500Library:
     # ------------------------------------------------------------------
     # internals
     # ------------------------------------------------------------------
+    def _ensure_evidence(self) -> _evidence.EvidenceRun | _evidence.NullEvidenceRun:
+        """Lazily create (or return) this library instance's evidence run.
+
+        One run per ``BK8500Library`` instance, not one per alias (this
+        library is ``ROBOT_LIBRARY_SCOPE = "GLOBAL"`` and supports several
+        simultaneously-open aliased connections) -- operations from different
+        aliases are tagged with different ``session_alias`` values within the
+        one run. Created on first keyword call, finalized in
+        ``close_load_connection``/``close_all_load_connections`` once every
+        alias is closed (see ``_maybe_finalize_evidence``).
+        """
+        if self._evidence is None:
+            if self._evidence_enabled:
+                self._evidence = _evidence.EvidenceRun(driver_id="bk8500_load", activity="session")
+            else:
+                self._evidence = _evidence.NullEvidenceRun()
+        return self._evidence
+
+    def _maybe_finalize_evidence(self) -> None:
+        if not self._connections and self._evidence is not None:
+            self._evidence.finalize(status="PASS")
+            self._evidence = None
+
+    def _frame_tracer(self, alias: str) -> Callable[[int, bytes, bytes | None, Exception | None], None]:
+        """Build a :class:`BK8500Driver.on_frame` callback tracing one alias's
+        26-byte frames into this instance's evidence run (RFDS-019 §6.3:
+        vendor/frame-level protocol is a supported outbound operation type;
+        RFDS-008 §24.1: binary frames are preserved losslessly as hex)."""
+
+        def tracer(command: int, request: bytes, response: bytes | None, error: Exception | None) -> None:
+            run = self._evidence
+            if run is None:
+                return
+            run.log_protocol(
+                "outbound",
+                "bk8500_frame",
+                f"cmd=0x{command:02X} {_protocol.format_frame(request)}",
+                session_alias=alias,
+                frame_hex=request.hex(),
+            )
+            if response is not None:
+                run.log_protocol(
+                    "inbound",
+                    "bk8500_frame",
+                    f"cmd=0x{command:02X} {_protocol.format_frame(response)}",
+                    session_alias=alias,
+                    frame_hex=response.hex(),
+                )
+            elif error is not None:
+                run.emit_event(
+                    "PROTOCOL_ATTEMPT_FAILED",
+                    f"cmd=0x{command:02X} attempt failed: {error}",
+                    level="WARN",
+                    session_alias=alias,
+                )
+
+        return tracer
+
     @property
     def driver(self) -> BK8500Driver:
         """The driver behind the current connection."""
@@ -259,6 +380,9 @@ class BK8500Library:
                 address=int(address),
             )
             driver = BK8500Driver(transport, model=model, address=int(address))
+            # Traces every frame from this point on, including the identify
+            # handshake below -- the simulated transport has no probe phase.
+            driver.on_frame = self._frame_tracer(alias)
         else:
             if not port:
                 raise BK8500ConnectionError(
@@ -278,6 +402,9 @@ class BK8500Library:
                     assert_rts=assert_rts,
                     confirm_identity=confirm_baudrate_identity,
                 )
+                # Baud-rate probing already happened inside the classmethod
+                # above, untraced -- only frames from here on are captured.
+                driver.on_frame = self._frame_tracer(alias)
                 _rf_logger.info(
                     f"Automatically detected {driver.detected_baudrate} baud on {port}"
                 )
@@ -292,6 +419,7 @@ class BK8500Library:
                     assert_dtr=assert_dtr,
                     assert_rts=assert_rts,
                 )
+                driver.on_frame = self._frame_tracer(alias)
                 info = driver.connect(identify=identify)
         if simulated:
             info = driver.connect(identify=identify)
@@ -300,6 +428,15 @@ class BK8500Library:
         _rf_logger.info(
             f"Opened DC load connection '{alias}' -> {driver.description}"
             + (f" ({info.serial_number}, firmware {info.firmware_version})" if info else "")
+        )
+        self._ensure_evidence().record_device_identity(
+            session_alias=alias,
+            manufacturer="B&K Precision",
+            model=getattr(info, "model", model),
+            serial_number=getattr(info, "serial_number", None),
+            firmware_version=getattr(info, "firmware_version", None),
+            transport=driver.description,
+            simulated=bool(simulated),
         )
         return alias
 
@@ -330,6 +467,10 @@ class BK8500Library:
                     f"{', '.join(sorted(self._connections))}. "
                     "Use 'Switch Load Connection' before the next keyword."
                 )
+        # Finalization (writing run_summary.json/evidence_manifest.json once
+        # every alias is closed) happens in _evidenced's wrapper, after this
+        # keyword's own (and any outer caller's) operation record has been
+        # written -- see _evidenced's docstring for why it isn't done here.
 
     @keyword("Close All Load Connections")
     def close_all_load_connections(self, safe: bool = True) -> None:
@@ -816,3 +957,34 @@ class BK8500Library:
             "limits": self.get_load_rated_limits(),
             "open_aliases": sorted(self._connections),
         }
+
+    @keyword("Export Diagnostic Bundle")
+    def export_diagnostic_bundle(self, destination: str | None = None) -> str | None:
+        """Zip this library instance's RFDS-008 evidence run for troubleshooting.
+
+        Works with any number of aliases open (or none), and does not finalize
+        the run -- the last ``Close Load Connection``/``Close All Load
+        Connections`` remains the point at which ``run_summary.json`` is
+        written for the last time. Returns the archive path, or ``None`` if
+        ``evidence_enabled=False`` was passed to this library instance.
+        ``destination`` defaults to a path next to the run's own result
+        directory.
+        """
+        run = self._ensure_evidence()
+        return run.export_diagnostic_bundle(None if destination in (None, "") else str(destination))
+
+
+def _wrap_public_keywords_with_evidence(cls: type) -> type:
+    """Post-hoc wrap every ``@keyword``-decorated method with :func:`_evidenced`.
+
+    Runs once, immediately after the class body above finishes executing --
+    see ``_evidenced``'s docstring for why this is done here rather than at
+    each ``def`` site.
+    """
+    for name, attribute in list(vars(cls).items()):
+        if callable(attribute) and getattr(attribute, "robot_name", None):
+            setattr(cls, name, _evidenced(attribute))
+    return cls
+
+
+BK8500Library = _wrap_public_keywords_with_evidence(BK8500Library)

@@ -10,6 +10,7 @@ Two version values are recorded:
 
 | Release | Driver version | Lifecycle stage |
 |---|---|---|
+| 17 | 26.17.0 | Phase 1, Gate 5 maintenance revision 12 |
 | 16 | 26.16.0 | Phase 1, Gate 5 maintenance revision 11 |
 | 15 | 26.15.0 | Phase 1, Gate 5 maintenance revision 10 |
 | 14 | 26.14.0 | Phase 1, Gate 5 maintenance revision 9 |
@@ -26,6 +27,23 @@ Two version values are recorded:
 | 3 | 26.01.03 | Phase 1, Gate 3 |
 | 2 | 26.01.02 | Phase 1, Gate 2 |
 | 1 | 26.01.01 | Phase 1, Gate 1 |
+
+## 26.17.0 — package release 17
+
+Added a live, always-on RFDS-008 evidence engine (`bk8500_load/evidence.py`):
+every public keyword call is now recorded (arguments, duration, result/
+failure) together with a frame-level protocol trace of every 26-byte command/
+response exchanged with the load, written to a timestamped, SHA-256-hashed
+run directory under `results/session/bk8500_load/`. This is a new,
+complementary system distinct from the existing archived
+`evidence/hardware_conformance/` example. Added the `Export Diagnostic
+Bundle` keyword (public keyword count is now 62), `schemas/evidence/`,
+`docs/logging_and_evidence.md` and `guide/logging_and_evidence.md`,
+`scripts/validate_evidence.{py,sh,bat,ps1}`, and `tests/evidence/`. Added
+`KW-061 Export Diagnostic Bundle` to the hardware conformance suite
+(`hardware_tests/01_all_library_keywords.robot`, now 62 Robot test cases) and
+an `OperatingSystem` library import it needed. Updated the RFDS-017 contract
+(revision 13) and regenerated its integrity lock.
 
 ## 26.16.0 — package release 16
 

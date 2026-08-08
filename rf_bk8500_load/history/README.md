@@ -3,6 +3,7 @@
 One file is provided for every externally published package release. The root
 `CHANGELOG.md` remains the cumulative itemized record.
 
+- [Release v26.17](release_v26.17.md)
 - [Release v26.16](release_v26.16.md)
 - [Release v26.15](release_v26.15.md)
 - [Release v26.14](release_v26.14.md)

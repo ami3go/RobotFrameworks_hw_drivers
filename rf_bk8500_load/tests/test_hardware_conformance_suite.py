@@ -41,8 +41,8 @@ def test_hazardous_actions_are_explicitly_gated():
 def test_clean_release_version_is_used():
     from bk8500_load.version import PACKAGE_RELEASE, VERSION
 
-    assert VERSION == "26.16.0"
-    assert PACKAGE_RELEASE == "26.16"
+    assert VERSION == "26.17.0"
+    assert PACKAGE_RELEASE == "26.17"
 
 
 

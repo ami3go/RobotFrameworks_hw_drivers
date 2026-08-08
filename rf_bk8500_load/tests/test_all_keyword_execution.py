@@ -106,6 +106,7 @@ def test_every_public_keyword_executes_against_simulated_device():
     call("Reset Load To Safe State", library.reset_load_to_safe_state)
     call("Connect", library.connect, alias="tertiary", simulated=True, model="8500")
     call("Disconnect", library.disconnect, "tertiary")
+    call("Export Diagnostic Bundle", library.export_diagnostic_bundle)
     call("Close All Load Connections", library.close_all_load_connections)
 
     public = {

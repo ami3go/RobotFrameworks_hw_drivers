@@ -152,6 +152,7 @@ class BK8500Driver:
         retry_delay_s: float = 0.05,
         settle_delay_s: float = 0.0,
         apply_stabilization_delays: bool = True,
+        on_frame: Callable[[int, bytes, bytes | None, Exception | None], None] | None = None,
     ) -> None:
         if not 0 <= int(address) < 0xFF:
             raise BK8500ValidationError(f"Address {address} outside 0x00..0xFE")
@@ -161,6 +162,12 @@ class BK8500Driver:
         self.retry_delay_s = float(retry_delay_s)
         self.settle_delay_s = float(settle_delay_s)
         self.apply_stabilization_delays = bool(apply_stabilization_delays)
+        #: Optional RFDS-008 evidence hook, fired once per attempt from
+        #: :meth:`_transact` with (command, request_frame, response_frame_or_None,
+        #: error_or_None). Wired by :mod:`bk8500_load.library` to
+        #: ``EvidenceRun.log_protocol``; ``None`` by default so this module has
+        #: no evidence-layer dependency of its own.
+        self.on_frame = on_frame
         self.response_style: str | None = None
         self._declared_model = model
         self._limits: ModelLimits = limits_for(model)
@@ -428,6 +435,8 @@ class BK8500Driver:
         frame = p.build_frame(self.address, command, payload)
         last_error: Exception | None = None
         for attempt in range(self.retries + 1):
+            if self.on_frame is not None:
+                self.on_frame(command, frame, None, None)
             try:
                 response = self.transport.transact(frame)
             except (BK8500ProtocolError, BK8500TimeoutError) as exc:
@@ -435,6 +444,8 @@ class BK8500Driver:
                 # input buffer before each write, so a late frame from the failed
                 # attempt cannot be mistaken for the reply to the next one.
                 last_error = exc
+                if self.on_frame is not None:
+                    self.on_frame(command, frame, None, exc)
             else:
                 ok, reason = p.frame_is_well_formed(response)
                 if ok and response[1] != self.address:
@@ -449,11 +460,15 @@ class BK8500Driver:
                         p.format_frame(frame),
                         p.format_frame(response),
                     )
+                    if self.on_frame is not None:
+                        self.on_frame(command, frame, response, None)
                     return response
                 last_error = BK8500ProtocolError(
                     f"Malformed response to command 0x{int(command):02X}: {reason} "
                     f"[{p.format_frame(response)}]"
                 )
+                if self.on_frame is not None:
+                    self.on_frame(command, frame, response, last_error)
             if attempt < self.retries:
                 time.sleep(self.retry_delay_s)
         raise last_error  # type: ignore[misc]

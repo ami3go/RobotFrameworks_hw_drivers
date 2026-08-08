@@ -9,20 +9,20 @@
 contract:
   rfds: RFDS-017
   specification_version: "3.0"
-  contract_revision: 12
-  generated_for_driver_version: "26.16.0"
+  contract_revision: 13
+  generated_for_driver_version: "26.17.0"
   lifecycle: {phase: 1, gate: 5, package: bk8500_load}
 
 identity:
   driver_name: bk8500_load
   package_name: rf_bk8500_load
-  package_release: 16
-  package_file: rf_bk8500_load_v26.16.zip
+  package_release: 17
+  package_file: rf_bk8500_load_v26.17.zip
   robot_library_name: BK8500Library
   library_scope: GLOBAL
-  version: "26.16.0"
-  lifecycle_version: "26.01.05"
-  maintenance_revision: 11
+  version: "26.17.0"
+  lifecycle_version: "26.01.06"
+  maintenance_revision: 12
   instrument_family: B&K Precision 8500 series DC electronic load
   supported_models: [8500, 8502, 8510, 8512, 8514, 8518, 8520, 8522, 8524, 8526]
   instrument_class: electronic_load
@@ -1180,6 +1180,21 @@ capabilities:
     stabilization_delay_s: 0
     retry_policy: *retry_none
     errors: [BK8500ConnectionError]
+    exclusive_resources: []
+
+  - keyword: Export Diagnostic Bundle
+    signature: "Export Diagnostic Bundle(destination=None)"
+    purpose: Diagnostic. Zip the current RFDS-008 evidence run (structured events, operation records, protocol frame trace, device identity, SHA-256 manifest) to a file for troubleshooting.
+    inputs: {destination: "optional file path; string; defaults next to the run's own result directory"}
+    outputs: {type: "string or null", note: "the archive path, or null when evidence_enabled=False was passed to this library instance"}
+    preconditions: []
+    postconditions: ["evidence_manifest.json inside the run directory is refreshed"]
+    side_effects: [Writes a .zip file to disk. No instrument traffic.]
+    risk_level: none
+    timing: {typical_ms: 50, worst_case_ms: 500}
+    stabilization_delay_s: 0
+    retry_policy: *retry_none
+    errors: []
     exclusive_resources: []
 
 error_catalogue:
