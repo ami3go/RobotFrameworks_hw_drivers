@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "robotframework-slcan"
-version = "26.1"
+version = "26.2"
 description = "Robot Framework driver for SLCAN (serial-line CAN) interface adapters"
 readme = "README.md"
 requires-python = ">=3.10"

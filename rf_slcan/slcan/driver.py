@@ -13,6 +13,7 @@ import threading
 
 from . import codec
 from .enums import Bitrate, ChannelMode
+from .evidence import EvidenceRun, NullEvidenceRun
 from .exceptions import (
     SlcanConnectionError,
     SlcanDeviceError,
@@ -29,10 +30,33 @@ _RAW_SLCAN_CONFIRMATION = "ENABLE RAW SLCAN"
 _DEFAULT_COMMAND_TIMEOUT_S = 2.0
 
 
-class SlcanAdapter:
-    """A connected session with one SLCAN interface adapter."""
+def _display_line(data: bytes) -> str:
+    """Human-readable form of one SLCAN wire line for protocol-trace evidence."""
+    if data == codec.BEL:
+        return "BEL(nack)"
+    try:
+        return data.decode("ascii")
+    except UnicodeDecodeError:
+        return data.hex()
 
-    def __init__(self, transport: Transport, *, timeout_s: float = _DEFAULT_COMMAND_TIMEOUT_S) -> None:
+
+class SlcanAdapter:
+    """A connected session with one SLCAN interface adapter.
+
+    ``evidence``/``session_alias`` are optional (RFDS-008): when omitted, a
+    :class:`~slcan.evidence.NullEvidenceRun` is used and this class behaves
+    exactly as before — protocol tracing is opt-in, never a hard dependency
+    for using this driver standalone outside Robot Framework.
+    """
+
+    def __init__(
+        self,
+        transport: Transport,
+        *,
+        timeout_s: float = _DEFAULT_COMMAND_TIMEOUT_S,
+        evidence: EvidenceRun | NullEvidenceRun | None = None,
+        session_alias: str = "default",
+    ) -> None:
         self.transport = transport
         self.timeout_s = timeout_s
         self._reader = BackgroundReader(transport)
@@ -45,6 +69,8 @@ class SlcanAdapter:
         self._timestamps_enabled = False
         self._acceptance_code: int | None = None
         self._acceptance_mask: int | None = None
+        self._evidence: EvidenceRun | NullEvidenceRun = evidence if evidence is not None else NullEvidenceRun()
+        self._session_alias = session_alias
 
     # ------------------------------------------------------------------
     # Construction / lifecycle
@@ -56,20 +82,27 @@ class SlcanAdapter:
         *,
         baud_rate: int = 115200,
         timeout_s: float = _DEFAULT_COMMAND_TIMEOUT_S,
+        evidence: EvidenceRun | NullEvidenceRun | None = None,
+        session_alias: str = "default",
     ) -> SlcanAdapter:
         transport = SerialTransport(port, baud_rate=baud_rate)
         transport.open()
-        adapter = cls(transport, timeout_s=timeout_s)
+        adapter = cls(transport, timeout_s=timeout_s, evidence=evidence, session_alias=session_alias)
         adapter._reader.start()
         return adapter
 
     @classmethod
     def connect_simulated(
-        cls, simulator: SimSlcanAdapter | None = None, *, timeout_s: float = _DEFAULT_COMMAND_TIMEOUT_S
+        cls,
+        simulator: SimSlcanAdapter | None = None,
+        *,
+        timeout_s: float = _DEFAULT_COMMAND_TIMEOUT_S,
+        evidence: EvidenceRun | NullEvidenceRun | None = None,
+        session_alias: str = "default",
     ) -> SlcanAdapter:
         transport = SimulatedTransport(simulator)
         transport.open()
-        adapter = cls(transport, timeout_s=timeout_s)
+        adapter = cls(transport, timeout_s=timeout_s, evidence=evidence, session_alias=session_alias)
         adapter._reader.start()
         return adapter
 
@@ -121,16 +154,30 @@ class SlcanAdapter:
                 except queue.Empty:
                     break
             self.transport.write(command)
+            self._evidence.log_protocol(
+                "outbound", "slcan_serial", _display_line(command), session_alias=self._session_alias
+            )
             try:
                 result = self._reader.ack_queue.get(timeout=effective_timeout_s)
             except queue.Empty as exc:
+                self._evidence.log_protocol(
+                    "inbound", "slcan_serial", "(timeout: no response)", session_alias=self._session_alias
+                )
                 raise SlcanTimeoutError(
                     f"no response to {command!r} within {effective_timeout_s}s"
                 ) from exc
 
         if result is FAULT_SENTINEL:
+            self._evidence.log_protocol(
+                "inbound", "slcan_serial", f"(connection lost: {self._reader.fault})",
+                session_alias=self._session_alias,
+            )
             raise SlcanConnectionError(f"connection lost: {self._reader.fault}") from self._reader.fault
         assert isinstance(result, bytes)  # narrows for mypy; FAULT_SENTINEL handled above
+        self._evidence.log_protocol(
+            "inbound", "slcan_serial", _display_line(result) if result else "(ack)",
+            session_alias=self._session_alias,
+        )
         if result == codec.BEL:
             raise SlcanDeviceError(f"adapter rejected command {command!r}")
         if not expects_data and result != b"":
@@ -154,6 +201,13 @@ class SlcanAdapter:
             raw=f"SLCAN,HW{hardware_version},SW{software_version},{serial_number}",
         )
         self._identity = identity
+        self._evidence.record_device_identity(
+            manufacturer="SLCAN (Lawicel-compatible)",
+            hardware_version=hardware_version,
+            software_version=software_version,
+            serial_number=serial_number,
+            resource=self.resource,
+        )
         return identity
 
     def check_communication(self) -> bool:
@@ -237,15 +291,27 @@ class SlcanAdapter:
         command = codec.encode_transmit(frame)  # raises SlcanValidationError on bad id/dlc
         self._send_command(command, expects_data=False)
 
+    def _log_received_frame(self, frame: CanFrame) -> None:
+        # Logged where a keyword actually observes the frame (here), not in the
+        # background reader thread that queued it — ties the evidence record to
+        # the operation/correlation context of the call that retrieved it.
+        try:
+            display = _display_line(codec.encode_transmit(frame))
+        except Exception:  # noqa: BLE001 - evidence formatting must never break a real read
+            display = repr(frame)
+        self._evidence.log_protocol("inbound", "slcan_serial", display, session_alias=self._session_alias)
+
     def receive_frame(self, timeout_s: float = 1.0) -> CanFrame | None:
         """Blocks up to ``timeout_s`` for the next frame. Returns ``None`` on
         timeout — receiving nothing is a normal outcome, not an error."""
 
         self._require_connected()
         try:
-            return self._reader.rx_queue.get(timeout=timeout_s)
+            frame = self._reader.rx_queue.get(timeout=timeout_s)
         except queue.Empty:
             return None
+        self._log_received_frame(frame)
+        return frame
 
     def drain_received_frames(self, max_count: int | None = None) -> list[CanFrame]:
         """Non-blocking: returns whatever is already queued, up to ``max_count``."""
@@ -257,6 +323,8 @@ class SlcanAdapter:
                 frames.append(self._reader.rx_queue.get_nowait())
             except queue.Empty:
                 break
+        for frame in frames:
+            self._log_received_frame(frame)
         return frames
 
     def get_received_frame_count(self) -> int:
