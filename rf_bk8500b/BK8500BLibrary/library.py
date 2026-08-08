@@ -1,7 +1,19 @@
-"""Robot Framework keyword library for B&K Precision 8500B electronic loads."""
+"""Robot Framework keyword library for B&K Precision 8500B electronic loads.
+
+Every public keyword is wrapped (see ``_evidenced`` below) with an RFDS-008
+evidence operation record, and the default device factory wires an
+``EvidenceAuditSink``/``EvidenceMetricsSink``/``TracingTransport`` into every
+connected device so the existing ``CommandExecutor`` audit seam and the raw
+serial bytes both flow into the same evidence run. See ``bk8500b/evidence.py``
+and ``docs/logging_and_evidence.md`` for what gets recorded. Pass
+``evidence_enabled=False`` to disable it (errors still reach the standard
+Python logger and Robot's own log either way).
+"""
 from __future__ import annotations
 
 import csv
+import functools
+import inspect
 import json
 import math
 import time
@@ -26,6 +38,8 @@ from bk8500b import (
     SessionState,
     TransientConfig,
 )
+from bk8500b import evidence as _evidence
+from bk8500b.transport import SerialTransport
 
 from .conversion import as_bool, as_float, as_int, to_robot
 
@@ -34,7 +48,51 @@ class BK8500BRobotError(RuntimeError):
     """Raised when a driver error is translated for Robot Framework output."""
 
 
-@library(scope="SUITE", version="26.04", converters={bool: as_bool})
+def _evidenced(func: Callable[..., Any]) -> Callable[..., Any]:
+    """Wrap a keyword method with an RFDS-008 evidence operation record.
+
+    Applied uniformly to every ``@keyword`` method (not only the ones that
+    happen to route through ``_translate``), so keyword-level evidence
+    coverage does not depend on auditing every method body. Must sit *below*
+    ``@keyword(...)`` in the decorator stack — see the ``rf_phidget_relay``
+    reference implementation this was adapted from for why reading
+    ``wrapper.robot_name`` via closure at call time (not decoration time)
+    is required.
+    """
+    signature = inspect.signature(func)
+
+    _DISCONNECT_CAPABILITIES = {"Disconnect Electronic Load", "Disconnect All Electronic Loads", "Disconnect"}
+
+    @functools.wraps(func)
+    def wrapper(self: BK8500BLibrary, *args: Any, **kwargs: Any) -> Any:
+        capability = getattr(wrapper, "robot_name", None) or func.__name__.replace("_", " ").title()
+        run = self._ensure_evidence()
+        bound = signature.bind_partial(self, *args, **kwargs)
+        bound.apply_defaults()
+        arguments = {key: value for key, value in bound.arguments.items() if key != "self"}
+        session_alias = arguments.get("alias") or self._active_alias
+        status = "PASS"
+        try:
+            with run.record_operation(capability, arguments=arguments, session_alias=session_alias) as op:
+                result = func(self, *args, **kwargs)
+                op.set_result(result)
+            return result
+        except Exception:
+            status = "FAIL"
+            raise
+        finally:
+            # One evidence run per library instance, not per alias (see
+            # _ensure_evidence) — only finalize once every alias is
+            # disconnected, so disconnecting one of several instruments does
+            # not prematurely close a still-active multi-alias evidence run.
+            if capability in _DISCONNECT_CAPABILITIES and self._evidence is not None and not self._devices:
+                self._evidence.finalize(status=status)
+                self._evidence = None
+
+    return wrapper
+
+
+@library(scope="SUITE", version="26.05", converters={bool: as_bool})
 class BK8500BLibrary:
     """Control B&K Precision 8500B Series DC electronic loads.
 
@@ -66,24 +124,78 @@ class BK8500BLibrary:
     """
 
     ROBOT_LIBRARY_SCOPE = "SUITE"
-    ROBOT_LIBRARY_VERSION = "26.04"
+    ROBOT_LIBRARY_VERSION = "26.05"
 
     def __init__(
         self,
         default_port: str | None = None,
         default_alias: str = "default",
         auto_connect: bool = False,
+        evidence_enabled: bool = True,
     ) -> None:
         self.default_port = default_port
         self.default_alias = str(default_alias)
         self._devices: dict[str, BK8500B] = {}
         self._active_alias: str | None = None
-        self._device_factory: Callable[..., BK8500B] = BK8500B
+        self._device_factory: Callable[..., BK8500B] = self._default_device_factory
+        self._evidence_enabled = as_bool(evidence_enabled, name="evidence_enabled")
+        self._evidence: _evidence.EvidenceRun | _evidence.NullEvidenceRun | None = None
+        self._pending_connect_alias: str | None = None
         self.ROBOT_LIBRARY_LISTENER = self
         if as_bool(auto_connect, name="auto_connect"):
             if not default_port:
                 raise ValueError("default_port is required when auto_connect is enabled")
             self.connect_to_electronic_load(default_port, alias=self.default_alias)
+
+    @not_keyword
+    def _ensure_evidence(self) -> _evidence.EvidenceRun | _evidence.NullEvidenceRun:
+        """Lazily create (or return) this library instance's evidence run.
+
+        One evidence run per ``BK8500BLibrary`` instance (matching its
+        ``SUITE`` scope), not one per alias — individual events/operations are
+        still tagged with the resolved ``session_alias`` so a multi-alias
+        suite's evidence remains attributable per instrument.
+        """
+        if self._evidence is None:
+            if self._evidence_enabled:
+                self._evidence = _evidence.EvidenceRun(driver_id="rf_bk8500b", activity="session")
+            else:
+                self._evidence = _evidence.NullEvidenceRun()
+        return self._evidence
+
+    @not_keyword
+    def _default_device_factory(self, config: DriverConfig) -> BK8500B:
+        """Default ``_device_factory``: wires evidence recording into a real serial device.
+
+        Tests and callers that assign their own ``library._device_factory =
+        factory`` (a single-argument ``factory(config)`` callable, as this
+        library has always supported) bypass this method entirely and get no
+        protocol-level tracing — that's correct, since a fake transport has no
+        real wire bytes to trace; those keyword calls are still covered by the
+        ``_evidenced`` operation-level recording regardless of which factory
+        built the device.
+        """
+        run = self._ensure_evidence()
+        alias = self._pending_connect_alias
+        transport = _evidence.TracingTransport(SerialTransport(config), run, session_alias=alias)
+        audit_sink = _evidence.EvidenceAuditSink(run, session_alias=alias)
+        metrics_sink = _evidence.EvidenceMetricsSink(run, session_alias=alias)
+        return BK8500B(config, transport=transport, audit_sink=audit_sink, metrics_sink=metrics_sink)
+
+    @keyword("Export Diagnostic Bundle")
+    @_evidenced
+    def export_diagnostic_bundle(self, destination: str | None = None) -> str | None:
+        """Zip this session's RFDS-008 evidence run to ``destination`` for troubleshooting.
+
+        Works whether or not any load is currently connected, and does not
+        finalize the run — disconnecting (any of the ``Disconnect*``
+        keywords) remains the point at which ``run_summary.json``/
+        ``evidence_manifest.json`` are written for the last time. Returns the
+        archive path, or ``None`` if ``evidence_enabled=False`` was passed to
+        this library instance.
+        """
+        run = self._ensure_evidence()
+        return run.export_diagnostic_bundle(None if destination in (None, "") else str(destination))
 
     # ------------------------------------------------------------------
     # Internal helpers
@@ -92,6 +204,12 @@ class BK8500BLibrary:
     def _end_suite(self, data: Any, result: Any) -> None:  # Robot listener API v3
         del data, result
         self._cleanup_all()
+        if self._evidence is not None:
+            # Safety-net finalization: normal finalization happens in the
+            # Disconnect* keywords below; this only does anything if a suite
+            # ended without an explicit disconnect (e.g. a crash), so evidence
+            # is never silently lost (RFDS-008 §6.7 finite finalization).
+            self._evidence.finalize(status="ABORTED")
 
     @not_keyword
     def _cleanup_all(self) -> None:
@@ -231,6 +349,7 @@ class BK8500BLibrary:
     # Connections and sessions
     # ------------------------------------------------------------------
     @keyword("Connect To Electronic Load")
+    @_evidenced
     def connect_to_electronic_load(
         self,
         port: str | None = None,
@@ -285,7 +404,11 @@ class BK8500BLibrary:
                 allow_short=as_bool(allow_short, name="allow_short"),
             ),
         )
-        device = self._device_factory(config)
+        self._pending_connect_alias = selected_alias
+        try:
+            device = self._device_factory(config)
+        finally:
+            self._pending_connect_alias = None
         self._translate("Connect", device.connect)
         self._devices[selected_alias] = device
         self._active_alias = selected_alias
@@ -296,10 +419,21 @@ class BK8500BLibrary:
             "session_state": device.session_state.value,
             **identity,
         }
+        if self._evidence is not None:
+            self._evidence.record_device_identity(
+                manufacturer="B&K Precision",
+                model=identity.get("model"),
+                serial_number=identity.get("serial") or identity.get("serial_number"),
+                firmware_version=identity.get("firmware") or identity.get("firmware_version"),
+                port=str(selected_port),
+                protocol=selected_protocol.value,
+                alias=selected_alias,
+            )
         logger.info(f"Connected {identity['model']} at {selected_port} as {selected_alias!r}")
         return result
 
     @keyword("Disconnect Electronic Load")
+    @_evidenced
     def disconnect_electronic_load(self, alias: str | None = None) -> None:
         """Disconnect one load. The input is turned off first by default."""
         selected = str(alias) if alias not in (None, "") else self._active_alias
@@ -310,6 +444,7 @@ class BK8500BLibrary:
         self._active_alias = next(iter(self._devices), None)
 
     @keyword("Disconnect All Electronic Loads")
+    @_evidenced
     def disconnect_all_electronic_loads(self) -> None:
         """Disconnect all known loads, raising the first close error after cleanup."""
         first_error: Exception | None = None
@@ -325,6 +460,7 @@ class BK8500BLibrary:
             raise first_error
 
     @keyword("Switch Electronic Load")
+    @_evidenced
     def switch_electronic_load(self, alias: str) -> str:
         """Select which connected alias subsequent keywords use."""
         self._device(alias)
@@ -332,11 +468,13 @@ class BK8500BLibrary:
         return self._active_alias
 
     @keyword("Get Active Electronic Load")
+    @_evidenced
     def get_active_electronic_load(self) -> str | None:
         """Return the current alias, or ``None`` when no session exists."""
         return self._active_alias
 
     @keyword("List Electronic Load Sessions")
+    @_evidenced
     def list_electronic_load_sessions(self) -> list[dict[str, Any]]:
         """Return aliases and connection states for all sessions."""
         return [
@@ -351,17 +489,20 @@ class BK8500BLibrary:
         ]
 
     @keyword("Reconnect Electronic Load")
+    @_evidenced
     def reconnect_electronic_load(self, alias: str | None = None) -> None:
         """Run the configured reconnect policy for a connected load."""
         device = self._device(alias)
         self._translate("Reconnect", device.reconnect)
 
     @keyword("Synchronize Electronic Load State")
+    @_evidenced
     def synchronize_electronic_load_state(self, alias: str | None = None) -> dict[str, Any]:
         """Read key state from the instrument and return it as a dictionary."""
         return to_robot(self._translate("Synchronize state", self._device(alias).synchronize_state))
 
     @keyword("Electronic Load Should Be Connected")
+    @_evidenced
     def electronic_load_should_be_connected(self, alias: str | None = None) -> None:
         """Fail unless the selected electronic load is connected."""
         device = self._device(alias)
@@ -377,6 +518,7 @@ class BK8500BLibrary:
     # documented API for this driver.
     # ------------------------------------------------------------------
     @keyword("Connect")
+    @_evidenced
     def connect(
         self,
         resource: str | None = None,
@@ -406,6 +548,7 @@ class BK8500BLibrary:
         return self._connection_state(selected_alias, self._devices[selected_alias])
 
     @keyword("Disconnect")
+    @_evidenced
     def disconnect(self, alias: str | None = None) -> None:
         """RFDS-002 generic disconnect. Idempotent: succeeds even if already disconnected."""
         selected = str(alias) if alias not in (None, "") else self._active_alias
@@ -414,6 +557,7 @@ class BK8500BLibrary:
         self.disconnect_electronic_load(selected)
 
     @keyword("Is Connected")
+    @_evidenced
     def is_connected(self, alias: str | None = None) -> bool:
         """Return whether ``alias`` (or the active session) is connected."""
         selected = str(alias) if alias not in (None, "") else self._active_alias
@@ -422,6 +566,7 @@ class BK8500BLibrary:
         return bool(self._devices[selected].connected)
 
     @keyword("Get Connection State")
+    @_evidenced
     def get_connection_state(self, alias: str | None = None, refresh: bool = False) -> dict[str, Any]:
         """Return the RFDS-002 Section 12.1 normalized connection-state dictionary."""
         selected = str(alias) if alias not in (None, "") else self._active_alias
@@ -445,6 +590,7 @@ class BK8500BLibrary:
         return self._connection_state(selected, device)
 
     @keyword("Check Communication")
+    @_evidenced
     def check_communication(self, alias: str | None = None) -> bool:
         """Perform a bounded, non-destructive communication check. Raises on failure."""
         device = self._device(alias)
@@ -452,6 +598,7 @@ class BK8500BLibrary:
         return True
 
     @keyword("Get Identity")
+    @_evidenced
     def get_identity(self, alias: str | None = None, refresh: bool = True) -> str:
         """Return a stable human-readable identity string.
 
@@ -471,11 +618,13 @@ class BK8500BLibrary:
     # Identity, status, diagnostics
     # ------------------------------------------------------------------
     @keyword("Identify Electronic Load")
+    @_evidenced
     def identify_electronic_load(self, alias: str | None = None) -> dict[str, Any]:
         """Return manufacturer, model, serial number, and firmware revision."""
         return to_robot(self._translate("Identify", self._device(alias).identify))
 
     @keyword("Get Electronic Load Capabilities")
+    @_evidenced
     def get_electronic_load_capabilities(
         self, refresh: bool = False, alias: str | None = None
     ) -> dict[str, Any]:
@@ -489,16 +638,19 @@ class BK8500BLibrary:
         )
 
     @keyword("Get Electronic Load Status")
+    @_evidenced
     def get_electronic_load_status(self, alias: str | None = None) -> dict[str, Any]:
         """Return input, short, mode, status registers, and protection flags."""
         return to_robot(self._translate("Get status", self._device(alias).get_device_status))
 
     @keyword("Run Electronic Load Health Check")
+    @_evidenced
     def run_electronic_load_health_check(self, alias: str | None = None) -> dict[str, Any]:
         """Return a health report with latency and consecutive failure count."""
         return to_robot(self._translate("Health check", self._device(alias).health_check))
 
     @keyword("Get Electronic Load Diagnostic Snapshot")
+    @_evidenced
     def get_electronic_load_diagnostic_snapshot(
         self, alias: str | None = None
     ) -> dict[str, Any]:
@@ -506,6 +658,7 @@ class BK8500BLibrary:
         return to_robot(self._translate("Diagnostic snapshot", self._device(alias).diagnostic_snapshot))
 
     @keyword("Run Electronic Load Self Test")
+    @_evidenced
     def run_electronic_load_self_test(
         self, timeout: float | None = None, alias: str | None = None
     ) -> dict[str, Any]:
@@ -517,11 +670,13 @@ class BK8500BLibrary:
         return to_robot(result)
 
     @keyword("Clear Electronic Load Status")
+    @_evidenced
     def clear_electronic_load_status(self, alias: str | None = None) -> None:
         """Clear SCPI status registers and error queue using ``*CLS``."""
         self._translate("Clear status", self._device(alias).clear_status)
 
     @keyword("Drain Electronic Load Error Queue")
+    @_evidenced
     def drain_electronic_load_error_queue(
         self, maximum: int | None = None, alias: str | None = None
     ) -> list[dict[str, Any]]:
@@ -535,6 +690,7 @@ class BK8500BLibrary:
     # Modes, setpoints, protections, input
     # ------------------------------------------------------------------
     @keyword("Set Electronic Load Mode")
+    @_evidenced
     def set_electronic_load_mode(self, mode: str, alias: str | None = None) -> str:
         """Set CC, CV, CP/CW, CR, dynamic, LED, or impedance mode."""
         selected = self._mode(mode)
@@ -542,11 +698,13 @@ class BK8500BLibrary:
         return selected.value
 
     @keyword("Get Electronic Load Mode")
+    @_evidenced
     def get_electronic_load_mode(self, alias: str | None = None) -> str:
         """Return the current driver mode token."""
         return self._translate("Get operating mode", self._device(alias).get_operating_mode).value
 
     @keyword("Enable Electronic Load Input")
+    @_evidenced
     def enable_electronic_load_input(self, alias: str | None = None) -> None:
         """Enable input. A short-lived safety token is supplied when policy requires it."""
         device = self._device(alias)
@@ -554,23 +712,27 @@ class BK8500BLibrary:
         self._translate("Enable input", device.set_input_enabled, True, token=token)
 
     @keyword("Disable Electronic Load Input")
+    @_evidenced
     def disable_electronic_load_input(self, alias: str | None = None) -> None:
         """Disable load input and verify the state when verification is enabled."""
         self._translate("Disable input", self._device(alias).set_input_enabled, False)
 
     @keyword("Electronic Load Input Should Be On")
+    @_evidenced
     def electronic_load_input_should_be_on(self, alias: str | None = None) -> None:
         """Fail unless load input is on."""
         if not self._translate("Read input state", self._device(alias).get_input_enabled):
             raise AssertionError("Electronic load input is OFF")
 
     @keyword("Electronic Load Input Should Be Off")
+    @_evidenced
     def electronic_load_input_should_be_off(self, alias: str | None = None) -> None:
         """Fail unless load input is off."""
         if self._translate("Read input state", self._device(alias).get_input_enabled):
             raise AssertionError("Electronic load input is ON")
 
     @keyword("Configure And Enable Load")
+    @_evidenced
     def configure_and_enable_load(
         self,
         mode: str,
@@ -603,6 +765,7 @@ class BK8500BLibrary:
         return to_robot(result)
 
     @keyword("Set Current Setpoint")
+    @_evidenced
     def set_current_setpoint(self, amperes: float, alias: str | None = None) -> dict[str, Any]:
         """Set and read back the CC setpoint in amperes."""
         return to_robot(
@@ -612,10 +775,12 @@ class BK8500BLibrary:
         )
 
     @keyword("Get Current Setpoint")
+    @_evidenced
     def get_current_setpoint(self, alias: str | None = None) -> float:
         return float(self._translate("Get current", self._device(alias).get_current_setpoint))
 
     @keyword("Set Voltage Setpoint")
+    @_evidenced
     def set_voltage_setpoint(self, volts: float, alias: str | None = None) -> dict[str, Any]:
         """Set and read back the CV setpoint in volts."""
         return to_robot(
@@ -623,10 +788,12 @@ class BK8500BLibrary:
         )
 
     @keyword("Get Voltage Setpoint")
+    @_evidenced
     def get_voltage_setpoint(self, alias: str | None = None) -> float:
         return float(self._translate("Get voltage", self._device(alias).get_voltage_setpoint))
 
     @keyword("Set Power Setpoint")
+    @_evidenced
     def set_power_setpoint(self, watts: float, alias: str | None = None) -> dict[str, Any]:
         """Set and read back the CP setpoint in watts."""
         return to_robot(
@@ -634,10 +801,12 @@ class BK8500BLibrary:
         )
 
     @keyword("Get Power Setpoint")
+    @_evidenced
     def get_power_setpoint(self, alias: str | None = None) -> float:
         return float(self._translate("Get power", self._device(alias).get_power_setpoint))
 
     @keyword("Set Resistance Setpoint")
+    @_evidenced
     def set_resistance_setpoint(self, ohms: float, alias: str | None = None) -> dict[str, Any]:
         """Set and read back the CR setpoint in ohms."""
         return to_robot(
@@ -647,10 +816,12 @@ class BK8500BLibrary:
         )
 
     @keyword("Get Resistance Setpoint")
+    @_evidenced
     def get_resistance_setpoint(self, alias: str | None = None) -> float:
         return float(self._translate("Get resistance", self._device(alias).get_resistance_setpoint))
 
     @keyword("Set Current Protection")
+    @_evidenced
     def set_current_protection(self, amperes: float, alias: str | None = None) -> dict[str, Any]:
         """Set over-current protection in amperes."""
         return to_robot(
@@ -662,10 +833,12 @@ class BK8500BLibrary:
         )
 
     @keyword("Get Current Protection")
+    @_evidenced
     def get_current_protection(self, alias: str | None = None) -> float:
         return float(self._translate("Get current protection", self._device(alias).get_current_protection))
 
     @keyword("Set Power Protection")
+    @_evidenced
     def set_power_protection(self, watts: float, alias: str | None = None) -> dict[str, Any]:
         """Set over-power protection in watts."""
         return to_robot(
@@ -675,10 +848,12 @@ class BK8500BLibrary:
         )
 
     @keyword("Get Power Protection")
+    @_evidenced
     def get_power_protection(self, alias: str | None = None) -> float:
         return float(self._translate("Get power protection", self._device(alias).get_power_protection))
 
     @keyword("Set Remote Sense")
+    @_evidenced
     def set_remote_sense(self, enabled: bool, alias: str | None = None) -> None:
         """Enable or disable remote sense. Input must be off when policy requires it."""
         self._translate(
@@ -688,30 +863,36 @@ class BK8500BLibrary:
         )
 
     @keyword("Get Remote Sense")
+    @_evidenced
     def get_remote_sense(self, alias: str | None = None) -> bool:
         return bool(self._translate("Get remote sense", self._device(alias).get_remote_sense))
 
     @keyword("Set Current Range")
+    @_evidenced
     def set_current_range(self, amperes: float, alias: str | None = None) -> dict[str, Any]:
         return to_robot(
             self._translate("Set current range", self._device(alias).set_current_range, as_float(amperes))
         )
 
     @keyword("Get Current Range")
+    @_evidenced
     def get_current_range(self, alias: str | None = None) -> float:
         return float(self._translate("Get current range", self._device(alias).get_current_range))
 
     @keyword("Set Voltage Range")
+    @_evidenced
     def set_voltage_range(self, volts: float, alias: str | None = None) -> dict[str, Any]:
         return to_robot(
             self._translate("Set voltage range", self._device(alias).set_voltage_range, as_float(volts))
         )
 
     @keyword("Get Voltage Range")
+    @_evidenced
     def get_voltage_range(self, alias: str | None = None) -> float:
         return float(self._translate("Get voltage range", self._device(alias).get_voltage_range))
 
     @keyword("Set Voltage Autorange")
+    @_evidenced
     def set_voltage_autorange(self, enabled: bool, alias: str | None = None) -> None:
         self._translate(
             "Set voltage autorange",
@@ -720,10 +901,12 @@ class BK8500BLibrary:
         )
 
     @keyword("Get Voltage Autorange")
+    @_evidenced
     def get_voltage_autorange(self, alias: str | None = None) -> bool:
         return bool(self._translate("Get voltage autorange", self._device(alias).get_voltage_autorange))
 
     @keyword("Set Current Slew Rate")
+    @_evidenced
     def set_current_slew_rate(
         self,
         rise_a_per_us: float,
@@ -741,10 +924,12 @@ class BK8500BLibrary:
         return {"rise": to_robot(rise_result), "fall": to_robot(fall_result)}
 
     @keyword("Get Current Slew Rate")
+    @_evidenced
     def get_current_slew_rate(self, alias: str | None = None) -> dict[str, Any]:
         return to_robot(self._translate("Get slew rate", self._device(alias).get_current_slew))
 
     @keyword("Set Load Voltage Thresholds")
+    @_evidenced
     def set_load_voltage_thresholds(
         self, on_voltage: float, off_voltage: float, alias: str | None = None
     ) -> dict[str, Any]:
@@ -759,6 +944,7 @@ class BK8500BLibrary:
         return {"on": to_robot(on_result), "off": to_robot(off_result)}
 
     @keyword("Clear Electronic Load Protection")
+    @_evidenced
     def clear_electronic_load_protection(self, alias: str | None = None) -> None:
         """Clear latched protection using a short-lived purpose-specific safety token."""
         self._translate(
@@ -768,6 +954,7 @@ class BK8500BLibrary:
         )
 
     @keyword("Set Short Circuit Mode")
+    @_evidenced
     def set_short_circuit_mode(
         self,
         enabled: bool,
@@ -795,31 +982,37 @@ class BK8500BLibrary:
     # Measurements and assertions
     # ------------------------------------------------------------------
     @keyword("Measure Voltage")
+    @_evidenced
     def measure_voltage(self, alias: str | None = None) -> float:
         """Return measured voltage in volts."""
         return self._measurement("voltage", alias)
 
     @keyword("Measure Current")
+    @_evidenced
     def measure_current(self, alias: str | None = None) -> float:
         """Return measured current in amperes."""
         return self._measurement("current", alias)
 
     @keyword("Measure Power")
+    @_evidenced
     def measure_power(self, alias: str | None = None) -> float:
         """Return measured power in watts."""
         return self._measurement("power", alias)
 
     @keyword("Measure Resistance")
+    @_evidenced
     def measure_resistance(self, alias: str | None = None) -> float:
         """Return measured resistance in ohms."""
         return self._measurement("resistance", alias)
 
     @keyword("Get Measurement Snapshot")
+    @_evidenced
     def get_measurement_snapshot(self, alias: str | None = None) -> dict[str, Any]:
         """Return voltage, current, power, optional resistance, and status metadata."""
         return to_robot(self._translate("Measure all", self._device(alias).measure_all))
 
     @keyword("Measurement Should Be Within Range")
+    @_evidenced
     def measurement_should_be_within_range(
         self, actual: float, minimum: float, maximum: float, name: str = "Measurement"
     ) -> None:
@@ -827,6 +1020,7 @@ class BK8500BLibrary:
         self._assert_range(str(name), as_float(actual, name="actual"), minimum, maximum)
 
     @keyword("Voltage Should Be Within Range")
+    @_evidenced
     def voltage_should_be_within_range(
         self, minimum: float, maximum: float, alias: str | None = None
     ) -> float:
@@ -836,6 +1030,7 @@ class BK8500BLibrary:
         return actual
 
     @keyword("Current Should Be Within Range")
+    @_evidenced
     def current_should_be_within_range(
         self, minimum: float, maximum: float, alias: str | None = None
     ) -> float:
@@ -845,6 +1040,7 @@ class BK8500BLibrary:
         return actual
 
     @keyword("Power Should Be Within Range")
+    @_evidenced
     def power_should_be_within_range(
         self, minimum: float, maximum: float, alias: str | None = None
     ) -> float:
@@ -854,6 +1050,7 @@ class BK8500BLibrary:
         return actual
 
     @keyword("Wait Until Measurement Is Within Range")
+    @_evidenced
     def wait_until_measurement_is_within_range(
         self,
         measurement: str,
@@ -889,6 +1086,7 @@ class BK8500BLibrary:
             time.sleep(min(interval_s, max(0.0, deadline - time.monotonic())))
 
     @keyword("Log Measurements To CSV")
+    @_evidenced
     def log_measurements_to_csv(
         self,
         path: str,
@@ -960,6 +1158,7 @@ class BK8500BLibrary:
     # Dynamic, peak, state and raw SCPI operations
     # ------------------------------------------------------------------
     @keyword("Configure Transient Load")
+    @_evidenced
     def configure_transient_load(
         self,
         high_level: float,
@@ -982,17 +1181,20 @@ class BK8500BLibrary:
         self._translate("Configure transient", self._device(alias).configure_transient, config)
 
     @keyword("Get Transient Load Configuration")
+    @_evidenced
     def get_transient_load_configuration(self, alias: str | None = None) -> dict[str, Any]:
         return to_robot(
             self._translate("Get transient configuration", self._device(alias).get_transient_config)
         )
 
     @keyword("Trigger Electronic Load")
+    @_evidenced
     def trigger_electronic_load(self, alias: str | None = None) -> None:
         """Send the SCPI trigger command."""
         self._translate("Trigger", self._device(alias).trigger)
 
     @keyword("Enable Peak Capture")
+    @_evidenced
     def enable_peak_capture(self, enabled: bool = True, alias: str | None = None) -> None:
         self._translate(
             "Set peak capture",
@@ -1001,10 +1203,12 @@ class BK8500BLibrary:
         )
 
     @keyword("Clear Peak Capture")
+    @_evidenced
     def clear_peak_capture(self, alias: str | None = None) -> None:
         self._translate("Clear peak capture", self._device(alias).clear_peak)
 
     @keyword("Read Peak Measurements")
+    @_evidenced
     def read_peak_measurements(self, alias: str | None = None) -> dict[str, float]:
         """Return maximum/minimum captured voltage and current."""
         device = self._device(alias)
@@ -1024,16 +1228,19 @@ class BK8500BLibrary:
         }
 
     @keyword("Save Electronic Load State")
+    @_evidenced
     def save_electronic_load_state(self, slot: int, alias: str | None = None) -> None:
         self._translate("Save state", self._device(alias).save_state, as_int(slot, name="slot"))
 
     @keyword("Recall Electronic Load State")
+    @_evidenced
     def recall_electronic_load_state(self, slot: int, alias: str | None = None) -> None:
         device = self._device(alias)
         self._translate("Recall state", device.recall_state, as_int(slot, name="slot"))
         self._translate("Synchronize state", device.synchronize_state)
 
     @keyword("Reset Electronic Load")
+    @_evidenced
     def reset_electronic_load(self, alias: str | None = None) -> None:
         """Reset the instrument and resynchronize driver state."""
         device = self._device(alias)
@@ -1041,12 +1248,14 @@ class BK8500BLibrary:
         self._translate("Synchronize state", device.synchronize_state)
 
     @keyword("Set Electronic Load Remote")
+    @_evidenced
     def set_electronic_load_remote(self, local_lockout: bool = False, alias: str | None = None) -> None:
         device = self._device(alias)
         method = device.set_remote_with_local_lockout if as_bool(local_lockout) else device.set_remote
         self._translate("Set remote control", method)
 
     @keyword("Set Electronic Load Local")
+    @_evidenced
     def set_electronic_load_local(self, alias: str | None = None) -> None:
         """Return front-panel control and resynchronize the driver state."""
         device = self._device(alias)
@@ -1054,6 +1263,7 @@ class BK8500BLibrary:
         self._translate("Synchronize state", device.synchronize_state)
 
     @keyword("Query Raw SCPI")
+    @_evidenced
     def query_raw_scpi(
         self, command: str, timeout: float | None = None, alias: str | None = None
     ) -> str:
@@ -1067,6 +1277,7 @@ class BK8500BLibrary:
         )
 
     @keyword("Write Raw SCPI")
+    @_evidenced
     def write_raw_scpi(
         self, command: str, timeout: float | None = None, alias: str | None = None
     ) -> None:
@@ -1080,6 +1291,7 @@ class BK8500BLibrary:
         )
 
     @keyword("Export Diagnostic Snapshot")
+    @_evidenced
     def export_diagnostic_snapshot(self, path: str, alias: str | None = None) -> str:
         """Write a diagnostic snapshot as formatted UTF-8 JSON and return its path."""
         output = Path(path).expanduser().resolve()

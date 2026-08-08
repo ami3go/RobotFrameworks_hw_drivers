@@ -10,3 +10,4 @@ always remains `rf_bk8500b/` so a newer release can replace an older checkout.
 | [v26.02](v26.02.md) | 2026-07-17 | Project-standard package layout, guides, review records, example runners, and GitHub Pages. |
 | [v26.03](v26.03.md) | 2026-07-20 | Complete synchronized archive with generated file manifest. |
 | [v26.04](v26.04.md) | 2026-07-21 | RFDS-017 AI driver contract, interface lock, RFDS-018 bench template, and CI enforcement. |
+| [v26.05](v26.05.md) | 2026-08-07 | RFDS-008 evidence engine, RFDS-019 real-hardware conformance suite, `Export Diagnostic Bundle` keyword. |

@@ -9,6 +9,6 @@ working unchanged.
 
 from BK8500BLibrary.library import BK8500BLibrary, BK8500BRobotError
 
-__version__ = "26.04"
+__version__ = "26.05"
 
 __all__ = ["BK8500BLibrary", "BK8500BRobotError"]

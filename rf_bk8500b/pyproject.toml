@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "robotframework-bk8500b"
-version = "26.4.0"
+version = "26.5.0"
 description = "Robot Framework library and bundled Python driver for B&K Precision 8500B Series DC electronic loads"
 readme = "README.md"
 requires-python = ">=3.10"

@@ -1,5 +1,15 @@
 # Changelog
 
+## v26.05 - 2026-08-07
+
+- Added an RFDS-008 evidence engine (`bk8500b/evidence.py`): every public keyword call is recorded as a correlated, redacted operation record, and every SCPI/legacy-frame protocol exchange is traced (hex-encoded), under `results/session/rf_bk8500b/<run>/`, with a SHA-256 evidence manifest and JSONL event/operation/error streams.
+- Integrated evidence recording with the existing `CommandExecutor` audit seam: `EvidenceAuditSink`/`EvidenceMetricsSink` implement the existing `AuditSink`/`MetricsSink` protocols, and a new `TracingTransport` wraps the real serial transport to capture raw wire bytes. Assigning a custom `library._device_factory` (as existing tests do) bypasses protocol-level tracing but keyword-level operation recording still applies uniformly via a decorator.
+- Added `Export Diagnostic Bundle` keyword to zip the current evidence run for troubleshooting; added the corresponding RFDS-017 capability entry and regenerated `ai/bk8500b_ai_contract.lock` (81 public keywords).
+- Added `tests/hardware/verify_all_keywords.robot`: an RFDS-019 real-hardware conformance suite, one test case per public keyword, gated behind safety-token-aware flags for state-changing operations.
+- Added `schemas/evidence/*.schema.json`, `docs/logging_and_evidence.md`, `guide/EVIDENCE_AND_DIAGNOSTICS.md`, and `scripts/validate_evidence.{py,sh,bat,ps1}`.
+- Added `tests/evidence/test_evidence.py`.
+- No existing public keyword name, parameter order, protocol behavior, or instrument safety policy changed. This release does not include a new release archive, `PACKAGE_CONTENTS.md` update, or formal code review sign-off — those remain a separate release-engineering step.
+
 ## v26.04 - 2026-07-21
 
 - Added canonical `ai/ai_contract.yaml` covering all 74 public Robot Framework keywords with exact signatures and machine-readable planning semantics.

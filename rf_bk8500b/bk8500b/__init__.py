@@ -1,4 +1,13 @@
-"""Production-oriented B&K Precision 8500B Series Python driver."""
+"""Production-oriented B&K Precision 8500B Series Python driver.
+
+``evidence.py`` (not imported here to avoid a hard import-order dependency
+for callers that only need the core driver) provides an RFDS-008 structured
+evidence/logging engine that plugs into ``CommandExecutor`` via the existing
+``AuditSink``/``MetricsSink`` protocols in ``diagnostics.py`` and a
+``TracingTransport`` wrapper for raw wire-byte capture. See
+``docs/logging_and_evidence.md`` and ``BK8500BLibrary/library.py``, which
+wires it into every public Robot Framework keyword.
+"""
 from .async_device import AsyncBK8500B
 from .config import DriverConfig, ReconnectPolicy, RetryPolicy, SafetyPolicy
 from .device import BK8500B

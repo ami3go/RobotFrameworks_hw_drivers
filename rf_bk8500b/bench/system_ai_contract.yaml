@@ -6,7 +6,7 @@ bench_identity:
   purpose: Conservative integration template for a bench containing the rf_bk8500b driver.
 available_drivers:
 - driver_name: BK8500BLibrary
-  driver_version: 26.4.0
+  driver_version: 26.5.0
   instrument_class: LOAD
   ai_contract: ai/bk8500b_ai_contract.yaml
   required: true

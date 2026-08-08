@@ -16,6 +16,12 @@ and safety policy in the underlying `bk8500b` driver.
 | License | MIT |
 | Hardware qualification | Pending real-instrument validation |
 
+The source tree also includes unreleased v26.05 additions not yet in a
+numbered archive: an RFDS-008 evidence/logging engine and an RFDS-019
+real-hardware conformance suite (`tests/hardware/verify_all_keywords.robot`,
+81 keywords). See [`CHANGELOG.md`](CHANGELOG.md) and the "Logging and
+evidence" / "Hardware conformance suite" sections below.
+
 ## Package standard
 
 Every release uses a versioned outer archive and a stable inner folder:
@@ -93,6 +99,7 @@ repository's drivers.
 | Advanced | `Configure Transient Load`, `Trigger Electronic Load`, `Read Peak Measurements` |
 | Diagnostics | `Run Electronic Load Health Check`, `Drain Electronic Load Error Queue`, `Run Electronic Load Self Test` |
 | Expert | `Query Raw SCPI`, `Write Raw SCPI` |
+| Evidence | `Export Diagnostic Bundle` — zips the current RFDS-008 evidence run for troubleshooting, see "Logging and evidence" below |
 
 The generated keyword reference is available at
 [`docs/BK8500BLibrary.html`](docs/BK8500BLibrary.html), and the categorized
@@ -102,7 +109,7 @@ summary is in [`docs/KEYWORDS.md`](docs/KEYWORDS.md).
 
 The package includes a canonical RFDS-017 contract for automatic test planning:
 
-- [`ai/bk8500b_ai_contract.yaml`](ai/bk8500b_ai_contract.yaml) describes all 74 public Robot keywords, exact signatures, states, resources, risks, errors, safety constraints, recovery sequences, verification oracles, and setup/teardown behavior.
+- [`ai/bk8500b_ai_contract.yaml`](ai/bk8500b_ai_contract.yaml) describes all 81 public Robot keywords, exact signatures, states, resources, risks, errors, safety constraints, recovery sequences, verification oracles, and setup/teardown behavior.
 - [`ai/bk8500b_ai_contract.lock`](ai/bk8500b_ai_contract.lock) is the SHA-256 lock for the public keyword surface.
 - [`ai/rfds017.schema.json`](ai/rfds017.schema.json) is the project-local validation schema.
 - [`bench/system_ai_contract.yaml`](bench/system_ai_contract.yaml) is an RFDS-018 bench-integration template. It remains `TEMPLATE_INCOMPLETE` until actual wiring, resources, DUT limits, and emergency procedures are reviewed for a specific bench.
@@ -163,6 +170,51 @@ an explicit `--execute` option and all required port environment variables.
 Read [`docs/SAFETY.md`](docs/SAFETY.md) and
 [`guide/HARDWARE_SETUP.md`](guide/HARDWARE_SETUP.md) before active-load tests.
 
+## Logging and evidence
+
+Every public keyword call is recorded as structured, correlated RFDS-008
+evidence — arguments, duration, result/failure, and the underlying
+SCPI/legacy-frame protocol exchange (hex-encoded) — written to
+`results/session/rf_bk8500b/<run>/` (override with `RFDS_EVIDENCE_ROOT`).
+This is on by default and integrates with the existing `AuditSink`/
+`MetricsSink` hooks in `bk8500b.execution.CommandExecutor` rather than
+duplicating them; pass `evidence_enabled=${FALSE}` to `BK8500BLibrary` to
+disable it, or call `Export Diagnostic Bundle` to zip the current run for a
+bug report:
+
+```robotframework
+Library    BK8500BLibrary    evidence_enabled=${FALSE}    # to disable
+```
+
+See [`docs/logging_and_evidence.md`](docs/logging_and_evidence.md) for the
+full evidence layout and [`guide/EVIDENCE_AND_DIAGNOSTICS.md`](guide/EVIDENCE_AND_DIAGNOSTICS.md)
+for a task-oriented "my test failed, now what" walkthrough. Validate a run's
+integrity (hashes, JSONL sequencing):
+
+```bash
+python scripts/validate_evidence.py results/session/rf_bk8500b/<run>/
+```
+
+## Hardware conformance suite
+
+`tests/hardware/verify_all_keywords.robot` is the RFDS-019 real-hardware
+conformance suite: one test case per public keyword (81 total), run against
+a real 8500B-series load. It is tagged `hardware` and does not run in CI:
+
+```bash
+python -m robot --outputdir results -v PORT:COM9 tests/hardware/verify_all_keywords.robot
+```
+
+The load input stays OFF for the whole suite unless `-v ALLOW_INPUT_ON:True`
+is passed; short-circuit mode additionally requires `-v
+ALLOW_SHORT_CIRCUIT:True` (and only on a bench proven safe for it — see
+`ai/bk8500b_ai_contract.yaml`'s `safety_rules`); persistent state-slot
+save/recall/reset keywords require `-v ALLOW_PERSISTENT_WRITES:True`; the raw
+SCPI escape hatch requires `-v ALLOW_RAW_SCPI:True`. Every keyword that
+mutates device-persistent state restores the original value before its own
+test case ends, and Suite Teardown disables the input and disconnects
+regardless of how earlier test cases left the load.
+
 ## Development and validation
 
 ```bash
@@ -172,7 +224,8 @@ python scripts/verify_ai_contract.py
 python -m pytest
 python -m robot --outputdir results/acceptance tests/robot/adapter_acceptance.robot
 python -m robot --dryrun --outputdir results/dryrun examples
-python -m ruff check BK8500BLibrary tests/test_robot_library.py tests/robot/FakeBK8500BLibrary.py scripts/build_release.py scripts/run_example.py scripts/run_all_examples.py scripts/verify_project_structure.py scripts/verify_ai_contract.py scripts/verify_release_artifacts.py scripts/generate_libdoc.py tests/test_ai_contract.py
+python -m robot --dryrun --outputdir results/dryrun tests/hardware/verify_all_keywords.robot
+python -m ruff check BK8500BLibrary bk8500b/evidence.py tests/test_robot_library.py tests/robot/FakeBK8500BLibrary.py tests/evidence scripts/build_release.py scripts/run_example.py scripts/run_all_examples.py scripts/verify_project_structure.py scripts/verify_ai_contract.py scripts/verify_release_artifacts.py scripts/generate_libdoc.py scripts/validate_evidence.py tests/test_ai_contract.py
 python scripts/generate_libdoc.py
 python -m build
 python -m twine check dist/*

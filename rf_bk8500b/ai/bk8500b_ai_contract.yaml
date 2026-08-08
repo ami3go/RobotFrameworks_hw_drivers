@@ -1,7 +1,7 @@
 rfds017_version: '3.0'
 identity:
   driver_name: BK8500BLibrary
-  driver_version: 26.4.0
+  driver_version: 26.5.0
   contract_version: 1.0.0
   supported_models:
   - 8500B
@@ -175,6 +175,45 @@ implementation_status:
   - LONG_DURATION_TESTED
   - MULTI_PROCESS_VALIDATED
 capabilities:
+- keyword: Export Diagnostic Bundle
+  signature: Export Diagnostic Bundle(destination=None)
+  purpose: Zip this session's RFDS-008 evidence run (events, protocol trace, device identity, manifest) for offline troubleshooting.
+  risk_level: NONE
+  blocking: BLOCKING
+  idempotency: IDEMPOTENT
+  retry: SAFE_TO_RETRY
+  typical_execution_time_s: 0.2
+  stabilization_time_s: 0.0
+  valid_in_states:
+  - DISCONNECTED
+  - CONNECTING
+  - CONNECTED_UNSYNCHRONIZED
+  - CONNECTED_READY_INPUT_OFF
+  - CONNECTED_READY_INPUT_ON
+  - DEGRADED
+  - RECONNECTING
+  - CLOSING
+  - FAILED
+  resulting_state: SAME
+  arguments:
+  - name: destination
+    kind: STRING
+    required: false
+    default: null
+  returns:
+  - name: path
+    kind: STRING
+  preconditions: []
+  postconditions:
+  - No instrument configuration or connection state is changed.
+  coupling: []
+  side_effects:
+  - Writes a .zip file to disk; does not finalize an in-progress evidence run.
+  exclusive_resources:
+  - HOST_FILESYSTEM_PATH
+  raises:
+  - FILE_IO_ERROR
+  planning_priority: SECONDARY
 - keyword: Connect To Electronic Load
   signature: Connect To Electronic Load(port=None, alias='default', protocol='scpi', baud_rate=9600, address=0, read_timeout=2.0,
     write_timeout=2.0, query_timeout=2.0, verify_writes=True, turn_input_off_on_close=True, require_enable_token=False, allow_short=False,
