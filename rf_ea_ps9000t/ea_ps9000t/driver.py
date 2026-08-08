@@ -2,7 +2,11 @@
 
 Owns SCPI command construction and response parsing. The Robot Framework
 adapter (``rf_ea_ps9000t/library.py``) is a thin layer on top of this
-module and must not duplicate any of this logic (task §5).
+module and must not duplicate any of this logic (task §5). That adapter also
+records every keyword call and every SCPI command/response as RFDS-008
+structured evidence (``rf_ea_ps9000t/evidence.py``) by wrapping this module's
+``Transport`` after ``connect_visa``/``connect_simulated`` return — nothing
+in this module is aware of, or coupled to, that evidence layer.
 """
 
 from __future__ import annotations

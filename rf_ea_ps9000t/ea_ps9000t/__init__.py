@@ -22,7 +22,7 @@ from .models import (
 )
 from .simulator import SimEaPs9000TInstrument
 
-__version__ = "26.1"
+__version__ = "26.2"
 
 __all__ = [
     "AdjustmentLimits",

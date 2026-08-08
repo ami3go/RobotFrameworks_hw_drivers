@@ -15,8 +15,15 @@ Documentation     RFDS-019 real-hardware conformance: exercises every public key
 ...               device-persistent state restores the original value before its test
 ...               case ends, and Suite Teardown restores the adjustment limits captured at
 ...               Suite Setup, so the instrument is left as it was found either way.
+...
+...               Every keyword call this suite makes is also recorded as RFDS-008
+...               structured evidence (arguments, duration, the raw SCPI exchange) under
+...               results/session/rf_ea_ps9000t/ — see docs/logging_and_evidence.md. This
+...               real-hardware run is a good one to keep: it is real-device SCPI-trace
+...               evidence for every keyword in one place.
 Library           rf_ea_ps9000t.EaPs9000TLibrary
 Library           Collections
+Library           OperatingSystem
 Suite Setup       Initialize Hardware Conformance
 Suite Teardown    Final Safe Teardown
 Test Setup        Prepare Hardware For Keyword Test
@@ -35,7 +42,7 @@ ${VOLTAGE_FRACTION}         ${0.1}
 ${CURRENT_FRACTION}         ${0.1}
 ${POWER_FRACTION}           ${0.1}
 ${SETPOINT_TOLERANCE}       ${0.05}
-${EXPECTED_DRIVER_VERSION}    26.1
+${EXPECTED_DRIVER_VERSION}    26.2
 
 *** Test Cases ***
 # ----------------------------------------------------------------------
@@ -614,6 +621,17 @@ KW-086 Raw SCPI Write
     ${response}=    Raw SCPI Query    SYSTem:ERRor?
     Should Not Be Empty    ${response}
     Log    ${response}
+
+# ----------------------------------------------------------------------
+# Diagnostics
+# ----------------------------------------------------------------------
+KW-087 Export Diagnostic Bundle
+    [Documentation]    Zips this real-hardware run's RFDS-008 evidence — including every
+    ...    SCPI exchange the earlier test cases in this suite made — for troubleshooting.
+    ${path}=    Export Diagnostic Bundle    alias=${ALIAS}
+    Should Not Be Empty    ${path}
+    File Should Exist    ${path}
+    Log    Diagnostic bundle written to ${path}
 
 *** Keywords ***
 Initialize Hardware Conformance

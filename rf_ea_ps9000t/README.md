@@ -1,7 +1,7 @@
 # RF EA-PS 9000 T
 
 Robot Framework driver for the Elektro-Automatik EA-PS 9000 T series DC laboratory power
-supply (source-only, "Tower" form factor). Version **26.1**. Gate 2 (Core
+supply (source-only, "Tower" form factor). Version **26.2**. Gate 2 (Core
 Implementation, RFDS-020): connection with explicit remote-control acquisition, set
 values (voltage/current/power), protection thresholds (OVP/OCP/OPP), output control,
 measuring, adjustment limits, alarm counters, and device configuration are all
@@ -126,6 +126,8 @@ device refuses it — see Safety notes below.
   `"ENABLE RAW SCPI"`), `Raw SCPI Query`, `Raw SCPI Write` — also the sanctioned path to
   ModBus-disable, which remains deliberately excluded from the typed keyword surface
   (see Safety notes)
+- **Diagnostics:** `Export Diagnostic Bundle` — zips the current RFDS-008 evidence run
+  (see "Logging and evidence" below) for troubleshooting
 
 Multiple power supplies can be driven from one suite via the `alias` parameter accepted
 by every non-connection keyword.
@@ -170,8 +172,9 @@ by every non-connection keyword.
 ## Hardware tests
 
 `tests/hardware/verify_all_keywords.robot` exercises every one of this library's public
-keywords against a real PS 9000 T unit and checks its response — one test case per
-keyword. It is tagged `hardware` and does not run in CI; run it explicitly:
+keywords (KW-001..KW-087, including `Export Diagnostic Bundle`) against a real PS 9000 T
+unit and checks its response — one test case per keyword. It is tagged `hardware` and
+does not run in CI; run it explicitly:
 
 ```console
 python -m robot --outputdir results tests/hardware/verify_all_keywords.robot
@@ -186,7 +189,46 @@ suitable load, or nothing, connected), and LAN-identity `Set` keywords
 passed. Every keyword that mutates device-persistent state (adjustment limits, protection
 thresholds, device configuration, LAN/analog settings) restores the original value before
 its own test case ends, and Suite Teardown restores the adjustment limits captured at
-Suite Setup — the instrument is left as it was found either way.
+Suite Setup — the instrument is left as it was found either way. Every keyword call this
+suite makes is also recorded as RFDS-008 evidence, including the raw SCPI exchange — see
+"Logging and evidence" below — making a full run of this suite a useful real-device SCPI
+reference in its own right.
+
+## Logging and evidence
+
+Every keyword call — and every raw SCPI command/response — is recorded as structured,
+correlated RFDS-008 evidence, one run per connected `alias`, written to
+`results/session/rf_ea_ps9000t/<run>/` (override with the `RFDS_EVIDENCE_ROOT`
+environment variable). This is on by default; construct the library with
+`evidence_enabled=${FALSE}` to disable it, or call `Export Diagnostic Bundle` to zip the
+current run for a bug report. See `docs/logging_and_evidence.md` for the full evidence
+layout and `guide/evidence_and_diagnostics.md` for a task-oriented "my test failed, now
+what" walkthrough. Validate a run's integrity (hashes, JSONL sequencing) with:
+
+```console
+python scripts/validate_evidence.py results/session/rf_ea_ps9000t/<run>/
+```
+
+## Running the tests
+
+Unit tests (`tests/unit/`, `tests/evidence/`) run against the bundled protocol-level
+simulator — no hardware or `pyvisa` required:
+
+```console
+python -m pip install -e ".[dev]"
+python -m pytest
+```
+
+The offline acceptance suite (`tests/robot/acceptance.robot`) also runs against the
+simulator:
+
+```console
+python -m robot --outputdir results tests/robot/acceptance.robot
+```
+
+`tests/hardware/verify_all_keywords.robot` is the RFDS-019 real-hardware conformance
+suite described above and requires a real PS 9000 T unit; it is tagged `hardware` and
+does not run in CI.
 
 ## Known documentation discrepancy
 
