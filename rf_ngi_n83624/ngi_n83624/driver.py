@@ -5,7 +5,7 @@ from __future__ import annotations
 import contextlib
 import threading
 import time
-from collections.abc import Iterator, Sequence
+from collections.abc import Callable, Iterator, Sequence
 from typing import Any
 
 from .exceptions import (
@@ -77,6 +77,15 @@ class N83624CellSimulator:
         self._heartbeat_thread: threading.Thread | None = None
         self._heartbeat_stop = threading.Event()
         self._communication_observation = CommunicationObservation()
+        #: Optional ``(direction, text)`` callback, ``direction`` one of
+        #: ``"outbound"``/``"inbound"``, invoked for every SCPI write/query this
+        #: instance performs. Lets a framework-layer caller (e.g. the Robot
+        #: Framework adapter's RFDS-008 evidence engine) observe the wire
+        #: protocol without this core driver knowing anything about evidence,
+        #: Robot Framework, or logging policy — it just calls the hook if set.
+        #: Exceptions raised by the observer propagate normally; it is not
+        #: wrapped in a try/except so a broken observer fails loudly.
+        self.protocol_observer: Callable[[str, str], None] | None = None
 
     @classmethod
     def tcp(
@@ -235,6 +244,8 @@ class N83624CellSimulator:
             raise ProtocolError("SCPI command must be a non-empty string")
         with self._lock:
             logger.debug("SCPI write: %s", command)
+            if self.protocol_observer:
+                self.protocol_observer("outbound", command)
             try:
                 self.transport.write(command)
                 self._communication_observation = CommunicationObservation.success(self._communication_observation)
@@ -256,8 +267,12 @@ class N83624CellSimulator:
         for attempt in range(attempts):
             try:
                 logger.debug("SCPI query: %s", command)
+                if self.protocol_observer:
+                    self.protocol_observer("outbound", command)
                 response = self.transport.query(command).strip()
                 logger.debug("SCPI response to %s: %s", command, response)
+                if self.protocol_observer:
+                    self.protocol_observer("inbound", response)
                 self._communication_observation = CommunicationObservation.success(self._communication_observation)
                 return response
             except (CommunicationError, TimeoutError) as exc:
@@ -270,6 +285,8 @@ class N83624CellSimulator:
 
     def _write_locked(self, command: str) -> None:
         logger.debug("SCPI write: %s", command)
+        if self.protocol_observer:
+            self.protocol_observer("outbound", command)
         try:
             self.transport.write(command)
             self._communication_observation = CommunicationObservation.success(self._communication_observation)

@@ -54,5 +54,8 @@ SOC and sequence steps accept Robot lists of dictionaries or JSON lists.
 - `Enable Raw SCPI`
 - `Raw SCPI Query`
 - `Raw SCPI Write`
+- `Export Diagnostic Bundle`
 
 Raw SCPI bypasses typed validation and is disabled unless explicitly enabled.
+`Export Diagnostic Bundle` zips the calling alias's RFDS-008 evidence run —
+see [Logging and Evidence](logging-and-evidence.md).

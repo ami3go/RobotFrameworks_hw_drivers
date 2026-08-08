@@ -29,6 +29,11 @@ Record before testing:
 - DMM/DAQ model, serial number, and calibration date.
 - Operator and date.
 
+`tests/hardware/verify_all_keywords.robot` (v26.02+) is a fast, safe, automatable
+first pass covering keyword-callability and SCPI-protocol conformance for
+every public keyword — a useful precursor to Gate H1 below, but not a
+replacement for it or for Gates H2-H8.
+
 ## Gate H1 — Communication and identity
 
 1. Connect over TCP.

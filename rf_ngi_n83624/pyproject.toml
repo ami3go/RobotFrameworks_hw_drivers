@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "rf-ngi-n83624"
-version = "26.1"
+version = "26.2"
 description = "Safety-oriented Robot Framework library for the NGI N83624 cell simulator"
 readme = "README.md"
 requires-python = ">=3.10"

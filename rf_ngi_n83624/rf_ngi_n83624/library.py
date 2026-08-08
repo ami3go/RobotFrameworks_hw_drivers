@@ -3,14 +3,24 @@
 The library wraps the typed :mod:`ngi_n83624` Python driver and adds Robot-specific
 session management, input conversion, output arming, audit logging, assertions, and
 safe teardown.
+
+Every public keyword is wrapped (see ``_evidenced`` below) with an RFDS-008
+evidence operation record — arguments, duration, result/failure, and a
+correlated trace of the underlying SCPI write/query traffic — written per
+connection alias to ``results/session/rf_ngi_n83624/<run>/``. This is a
+separate, deeper layer than the existing opt-in ``audit_log_path`` JSONL
+audit log; see ``evidence.py`` and ``docs/logging_and_evidence.md`` for how
+the two relate. Pass ``evidence_enabled=${FALSE}`` to disable it.
 """
 
 from __future__ import annotations
 
+import functools
+import inspect
 import json
 import math
 import time
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import asdict, dataclass, is_dataclass, replace
 from datetime import datetime, timezone
 from enum import Enum
@@ -35,7 +45,9 @@ from ngi_n83624 import (
 from ngi_n83624.emulator import SimpleN83624Emulator
 from ngi_n83624.exceptions import SafetyError, SessionStateError, ValidationError
 
-RELEASE_VERSION = "26.01"
+from . import evidence as _evidence
+
+RELEASE_VERSION = "26.02"
 OUTPUT_CONFIRMATION = "ENABLE OUTPUT"
 RAW_SCPI_CONFIRMATION = "ENABLE RAW SCPI"
 
@@ -49,6 +61,62 @@ class _Session:
     audit_log_path: Path | None
     armed_channels: set[int]
     emulator: SimpleN83624Emulator | None = None
+
+
+def _evidenced(func: Callable) -> Callable:
+    """Wrap a keyword method with an RFDS-008 evidence operation record.
+
+    Resolves which connection alias's :class:`evidence.EvidenceRun` applies
+    using the same "explicit alias, else active alias, else 'default'" rule
+    as :meth:`NGI_N83624._session`, but tolerates the alias not existing yet
+    (needed for ``Open N83624 * Connection``, where the session is created
+    *during* the wrapped call). After every call, whichever aliases actually
+    disappeared from ``self._sessions`` during the call have their evidence
+    run finalized (see ``_finalize_closed_sessions``) — this naturally covers
+    ``Close N83624 Connection`` and ``Close All N83624 Connections`` (which
+    calls the former once per alias, itself wrapped) without special-casing
+    either capability by name.
+
+    Finalization is deferred to the outermost (non-nested) call only —
+    detected via whether ``evidence._current_operation_id`` is already set on
+    entry. Without this, ``Close All N83624 Connections`` calling the
+    per-alias ``Close N83624 Connection`` internally would finalize (and
+    hash-freeze) that alias's run *before* the outer call's own operation
+    record is appended to it, leaving evidence_manifest.json describing a
+    stale version of operations.jsonl.
+
+    Must sit *below* ``@keyword(...)`` in the decorator stack — see the same
+    note in ``rf_phidget_relay``'s ``_evidenced`` for why ``wrapper.robot_name``
+    is safely readable at call time despite being set by a decorator that
+    runs *after* this one.
+    """
+    signature = inspect.signature(func)
+
+    @functools.wraps(func)
+    def wrapper(self: NGI_N83624, *args: Any, **kwargs: Any) -> Any:
+        capability = getattr(wrapper, "robot_name", None) or func.__name__.replace("_", " ").title()
+        bound = signature.bind_partial(self, *args, **kwargs)
+        bound.apply_defaults()
+        arguments = {key: value for key, value in bound.arguments.items() if key != "self"}
+        resolved_alias = self._resolve_alias_for_evidence(arguments)
+        execution_mode = "SIMULATOR" if capability == "Open N83624 Emulator" else "REAL_HARDWARE"
+        run = self._ensure_evidence_run(resolved_alias, execution_mode=execution_mode)
+        is_top_level_call = _evidence._current_operation_id.get() is None
+        aliases_before = set(self._sessions)
+        status = "PASS"
+        try:
+            with run.record_operation(capability, arguments=arguments, session_alias=resolved_alias) as op:
+                result = func(self, *args, **kwargs)
+                op.set_result(result)
+            return result
+        except Exception:
+            status = "FAIL"
+            raise
+        finally:
+            if is_top_level_call:
+                self._finalize_closed_sessions(aliases_before, status)
+
+    return wrapper
 
 
 @library(scope="GLOBAL", version=RELEASE_VERSION, auto_keywords=False)
@@ -73,15 +141,60 @@ class NGI_N83624:
         default_port: int = 7000,
         default_timeout: float = 3.0,
         auto_close_on_suite_end: bool = True,
+        evidence_enabled: bool | str = True,
     ) -> None:
         self.default_host = str(default_host)
         self.default_port = self._as_int(default_port, "default_port")
         self.default_timeout = self._as_float(default_timeout, "default_timeout")
         self.auto_close_on_suite_end = self._as_bool(auto_close_on_suite_end)
+        self._evidence_enabled = self._as_bool(evidence_enabled)
         self._sessions: dict[str, _Session] = {}
+        self._evidence_runs: dict[str, Any] = {}
         self._active_alias: str | None = None
         self.ROBOT_LIBRARY_LISTENER = self
         self.ROBOT_LISTENER_API_VERSION = 2
+
+    # RFDS-008 evidence -----------------------------------------------------------
+    def _resolve_alias_for_evidence(self, arguments: Mapping[str, Any]) -> str:
+        """Same resolution order as :meth:`_session`, but never raises: an
+        alias that doesn't have a live session yet (e.g. mid-``Open N83624 *
+        Connection``) is a perfectly normal case here."""
+        alias = arguments.get("alias")
+        if alias:
+            try:
+                return self._normalize_alias(str(alias))
+            except ValidationError:
+                return "default"
+        if self._active_alias:
+            return self._active_alias
+        return "default"
+
+    def _ensure_evidence_run(self, alias: str, *, execution_mode: str = "REAL_HARDWARE") -> Any:
+        """Get-or-create ``alias``'s evidence run. ``execution_mode`` only takes
+        effect on first creation (an already-open alias's run keeps whatever
+        mode it was created with, e.g. it isn't overwritten by an unrelated
+        later call resolving to the same alias with a different capability)."""
+        run = self._evidence_runs.get(alias)
+        if run is None:
+            if self._evidence_enabled:
+                run = _evidence.EvidenceRun(driver_id="rf_ngi_n83624", activity="session", execution_mode=execution_mode)
+            else:
+                run = _evidence.NullEvidenceRun()
+            self._evidence_runs[alias] = run
+        return run
+
+    def _finalize_closed_sessions(self, aliases_before: set[str], status: str = "PASS") -> None:
+        """Finalize (write run_summary.json/evidence_manifest.json for) every
+        alias present in ``aliases_before`` but no longer in ``self._sessions``
+        — i.e. whatever this call actually closed. Deliberately a before/after
+        diff rather than "alias not in self._sessions", since an alias that
+        never had a session yet (e.g. a query before any Connect) would
+        otherwise look identically 'closed' and get wrongly finalized."""
+        closed_aliases = aliases_before - set(self._sessions)
+        for alias in closed_aliases:
+            run = self._evidence_runs.pop(alias, None)
+            if run is not None:
+                run.finalize(status=status)
 
     # Robot listener -------------------------------------------------------------
     def _end_suite(self, name: str, attributes: Mapping[str, Any]) -> None:
@@ -99,6 +212,7 @@ class NGI_N83624:
 
     # Connection management -----------------------------------------------------
     @keyword("Open N83624 TCP Connection")
+    @_evidenced
     def open_n83624_tcp_connection(
         self,
         alias: str = "default",
@@ -140,6 +254,7 @@ class NGI_N83624:
         )
 
     @keyword("Open N83624 UDP Connection")
+    @_evidenced
     def open_n83624_udp_connection(
         self,
         alias: str = "default",
@@ -174,6 +289,7 @@ class NGI_N83624:
         )
 
     @keyword("Open N83624 Channel UDP Connection")
+    @_evidenced
     def open_n83624_channel_udp_connection(
         self,
         alias: str,
@@ -208,6 +324,7 @@ class NGI_N83624:
         )
 
     @keyword("Open N83624 Serial Connection")
+    @_evidenced
     def open_n83624_serial_connection(
         self,
         alias: str,
@@ -241,6 +358,7 @@ class NGI_N83624:
         )
 
     @keyword("Open N83624 Emulator")
+    @_evidenced
     def open_n83624_emulator(
         self,
         alias: str = "emulator",
@@ -265,6 +383,7 @@ class NGI_N83624:
         )
 
     @keyword("Switch N83624 Connection")
+    @_evidenced
     def switch_n83624_connection(self, alias: str) -> str:
         """Select the active named session."""
         normalized = self._normalize_alias(alias)
@@ -275,16 +394,19 @@ class NGI_N83624:
         return normalized
 
     @keyword("Get Active N83624 Connection")
+    @_evidenced
     def get_active_n83624_connection(self) -> str:
         """Return the active alias."""
         return self._session().alias
 
     @keyword("List N83624 Connections")
+    @_evidenced
     def list_n83624_connections(self) -> list[str]:
         """Return all open aliases."""
         return sorted(self._sessions)
 
     @keyword("Close N83624 Connection")
+    @_evidenced
     def close_n83624_connection(self, alias: str | None = None) -> None:
         """Safely close one session and remove it from the registry."""
         session = self._session(alias)
@@ -310,6 +432,7 @@ class NGI_N83624:
             raise error
 
     @keyword("Close All N83624 Connections")
+    @_evidenced
     def close_all_n83624_connections(self) -> None:
         """Close all sessions, attempting every session even after failures."""
         errors: list[str] = []
@@ -322,6 +445,7 @@ class NGI_N83624:
             raise SafetyError("One or more N83624 sessions failed safe close: " + "; ".join(errors))
 
     @keyword("Identify N83624")
+    @_evidenced
     def identify_n83624(self, alias: str | None = None) -> str:
         """Return ``*IDN?`` response."""
         session = self._session(alias)
@@ -369,6 +493,7 @@ class NGI_N83624:
         }
 
     @keyword("Connect")
+    @_evidenced
     def connect(
         self,
         resource: str | None = None,
@@ -398,6 +523,7 @@ class NGI_N83624:
         return self._connection_state(self._sessions[normalized])
 
     @keyword("Disconnect")
+    @_evidenced
     def disconnect(self, alias: str | None = None) -> None:
         """RFDS-002 generic disconnect. Idempotent: succeeds even if already disconnected."""
         normalized = self._active_alias if alias is None or str(alias).strip() == "" else self._normalize_alias(alias)
@@ -406,6 +532,7 @@ class NGI_N83624:
         self.close_n83624_connection(normalized)
 
     @keyword("Is Connected")
+    @_evidenced
     def is_connected(self, alias: str | None = None) -> bool:
         """Return whether ``alias`` (or the active session) is connected."""
         normalized = self._active_alias if alias is None or str(alias).strip() == "" else self._normalize_alias(alias)
@@ -414,6 +541,7 @@ class NGI_N83624:
         return self._sessions[normalized].driver.transport.is_open()
 
     @keyword("Get Connection State")
+    @_evidenced
     def get_connection_state(self, alias: str | None = None, refresh: bool = False) -> dict[str, Any]:
         """Return the RFDS-002 Section 12.1 normalized connection-state dictionary."""
         normalized = self._active_alias if alias is None or str(alias).strip() == "" else self._normalize_alias(alias)
@@ -437,12 +565,14 @@ class NGI_N83624:
         return self._connection_state(session)
 
     @keyword("Check Communication")
+    @_evidenced
     def check_communication(self, alias: str | None = None) -> bool:
         """Perform a bounded, non-destructive communication check. Raises on failure."""
         self._session(alias).driver.identify()
         return True
 
     @keyword("Get Identity")
+    @_evidenced
     def get_identity_generic(self, alias: str | None = None, refresh: bool = True) -> str:
         """Return a stable human-readable identity string."""
         del refresh
@@ -450,6 +580,7 @@ class NGI_N83624:
 
     # Safety configuration -------------------------------------------------------
     @keyword("Set Channel Safety Limits")
+    @_evidenced
     def set_channel_safety_limits(
         self,
         channel: int | str,
@@ -485,12 +616,14 @@ class NGI_N83624:
         return result
 
     @keyword("Get Channel Safety Limits")
+    @_evidenced
     def get_channel_safety_limits(self, channel: int | str, alias: str | None = None) -> dict[str, Any]:
         """Return effective channel limits as a dictionary."""
         session = self._session(alias)
         return self._to_robot(session.driver.limits.for_channel(self._channel(channel)))
 
     @keyword("Arm Channel Output")
+    @_evidenced
     def arm_channel_output(
         self,
         channel: int | str,
@@ -515,6 +648,7 @@ class NGI_N83624:
         self._audit_for(session, "arm_output", channel=channel_value)
 
     @keyword("Disarm Channel Output")
+    @_evidenced
     def disarm_channel_output(self, channel: int | str, alias: str | None = None) -> None:
         """Remove output enable permission for one channel."""
         session = self._session(alias)
@@ -523,6 +657,7 @@ class NGI_N83624:
         self._audit_for(session, "disarm_output", channel=channel_value)
 
     @keyword("Disarm All Channel Outputs")
+    @_evidenced
     def disarm_all_channel_outputs(self, alias: str | None = None) -> None:
         """Remove output enable permission from all channels."""
         session = self._session(alias)
@@ -530,6 +665,7 @@ class NGI_N83624:
         self._audit_for(session, "disarm_all_outputs")
 
     @keyword("Channel Output Should Be Armed")
+    @_evidenced
     def channel_output_should_be_armed(self, channel: int | str, alias: str | None = None) -> None:
         """Fail unless the channel is armed."""
         session = self._session(alias)
@@ -539,6 +675,7 @@ class NGI_N83624:
 
     # Output and configuration ---------------------------------------------------
     @keyword("Set Channel Mode")
+    @_evidenced
     def set_channel_mode(
         self,
         channel: int | str,
@@ -559,11 +696,13 @@ class NGI_N83624:
         return mode_value.name
 
     @keyword("Get Channel Mode")
+    @_evidenced
     def get_channel_mode(self, channel: int | str, alias: str | None = None) -> str:
         """Return channel mode name."""
         return self._session(alias).driver.channel(self._channel(channel)).get_mode().name
 
     @keyword("Configure Source Mode")
+    @_evidenced
     def configure_source_mode(
         self,
         channel: int | str,
@@ -599,6 +738,7 @@ class NGI_N83624:
         )
 
     @keyword("Configure Charge Mode")
+    @_evidenced
     def configure_charge_mode(
         self,
         channel: int | str,
@@ -625,6 +765,7 @@ class NGI_N83624:
         self._audit_for(session, "configure_charge", channel=channel_value, output=output_value)
 
     @keyword("Configure SOC Profile")
+    @_evidenced
     def configure_soc_profile(
         self,
         channel: int | str,
@@ -652,6 +793,7 @@ class NGI_N83624:
         self._audit_for(session, "configure_soc", channel=channel_value, steps=len(parsed_steps), output=output_value)
 
     @keyword("Configure Sequence Profile")
+    @_evidenced
     def configure_sequence_profile(
         self,
         channel: int | str,
@@ -685,6 +827,7 @@ class NGI_N83624:
         )
 
     @keyword("Enable Channel Output")
+    @_evidenced
     def enable_channel_output(self, channel: int | str, alias: str | None = None) -> None:
         """Enable one armed channel output."""
         session = self._session(alias)
@@ -694,6 +837,7 @@ class NGI_N83624:
         self._audit_for(session, "output_on", channel=channel_value)
 
     @keyword("Disable Channel Output")
+    @_evidenced
     def disable_channel_output(self, channel: int | str, alias: str | None = None) -> None:
         """Disable one output. This operation never requires arming."""
         session = self._session(alias)
@@ -702,6 +846,7 @@ class NGI_N83624:
         self._audit_for(session, "output_off", channel=channel_value)
 
     @keyword("All N83624 Outputs Off")
+    @_evidenced
     def all_n83624_outputs_off(self, alias: str | None = None, disarm: bool | str = True) -> None:
         """Attempt to disable all 24 outputs."""
         session = self._session(alias)
@@ -711,17 +856,20 @@ class NGI_N83624:
         self._audit_for(session, "all_outputs_off", disarm=self._as_bool(disarm))
 
     @keyword("Get Channel Output State")
+    @_evidenced
     def get_channel_output_state(self, channel: int | str, alias: str | None = None) -> bool:
         """Return true when output is enabled."""
         return self._session(alias).driver.channel(self._channel(channel)).get_output()
 
     @keyword("Channel Output Should Be On")
+    @_evidenced
     def channel_output_should_be_on(self, channel: int | str, alias: str | None = None) -> None:
         """Fail unless output is on."""
         if not self.get_channel_output_state(channel, alias):
             raise AssertionError(f"N83624 channel {self._channel(channel)} output is OFF")
 
     @keyword("Channel Output Should Be Off")
+    @_evidenced
     def channel_output_should_be_off(self, channel: int | str, alias: str | None = None) -> None:
         """Fail unless output is off."""
         if self.get_channel_output_state(channel, alias):
@@ -729,43 +877,51 @@ class NGI_N83624:
 
     # Measurements and assertions -----------------------------------------------
     @keyword("Measure Channel Voltage")
+    @_evidenced
     def measure_channel_voltage(self, channel: int | str, alias: str | None = None) -> float:
         """Return channel voltage in volts."""
         return self._session(alias).driver.channel(self._channel(channel)).measure_voltage_v()
 
     @keyword("Measure Channel Current")
+    @_evidenced
     def measure_channel_current(self, channel: int | str, alias: str | None = None) -> float:
         """Return channel current in milliamperes."""
         return self._session(alias).driver.channel(self._channel(channel)).measure_current_ma()
 
     @keyword("Measure Channel Power")
+    @_evidenced
     def measure_channel_power(self, channel: int | str, alias: str | None = None) -> float:
         """Return channel power in watts."""
         return self._session(alias).driver.channel(self._channel(channel)).measure_power_w()
 
     @keyword("Measure Channel Resistance")
+    @_evidenced
     def measure_channel_resistance(self, channel: int | str, alias: str | None = None) -> float:
         """Return channel resistance in milliohms."""
         return self._session(alias).driver.channel(self._channel(channel)).measure_resistance_mohm()
 
     @keyword("Measure Channel Capacity")
+    @_evidenced
     def measure_channel_capacity(self, channel: int | str, alias: str | None = None) -> float:
         """Return channel capacity in mAh."""
         return self._session(alias).driver.channel(self._channel(channel)).measure_capacity_mah()
 
     @keyword("Measure Channel")
+    @_evidenced
     def measure_channel(self, channel: int | str, alias: str | None = None) -> dict[str, Any]:
         """Return all supported channel measurements as a dictionary."""
         measurement = self._session(alias).driver.channel(self._channel(channel)).measure_all()
         return self._to_robot(measurement)
 
     @keyword("Measure Voltage Channels")
+    @_evidenced
     def measure_voltage_channels(self, channels: Any, alias: str | None = None) -> dict[int, float]:
         """Measure multiple channels. ``channels`` may be a Robot list or CSV string."""
         values = [self._channel(item) for item in self._as_channel_sequence(channels)]
         return self._session(alias).driver.measure_voltage_channels(values)
 
     @keyword("Channel Voltage Should Be Within")
+    @_evidenced
     def channel_voltage_should_be_within(
         self,
         channel: int | str,
@@ -779,6 +935,7 @@ class NGI_N83624:
         return actual
 
     @keyword("Channel Current Should Be Within")
+    @_evidenced
     def channel_current_should_be_within(
         self,
         channel: int | str,
@@ -792,6 +949,7 @@ class NGI_N83624:
         return actual
 
     @keyword("Wait Until Channel Voltage Is Within")
+    @_evidenced
     def wait_until_channel_voltage_is_within(
         self,
         channel: int | str,
@@ -813,6 +971,7 @@ class NGI_N83624:
         )
 
     @keyword("Wait Until Channel Current Is Within")
+    @_evidenced
     def wait_until_channel_current_is_within(
         self,
         channel: int | str,
@@ -834,16 +993,19 @@ class NGI_N83624:
         )
 
     @keyword("Get Channel Status")
+    @_evidenced
     def get_channel_status(self, channel: int | str, alias: str | None = None) -> dict[str, Any]:
         """Return decoded status bits."""
         return self._to_robot(self._session(alias).driver.channel(self._channel(channel)).get_status())
 
     @keyword("Get Channel Event")
+    @_evidenced
     def get_channel_event(self, channel: int | str, alias: str | None = None) -> dict[str, Any]:
         """Return decoded event bits."""
         return self._to_robot(self._session(alias).driver.channel(self._channel(channel)).get_event())
 
     @keyword("Get Channel Configuration")
+    @_evidenced
     def get_channel_configuration(self, channel: int | str, alias: str | None = None) -> dict[str, Any]:
         """Return a typed configuration snapshot as a Robot dictionary."""
         return self._to_robot(
@@ -852,6 +1014,7 @@ class NGI_N83624:
 
     # Protection and acquisition -------------------------------------------------
     @keyword("Set Channel Protection Limits")
+    @_evidenced
     def set_channel_protection_limits(
         self,
         channel: int | str,
@@ -869,6 +1032,7 @@ class NGI_N83624:
         self._audit_for(session, "set_protection", channel=self._channel(channel))
 
     @keyword("Set Channel Capture Rate")
+    @_evidenced
     def set_channel_capture_rate(
         self,
         channel: int | str,
@@ -881,12 +1045,14 @@ class NGI_N83624:
         return rate_value.name
 
     @keyword("Get Channel Capture Rate")
+    @_evidenced
     def get_channel_capture_rate(self, channel: int | str, alias: str | None = None) -> str:
         """Return capture rate name."""
         return self._session(alias).driver.channel(self._channel(channel)).get_capture_rate().name
 
     # Heartbeat and recovery -----------------------------------------------------
     @keyword("Start N83624 Heartbeat")
+    @_evidenced
     def start_n83624_heartbeat(
         self,
         interval_s: float | str = 10.0,
@@ -906,6 +1072,7 @@ class NGI_N83624:
         self._audit_for(session, "heartbeat_start", interval_s=float(interval_s), fail_after=int(fail_after))
 
     @keyword("Stop N83624 Heartbeat")
+    @_evidenced
     def stop_n83624_heartbeat(self, alias: str | None = None) -> None:
         """Stop background heartbeat."""
         session = self._session(alias)
@@ -913,6 +1080,7 @@ class NGI_N83624:
         self._audit_for(session, "heartbeat_stop")
 
     @keyword("Get N83624 Communication Health")
+    @_evidenced
     def get_n83624_communication_health(self, alias: str | None = None) -> dict[str, Any]:
         """Return session state and latest communication observation."""
         session = self._session(alias)
@@ -924,6 +1092,7 @@ class NGI_N83624:
         }
 
     @keyword("Recover N83624 Connection")
+    @_evidenced
     def recover_n83624_connection(self, alias: str | None = None) -> None:
         """Attempt transport reconnect using the configured recovery policy."""
         session = self._session(alias)
@@ -933,6 +1102,7 @@ class NGI_N83624:
 
     # Raw SCPI -------------------------------------------------------------------
     @keyword("Enable Raw SCPI")
+    @_evidenced
     def enable_raw_scpi(
         self,
         confirmation: str,
@@ -946,6 +1116,7 @@ class NGI_N83624:
         self._audit_for(session, "raw_scpi_enabled")
 
     @keyword("Raw SCPI Query")
+    @_evidenced
     def raw_scpi_query(self, command: str, alias: str | None = None) -> str:
         """Send a raw SCPI query when explicitly enabled."""
         session = self._session(alias)
@@ -955,6 +1126,7 @@ class NGI_N83624:
         return response
 
     @keyword("Raw SCPI Write")
+    @_evidenced
     def raw_scpi_write(self, command: str, alias: str | None = None) -> None:
         """Send a raw SCPI write when explicitly enabled.
 
@@ -968,6 +1140,7 @@ class NGI_N83624:
 
     # Emulator support -----------------------------------------------------------
     @keyword("Set Emulator Channel Measurement")
+    @_evidenced
     def set_emulator_channel_measurement(
         self,
         channel: int | str,
@@ -996,12 +1169,27 @@ class NGI_N83624:
         self._audit_for(session, "set_emulator_measurement", channel=channel_value)
 
     @keyword("Get Emulator Command Log")
+    @_evidenced
     def get_emulator_command_log(self, alias: str | None = None) -> list[str]:
         """Return all commands recorded by the active emulator."""
         session = self._session(alias)
         if session.emulator is None:
             raise SessionStateError("Active N83624 session is not an emulator")
         return list(session.emulator.all_commands)
+
+    @keyword("Export Diagnostic Bundle")
+    @_evidenced
+    def export_diagnostic_bundle(self, alias: str | None = None, destination: str | None = None) -> str | None:
+        """Zip ``alias`` (or the active session)'s RFDS-008 evidence run for troubleshooting.
+
+        Works whether or not the session is still connected — closing it
+        finalizes the run for the last time, this can be called before or
+        after that. Returns the archive path, or ``None`` when
+        ``evidence_enabled=False`` was passed to this library instance.
+        """
+        resolved_alias = self._resolve_alias_for_evidence({"alias": alias})
+        run = self._ensure_evidence_run(resolved_alias)
+        return run.export_diagnostic_bundle(None if not destination else str(destination))
 
     # Helpers --------------------------------------------------------------------
     def _register_and_connect(
@@ -1026,6 +1214,15 @@ class NGI_N83624:
             armed_channels=set(),
             emulator=emulator,
         )
+        # This alias's evidence run already exists by now (created by the
+        # @_evidenced wrapper around whichever Open N83624 * Connection
+        # keyword called us) — wire the core driver's protocol_observer hook
+        # to it so every SCPI write/query this session makes, starting with
+        # driver.connect()'s own identity query, is traced.
+        evidence_run = self._ensure_evidence_run(normalized)
+        driver.protocol_observer = lambda direction, text: evidence_run.log_protocol(
+            direction, "scpi", text, session_alias=normalized
+        )
         try:
             driver.connect()
         except Exception:
@@ -1035,6 +1232,13 @@ class NGI_N83624:
                 raise
         self._sessions[normalized] = session
         self._active_alias = normalized
+        evidence_run.record_device_identity(
+            manufacturer="NGI",
+            model="N83624",
+            identity_response=driver.idn,
+            transport_type=type(driver.transport).__name__,
+            resource=self._resource_of(driver),
+        )
         self._audit_for(session, "open_connection", idn=driver.idn, safe_shutdown=session.safe_shutdown)
         logger.info(f"Opened N83624 connection {normalized!r}: {driver.idn or 'identity check disabled'}")
         return normalized
