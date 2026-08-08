@@ -2,6 +2,6 @@
 
 from .library import Tbs1000cLibrary
 
-__version__ = "26.1"
+__version__ = "26.2"
 
 __all__ = ["Tbs1000cLibrary", "__version__"]

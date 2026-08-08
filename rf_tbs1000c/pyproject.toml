@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "robotframework-tbs1000c"
-version = "26.1"
+version = "26.2"
 description = "Robot Framework driver for the Tektronix TBS1000C series digital storage oscilloscopes"
 readme = "README.md"
 requires-python = ">=3.10"

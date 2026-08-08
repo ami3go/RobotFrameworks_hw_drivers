@@ -31,7 +31,7 @@ from .models import (
 )
 from .simulator import SimTbs1000cInstrument
 
-__version__ = "26.1"
+__version__ = "26.2"
 
 __all__ = [
     "AcquisitionMode",

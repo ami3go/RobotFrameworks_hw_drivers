@@ -1,7 +1,7 @@
 # RF TBS1000C
 
 Robot Framework driver for the Tektronix TBS1000C digital storage
-oscilloscope. Version **26.01**. Gate 2 (Core Implementation, RFDS-020):
+oscilloscope. Version **26.02**. Gate 2 (Core Implementation, RFDS-020):
 connection, channel/trigger/acquisition configuration, calibration,
 measurements, waveform fetch, screen/CSV/setup save-restore, and a raw SCPI
 escape hatch are all implemented and tested against the bundled simulator.
@@ -87,6 +87,9 @@ offline coverage.
   `Restore Factory Setup`
 - **Raw SCPI escape hatch:** `Enable Raw SCPI` (requires the exact
   confirmation text `"ENABLE RAW SCPI"`), `Raw SCPI Query`, `Raw SCPI Write`
+- **RFDS-008 evidence:** `Export Diagnostic Bundle` — zips the current
+  session's structured evidence run for troubleshooting (see "Logging and
+  evidence" below)
 
 Multiple oscilloscopes can be driven from one suite via the `alias`
 parameter accepted by every non-connection keyword.
@@ -100,3 +103,60 @@ parameter accepted by every non-connection keyword.
   equal a whitespace byte.
 - An `ai/ai_contract.yaml` (RFDS-017 machine-readable contract) has not been
   generated yet; that is Gate 4 work.
+
+## Logging and evidence
+
+Every keyword call is recorded as structured, correlated RFDS-008 evidence —
+arguments, duration, result/failure, and the literal SCPI commands/responses
+exchanged with the instrument (via a transparent `InstrumentedTransport`
+wrapper around each session's transport) — written to
+`results/session/rf_tbs1000c/<run>/` (override with `RFDS_EVIDENCE_ROOT`).
+On by default; pass `evidence_enabled=${FALSE}` to the `Library` import to
+disable it, or call `Export Diagnostic Bundle` to zip the current run for a
+bug report. The run is finalized when the suite ends (this driver already
+implements a Robot listener hook, `_end_suite`, for session cleanup; evidence
+finalization now happens there too). See `docs/logging_and_evidence.md` for
+the full evidence layout and `guide/evidence_and_diagnostics.md` for a
+task-oriented "my test failed, now what" walkthrough. Validate a run's
+integrity (hashes, JSONL sequencing) with:
+
+```console
+python scripts/validate_evidence.py results/session/rf_tbs1000c/<run>/
+```
+
+## Hardware tests
+
+`tests/hardware/verify_all_keywords.robot` exercises every one of this
+library's 60 public keywords (plus `Export Diagnostic Bundle`) against a
+real TBS1000C — one test case per keyword. It is tagged `hardware` and does
+not run in CI; run it explicitly with a real VISA USBTMC resource string:
+
+```console
+python -m robot --outputdir results \
+    -v RESOURCE:USB0::0x0699::0x03C4::<serial>::INSTR \
+    tests/hardware/verify_all_keywords.robot
+```
+
+Channel/trigger/acquisition settings are captured at Suite Setup and restored
+at Suite Teardown regardless of which keywords ran or failed. Three flags
+gate operations that are disruptive or touch instrument-persistent storage —
+see the suite's own `Documentation` for exactly what each unlocks:
+`ALLOW_CALIBRATION` (`Run Internal Calibration` takes the instrument offline
+for the duration), `ALLOW_FACTORY_RESET` (`Restore Factory Setup` wipes all
+current settings — the suite restores the pre-test setup immediately
+afterward), and `ALLOW_INSTRUMENT_MEMORY_WRITE` (any keyword writing to a
+setup/reference-waveform memory slot or the instrument's own filesystem,
+using a scratch slot identified by `SCRATCH_SLOT` — verify that slot is
+unused on your bench first).
+
+## Running the tests
+
+```console
+python -m pip install -e ".[dev]"          # unit + evidence tests, no hardware needed
+python -m pytest
+python -m robot --outputdir results rf_tbs1000c/tests/robot/acceptance.robot   # simulator-backed
+```
+
+`tests/hardware/verify_all_keywords.robot` (above) needs real hardware.
+`tests/unit/` and `tests/evidence/` use the bundled simulator or an
+injectable test double and need no hardware or vendor SDK at all.
