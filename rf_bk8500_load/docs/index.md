@@ -7,9 +7,13 @@ title: BK8500Library
 
 Robot Framework driver for B&K Precision 8500-series DC electronic loads.
 
-**Package release:** v26.16  
-**Driver version:** 26.16.0  
+**Package release:** v26.17  
+**Driver version:** 26.17.0  
 **Lifecycle:** Phase 1, Gate 5 maintenance revision 11
+
+Release v26.17 adds an RFDS-008 structured evidence engine (`bk8500_load/evidence.py`)
+tracing every 26-byte protocol frame and a new `Export Diagnostic Bundle` keyword. See
+[Logging and evidence](logging_and_evidence.md).
 
 ## Automatic baud detection
 
@@ -37,6 +41,7 @@ at a changed instrument baud remains the feature-specific closure test.
 - [User guide](user_guide.md)
 - [Architecture](architecture.md)
 - [Keyword reference](BK8500Library.html)
+- [Logging and evidence](logging_and_evidence.md)
 - [AI integration](ai_integration.md)
 - [PyCharm and Robot Framework setup](pycharm_robot_framework_setup.md)
 - [Hardware connection](hardware_connection.md)
