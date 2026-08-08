@@ -26,6 +26,10 @@ python scripts/generate_libdoc.py
 - `Run Electronic Load Health Check`
 - `Get Electronic Load Diagnostic Snapshot`
 - `Export Diagnostic Snapshot`
+- `Export Diagnostic Bundle` — zips the current session's live RFDS-008 evidence
+  run (every keyword call and every SCPI/serial exchange, correlated and
+  SHA-256-manifested); distinct from the point-in-time `Export Diagnostic
+  Snapshot` above. See [Logging and evidence](logging_and_evidence.md).
 - `Run Electronic Load Self Test`
 - `Clear Electronic Load Status`
 - `Drain Electronic Load Error Queue`

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>RF BK8500B v26.04</title>
+  <title>RF BK8500B v26.05</title>
   <meta name="description" content="Robot Framework driver for B&K Precision 8500B Series DC electronic loads.">
   <style>
     :root { color-scheme: light dark; font-family: Inter, system-ui, sans-serif; }
@@ -24,7 +24,7 @@
 </head>
 <body>
 <header>
-  <span class="tag">Release v26.04</span>
+  <span class="tag">Release v26.05</span>
   <span class="tag">Robot Framework 7.x</span>
   <span class="tag">Python 3.10–3.13</span>
   <h1>RF BK8500B</h1>
@@ -39,7 +39,7 @@
     </article>
     <article class="card">
       <h2>Release Format</h2>
-      <p><code>rf_bk8500b_v26.04.zip</code></p>
+      <p><code>rf_bk8500b_v26.05.zip</code>, unpacking to <code>rf_bk8500b/</code></p>
       <p>Stable extracted root: <code>rf_bk8500b/</code></p>
     </article>
     <article class="card">
@@ -73,6 +73,7 @@ Verify Constant Current Load
   <h2>Documentation</h2>
   <div class="grid">
     <div class="card"><a href="KEYWORDS.md">Keyword categories</a></div>
+    <div class="card"><a href="logging_and_evidence.md">Logging and evidence</a></div>
     <div class="card"><a href="SAFETY.md">Safety guide</a></div>
     <div class="card"><a href="ARCHITECTURE.md">Architecture</a></div>
     <div class="card"><a href="MIGRATION_FROM_PYTHON_DRIVER.md">Migration guide</a></div>
@@ -83,8 +84,8 @@ Verify Constant Current Load
   </div>
 
   <h2>Release note</h2>
-  <p>v26.04 adds a machine-validated RFDS-017 contract for all 74 exact Robot keywords, a public-interface lock, and a conservative RFDS-018 bench-integration template. Protocol and public keyword behavior are unchanged.</p>
+  <p>v26.05 adds a live RFDS-008 evidence engine implementing this driver's existing <code>AuditSink</code>/<code>MetricsSink</code> protocols (no duplicate instrumentation) plus a <code>TracingTransport</code> for byte-level protocol tracing, an RFDS-019 real-hardware conformance suite (81 test cases, one per public keyword), and a new <code>Export Diagnostic Bundle</code> keyword. Public keyword count is now 81; the RFDS-017 contract and its lock were regenerated to match.</p>
 </main>
-<footer>RF BK8500B v26.04 · MIT License · 2026-07-21</footer>
+<footer>RF BK8500B v26.05 · MIT License · 2026-08-08</footer>
 </body>
 </html>
