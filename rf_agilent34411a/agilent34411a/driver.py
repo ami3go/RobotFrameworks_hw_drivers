@@ -2,7 +2,11 @@
 
 Owns SCPI command construction and response parsing. The Robot Framework
 adapter (``rf_agilent34411a/library.py``) is a thin layer on top of this
-module and must not duplicate any of this logic (task §5.2).
+module and must not duplicate any of this logic (task §5.2). RFDS-008
+evidence/logging also lives only in the RF adapter layer (via
+``rf_agilent34411a/evidence.py``'s ``InstrumentedTransport``, which wraps
+``self.transport`` from the outside) — this module has no evidence-related
+code of its own, by design.
 """
 
 from __future__ import annotations

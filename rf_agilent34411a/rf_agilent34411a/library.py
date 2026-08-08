@@ -3,13 +3,25 @@
 Keeps SCPI construction and validation entirely in the core driver
 (task §5.2) — this module only converts arguments/results and manages
 named sessions.
+
+Every public keyword is also wrapped with an RFDS-008 evidence operation
+record (see ``_instrument_all_keywords`` below and ``evidence.py``) —
+arguments, duration, result/failure, and a correlated trace of the actual
+SCPI commands/responses exchanged with the instrument, written to
+``results/session/rf_agilent34411a/<run>/`` for troubleshooting. See
+``docs/logging_and_evidence.md``. Pass ``evidence_enabled=${FALSE}`` to the
+``Library`` import to disable it.
 """
 
 from __future__ import annotations
 
+import functools
+import inspect
 from dataclasses import asdict, is_dataclass
 from enum import Enum
 from typing import Any
+
+from . import evidence as _evidence
 
 try:  # Robot Framework is optional at import time so pytest can run standalone.
     from robot.api import logger as _rf_logger
@@ -67,7 +79,57 @@ def _robot_value(value: Any) -> Any:
     return value
 
 
-@library(scope="SUITE", version="26.1", auto_keywords=False)
+def _evidenced(func: Any) -> Any:
+    """Wrap one keyword method with an RFDS-008 evidence operation record.
+
+    Resolves the ``alias`` argument (present on almost every keyword here)
+    to a concrete session alias for the evidence record's ``session_alias``
+    field, falling back to the currently active alias the same way
+    ``_resolve_alias`` does. Reads ``self._evidence`` (created lazily by
+    ``_ensure_evidence``). Called from ``_instrument_all_keywords`` *after*
+    ``@keyword(...)`` has already set ``robot_name`` on ``func``, so
+    ``functools.wraps`` copies it onto ``wrapper`` automatically — no
+    decoration-order trick needed here (contrast with
+    ``rf_phidget_relay/rf_phidget_relay/library.py``, which applies its
+    equivalent decorator *before* ``@keyword`` runs and has to read
+    ``wrapper.robot_name`` at call time instead).
+    """
+    signature = inspect.signature(func)
+
+    @functools.wraps(func)
+    def wrapper(self: Agilent34411ALibrary, *args: Any, **kwargs: Any) -> Any:
+        capability = getattr(wrapper, "robot_name", None) or func.__name__.replace("_", " ").title()
+        run = self._ensure_evidence()
+        bound = signature.bind_partial(self, *args, **kwargs)
+        bound.apply_defaults()
+        arguments = {key: value for key, value in bound.arguments.items() if key != "self"}
+        session_alias = self._resolve_alias(arguments.get("alias")) or "default"
+        with run.record_operation(capability, arguments=arguments, session_alias=session_alias) as op:
+            result = func(self, *args, **kwargs)
+            op.set_result(result)
+            return result
+
+    return wrapper
+
+
+def _instrument_all_keywords(cls: type) -> type:
+    """Class decorator: wrap every ``@keyword``-decorated method with ``_evidenced``.
+
+    Applied once here rather than annotating each of this library's 148
+    keyword methods individually — mechanically identical to per-method
+    ``@_evidenced``, just far less error-prone at this keyword count. Runs
+    after the class body finishes executing, so every ``@keyword(...)`` call
+    inside the class body has already set ``robot_name`` on its method by
+    the time this walks ``vars(cls)``.
+    """
+    for name, value in list(vars(cls).items()):
+        if callable(value) and getattr(value, "robot_name", None):
+            setattr(cls, name, _evidenced(value))
+    return cls
+
+
+@_instrument_all_keywords
+@library(scope="SUITE", version="26.2", auto_keywords=False)
 class Agilent34411ALibrary:
     """Robot Framework keywords for the Agilent (Keysight) 34411A digital multimeter.
 
@@ -78,12 +140,31 @@ class Agilent34411ALibrary:
     """
 
     ROBOT_LIBRARY_SCOPE = "SUITE"
-    ROBOT_LIBRARY_VERSION = "26.1"
+    ROBOT_LIBRARY_VERSION = "26.2"
 
-    def __init__(self) -> None:
+    def __init__(self, evidence_enabled: Any = True) -> None:
         self._sessions: dict[str, Agilent34411A] = {}
         self._active_alias: str | None = None
+        self._evidence_enabled = _as_bool(evidence_enabled, "evidence_enabled")
+        self._evidence: Any = None
         self.ROBOT_LIBRARY_LISTENER = self
+
+    def _ensure_evidence(self) -> Any:
+        """Lazily create (or return) this library instance's :class:`evidence.EvidenceRun`.
+
+        One run per library instance (this library is ``ROBOT_LIBRARY_SCOPE
+        = "SUITE"``), covering every alias/session connected during the
+        suite — see ``evidence.py``'s module docstring for why finalization
+        happens in ``_end_suite`` rather than in ``Disconnect``.
+        """
+        if self._evidence is None:
+            if self._evidence_enabled:
+                self._evidence = _evidence.EvidenceRun(
+                    driver_id="rf_agilent34411a", activity="session", execution_mode="NO_HARDWARE"
+                )
+            else:
+                self._evidence = _evidence.NullEvidenceRun()
+        return self._evidence
 
     def _end_suite(self, name: str, attributes: dict[str, Any]) -> None:
         del name, attributes
@@ -94,6 +175,9 @@ class Agilent34411ALibrary:
                 _rf_logger.warn(f"Agilent34411A: cleanup for {alias!r} reported: {exc}")  # noqa: G010 - robot.api.logger has no .warning
         self._sessions.clear()
         self._active_alias = None
+        if self._evidence is not None:
+            self._evidence.finalize(status="PASS")
+            self._evidence = None
 
     # ------------------------------------------------------------------
     # Internal helpers
@@ -176,13 +260,39 @@ class Agilent34411ALibrary:
         simulated = _as_bool(options.pop("simulated", False), "simulated")
         if simulated:
             driver = Agilent34411A.connect_simulated()
+            execution_mode = "SIMULATOR"
         else:
             if not resource:
                 raise Agilent34411AValidationError("resource is required unless simulated=True")
             driver = Agilent34411A.connect_visa(str(resource), timeout_s=timeout_s or 5.0)
+            execution_mode = "REAL_HARDWARE"
+        run = self._ensure_evidence()
+        if hasattr(run, "execution_mode"):
+            # A run that mixes simulated and real aliases is honestly reported as
+            # MIXED rather than silently keeping whichever mode connected first
+            # (RFDS-008 §6.6 simulation honesty).
+            if run.execution_mode == "NO_HARDWARE":
+                run.execution_mode = execution_mode
+            elif run.execution_mode != execution_mode:
+                run.execution_mode = "MIXED"
+        driver.transport = _evidence.InstrumentedTransport(driver.transport, run, selected_alias)
         self._sessions[selected_alias] = driver
         self._active_alias = selected_alias
         _rf_logger.info(f"Agilent34411A: connected alias={selected_alias!r} resource={driver.resource!r}")
+        try:
+            identity = driver.identify(refresh=True)
+            run.record_device_identity(
+                session_alias=selected_alias,
+                manufacturer=getattr(identity, "manufacturer", None),
+                model=getattr(identity, "model", None),
+                serial_number=getattr(identity, "serial", None),
+                firmware_version=getattr(identity, "firmware", None),
+                raw_identity=getattr(identity, "raw", None),
+                resource=driver.resource,
+                execution_mode=execution_mode,
+            )
+        except Exception:  # noqa: BLE001, S110 - identity capture is best-effort evidence, not a connect precondition
+            pass
         return self._connection_state(selected_alias, driver)
 
     @keyword("Disconnect")
@@ -885,3 +995,19 @@ class Agilent34411ALibrary:
         """Bypasses typed validation."""
 
         self._session(alias).raw_write(command)
+
+    # ------------------------------------------------------------------
+    # Diagnostics
+    # ------------------------------------------------------------------
+    @keyword("Export Diagnostic Bundle")
+    def export_diagnostic_bundle(self, destination: str | None = None) -> str | None:
+        """Zip this suite's RFDS-008 evidence run to ``destination`` for troubleshooting.
+
+        Works with any number of connected aliases, and does not finalize the
+        run — Robot's own suite-end hook (``_end_suite``) remains the point at
+        which ``run_summary.json``/``evidence_manifest.json`` are written for
+        the last time. Returns the archive path, or ``None`` if
+        ``evidence_enabled=${FALSE}`` was passed to this library instance.
+        """
+        run = self._ensure_evidence()
+        return run.export_diagnostic_bundle(None if destination in (None, "") else str(destination))

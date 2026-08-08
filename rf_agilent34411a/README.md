@@ -1,15 +1,18 @@
 # RF Agilent34411A
 
 Robot Framework driver for the Agilent (Keysight) 34411A 6.5-digit digital multimeter.
-Version **26.1**. Gate 2 (Core Implementation, RFDS-020): connection, all measurement
+Version **26.2**. Gate 2 (Core Implementation, RFDS-020): connection, all measurement
 functions (dc/ac voltage, dc/ac current, 2-/4-wire resistance, frequency/period,
 capacitance, temperature, continuity, diode), math (dB/dBm/statistics/limit test),
 trigger/sample configuration, reading memory and non-volatile-memory data logging, and
 instrument state storage (5 non-volatile `MEMory:STATe` slots) are all implemented and
 tested against the bundled simulator. Gate 3 (Extended Features): calibration (behind a
 dedicated two-tier guard) and LAN interface configuration are also implemented. Gate 4
-(full docs/AI contract/CI) and Gate 5 (review/release) have not started yet — see `task/`
-for the driver specification and readiness review that shaped this implementation.
+work has started: an RFDS-019 real-hardware keyword conformance suite and an RFDS-008
+structured evidence/logging system are both in place (see "Hardware tests" and "Logging
+and evidence" below); the RFDS-017 AI contract and CI wiring have not started yet, and
+Gate 5 (review/release) has not started — see `task/` for the driver specification and
+readiness review that shaped this implementation.
 
 ## Install
 
@@ -115,6 +118,8 @@ Connect    resource=USB0::0x0957::0x0618::<serial>::INSTR
   `Clear LAN History`, `Get LAN History`
 - **Raw SCPI escape hatch:** `Enable Raw SCPI` (requires the exact confirmation text
   `"ENABLE RAW SCPI"`), `Raw SCPI Query`, `Raw SCPI Write`
+- **Diagnostics:** `Export Diagnostic Bundle` — zips the current RFDS-008 evidence run
+  (see "Logging and evidence" below) for troubleshooting
 
 Multiple multimeters can be driven from one suite via the `alias` parameter accepted by
 every non-connection keyword.
@@ -152,5 +157,51 @@ every non-connection keyword.
   device-configuration commands with no documented risk to calibration data or
   measurement accuracy.
 - An `ai/ai_contract.yaml` (RFDS-017 machine-readable contract) has not been generated
-  yet; that is Gate 4 work. When it is, this repository's convention names it
+  yet; that is remaining Gate 4 work. When it is, this repository's convention names it
   `agilent34411a_ai_contract.yaml`/`.lock`.
+
+## Logging and evidence
+
+Every keyword call is recorded as structured, correlated RFDS-008 evidence — arguments,
+duration, result/failure, and the underlying SCPI commands/responses for the alias it
+targeted — written to `results/session/rf_agilent34411a/<run>/` (override with the
+`RFDS_EVIDENCE_ROOT` environment variable). On by default; pass
+`evidence_enabled=${FALSE}` to the `Library` import to disable it, or call
+`Export Diagnostic Bundle` to zip the current run for a bug report. See
+`docs/logging_and_evidence.md` for the full evidence layout and
+`guide/evidence_and_diagnostics.md` for a task-oriented "my test failed, now what"
+walkthrough. Validate a run's integrity (hashes, JSONL sequencing) with:
+
+```console
+python scripts/validate_evidence.py results/session/rf_agilent34411a/<run>/
+```
+
+## Hardware tests
+
+`tests/hardware/verify_all_keywords.robot` exercises every one of this library's public
+keywords against a real 34411A unit and checks its response — one test case per keyword
+(149 total). It is tagged `hardware` and does not run in CI; run it explicitly:
+
+```console
+python -m robot --outputdir results -v RESOURCE:<visa resource string> \
+    tests/hardware/verify_all_keywords.robot
+```
+
+Calibration-mutating keywords are skipped unless `-v ALLOW_CALIBRATION:True` is passed
+(calibration changes persist and affect measurement accuracy on every subsequent use of
+the instrument), LAN-identity `Set` keywords are read-only unless `-v ALLOW_LAN_WRITES:True`
+is passed, `Delete All Instrument Memory Slots` is skipped unless
+`-v ALLOW_DELETE_ALL_MEMORY:True` is passed, and the instrument-memory-slot tests use
+`TEST_MEMORY_SLOT` (default `4`) and refuse to overwrite it if already occupied unless
+`-v ALLOW_MEMORY_OVERWRITE:True` is passed. Every keyword that mutates device-persistent
+state restores the original value before its own test case ends.
+
+## Running the tests
+
+```console
+python -m pip install -e ".[dev,visa,visa-py]"
+python -m pytest                                                    # unit + evidence tests, simulator only
+python -m robot --outputdir results tests/robot/acceptance.robot    # offline acceptance, simulator only
+python -m robot --outputdir results -v RESOURCE:<visa resource> \
+    tests/hardware/verify_all_keywords.robot                        # real hardware, see above
+```

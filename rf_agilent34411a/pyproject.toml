@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "robotframework-agilent34411a"
-version = "26.1"
+version = "26.2"
 description = "Robot Framework driver for the Agilent (Keysight) 34411A 6.5-digit digital multimeter"
 readme = "README.md"
 requires-python = ">=3.10"
