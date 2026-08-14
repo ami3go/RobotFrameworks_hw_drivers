@@ -51,7 +51,7 @@ PACKAGES=(
   rf_keysight_n6700
   rf_ngi_n83624
   rf_phidget_relay
-  rf_picoscope2000a
+  rf_picoscope_scope
   rf_slcan
   rf_tbs1000c
   rf_votsch_climate_chamber
@@ -68,7 +68,7 @@ declare -A DEV_EXTRAS=(
   [rf_keysight_n6700]="dev,docs"
   [rf_ngi_n83624]="dev,docs"
   [rf_phidget_relay]="dev"
-  [rf_picoscope2000a]="dev"
+  [rf_picoscope_scope]="dev"
   [rf_slcan]="dev"
   [rf_tbs1000c]="dev"
   [rf_votsch_climate_chamber]="dev,docs"

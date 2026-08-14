@@ -17,7 +17,7 @@ environment or individually as needed.
 | `rf_keysight_n6700` | `robotframework-keysight-n6700` | Keysight/Agilent N6700-series mainframe | >=3.10 |
 | `rf_ngi_n83624` | `rf-ngi-n83624` | NGI N83624 24-channel cell simulator | >=3.10 |
 | `rf_phidget_relay` | `rf-phidget-relay` | Phidget USB relay boards | >=3.9 |
-| `rf_picoscope2000a` | `robotframework-picoscope2000a` | PicoScope 2000A-family oscilloscope + AWG | >=3.10 |
+| `rf_picoscope_scope` | `robotframework-picoscope-scope` | PicoScope oscilloscope (2000A/3000A series) + AWG | >=3.10 |
 | `rf_slcan` | `robotframework-slcan` | SLCAN-compatible CAN adapters | >=3.10 |
 | `rf_tbs1000c` | `robotframework-tbs1000c` | Tektronix TBS1000C oscilloscope | >=3.10 |
 | `rf_votsch_climate_chamber` | `rf-votsch-climate-chamber` | Vötsch/Weiss climate chamber | >=3.11 |
@@ -45,7 +45,7 @@ package in this repo.
   sufficient USB permissions for the relay boards to enumerate — see
   [Phidgets' Linux setup documentation](https://www.phidgets.com/docs/OS_-_Linux)
   if devices aren't found after installing the SDK.
-- For `rf_picoscope2000a` real hardware, install the `hardware` extra
+- For `rf_picoscope_scope` real hardware, install the `hardware` extra
   (`picosdk`) **and** Pico Technology's own native PicoSDK driver package
   separately — `picosdk` is a ctypes wrapper around it, not a self-contained
   driver. Not needed to run the package's own tests, which use a bundled
@@ -122,7 +122,7 @@ python -m pip install -e "./rf_hp34401a[dev,hardware]"
 python -m pip install -e "./rf_keysight_n6700[dev,docs]"
 python -m pip install -e "./rf_ngi_n83624[dev,docs]"
 python -m pip install -e "./rf_phidget_relay[dev]"
-python -m pip install -e "./rf_picoscope2000a[dev]"
+python -m pip install -e "./rf_picoscope_scope[dev]"
 python -m pip install -e "./rf_slcan[dev]"
 python -m pip install -e "./rf_tbs1000c[dev]"
 python -m pip install -e "./rf_votsch_climate_chamber[dev,docs]"
@@ -141,7 +141,7 @@ python -m pip install -e ./rf_hp34401a
 python -m pip install -e ./rf_keysight_n6700
 python -m pip install -e ./rf_ngi_n83624
 python -m pip install -e ./rf_phidget_relay
-python -m pip install -e ./rf_picoscope2000a
+python -m pip install -e ./rf_picoscope_scope
 python -m pip install -e ./rf_slcan
 python -m pip install -e ./rf_tbs1000c
 python -m pip install -e ./rf_votsch_climate_chamber
@@ -165,10 +165,10 @@ python -m pip install -e "./rf_hp34401a[hardware]"   # pulls in both pyvisa and 
 python -m pip install -e "./rf_slcan[serial]"
 python -m pip install -e "./rf_tbs1000c[usbtmc]"
 
-# PicoScope 2000A-family: real hardware (native PicoSDK driver required too, see above)
-python -m pip install -e "./rf_picoscope2000a[hardware]"
-# PicoScope 2000A-family: image export (Save Channel Image / Save All Channels Image)
-python -m pip install -e "./rf_picoscope2000a[plot]"
+# PicoScope (2000A or 3000A series): real hardware (native PicoSDK driver required too, see above)
+python -m pip install -e "./rf_picoscope_scope[hardware]"
+# PicoScope (any series): image export (Save Channel Image / Save All Channels Image)
+python -m pip install -e "./rf_picoscope_scope[plot]"
 ```
 
 `rf_bk8500_load`, `rf_ngi_n83624`, and `rf_phidget_relay` install their
@@ -195,7 +195,7 @@ python -m pytest rf_hp34401a/tests -q
 python -m pytest rf_keysight_n6700/tests -q
 python -m pytest rf_ngi_n83624/tests -q
 python -m pytest rf_phidget_relay/tests -q
-python -m pytest rf_picoscope2000a/tests -q
+python -m pytest rf_picoscope_scope/tests -q
 python -m pytest rf_slcan/tests -q
 python -m pytest rf_tbs1000c/tests -q
 python -m pytest rf_votsch_climate_chamber/tests -q
@@ -203,7 +203,7 @@ python -m pytest rf_votsch_climate_chamber/tests -q
 
 Import a library from Robot Framework directly to confirm it's on the path:
 ```bash
-python -c "import rf_agilent33220a, rf_agilent34411a, BK8500BLibrary, bk8500_load, rf_ea_ps9000t, rf_eresistor, rf_hp34401a, KeysightN6700Library, rf_ngi_n83624, rf_phidget_relay, rf_picoscope2000a, rf_slcan, rf_tbs1000c, rf_votsch_climate_chamber; print('all imports OK')"
+python -c "import rf_agilent33220a, rf_agilent34411a, BK8500BLibrary, bk8500_load, rf_ea_ps9000t, rf_eresistor, rf_hp34401a, KeysightN6700Library, rf_ngi_n83624, rf_phidget_relay, rf_picoscope_scope, rf_slcan, rf_tbs1000c, rf_votsch_climate_chamber; print('all imports OK')"
 ```
 
 ## Notes
