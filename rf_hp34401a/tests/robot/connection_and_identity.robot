@@ -35,7 +35,11 @@ Runtime Metadata Is Exposed
     Should Be Equal    ${metadata}[model]    34401A
     Should Be Equal    ${metadata}[driver_version]    26.07
     ${capabilities}=    Get Driver Capabilities
-    Should Be Equal    ${capabilities}[instrument_class]    DMM
+    List Should Contain Value    ${capabilities}    connection
+    List Should Contain Value    ${capabilities}    dc_voltage_measurement
+    ${model}=    Get Driver Capability Model    mode=static
+    Should Be Equal    ${model}[driver][id]    rf_hp34401a
+    Should Be True    ${model}[validation][valid]
 
 Multiple Aliases Work
     Open Simulated DMM    alias=second    reading=2.0
