@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-from typing import Any, TypeVar
+import math
 import re
+from typing import Any, TypeVar
 
 from hp34401a_dmm import (
     AcFilterHz,
@@ -33,9 +34,12 @@ def as_bool(value: Any, *, name: str = "value") -> bool:
 
 def as_float(value: Any, *, name: str = "value") -> float:
     try:
-        return float(value)
+        result = float(value)
     except (TypeError, ValueError) as exc:
         raise ValueError(f"{name} must be numeric, got {value!r}") from exc
+    if not math.isfinite(result):
+        raise ValueError(f"{name} must be finite, got {value!r}")
+    return result
 
 
 def as_int(value: Any, *, name: str = "value") -> int:
@@ -43,12 +47,19 @@ def as_int(value: Any, *, name: str = "value") -> int:
         number = float(value)
     except (TypeError, ValueError) as exc:
         raise ValueError(f"{name} must be an integer, got {value!r}") from exc
-    if not number.is_integer():
+    if not math.isfinite(number) or not number.is_integer():
         raise ValueError(f"{name} must be an integer, got {value!r}")
     return int(number)
 
 
 def as_seconds(value: Any, *, name: str = "duration") -> float:
+    """Convert a Robot/Python duration to a finite positive number of seconds.
+
+    Every current caller uses this helper for a communication/operation timeout.
+    RFDS-002 requires those public timeout values to be finite and strictly
+    positive, so zero, negative, NaN, and infinity are rejected centrally.
+    """
+
     if isinstance(value, (int, float)):
         seconds = float(value)
     else:
@@ -86,8 +97,8 @@ def as_seconds(value: Any, *, name: str = "duration") -> float:
                     "hours": 3600.0,
                 }[unit]
                 seconds = number * factor
-    if seconds < 0:
-        raise ValueError(f"{name} must be >= 0")
+    if not math.isfinite(seconds) or seconds <= 0:
+        raise ValueError(f"{name} must be a finite value > 0 seconds")
     return seconds
 
 
@@ -101,7 +112,7 @@ def as_range(value: Any, *, name: str = "range") -> float | AutoRange:
     if isinstance(value, AutoRange):
         return value
     if isinstance(value, (int, float)):
-        result = float(value)
+        result = as_float(value, name=name)
         if result <= 0:
             raise ValueError(f"{name} must be positive or AUTO/MIN/MAX/DEF")
         return result
