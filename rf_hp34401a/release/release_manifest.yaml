@@ -1,9 +1,10 @@
 schema_version: '1.0'
 driver_name: rf_hp34401a
-release_version: '26.06'
-distribution_version: 26.6.0
+release_version: '26.07'
+distribution_version: 26.7.0
 api_version: 1.1.0
 release_class: D0
+status: REMEDIATION_CANDIDATE
 entry_point: rf_hp34401a.Hp34401ALibrary
 plugin_entry_point: rf_hp34401a.plugin:Hp34401APluginProvider
 supported_devices:
@@ -22,11 +23,12 @@ python_versions:
 robot_framework_versions:
 - 7.x
 rfds_compliance:
-  RFDS-001: '1.2'
+  RFDS-001: 1.2-partial-hardware-pending
   RFDS-002: '1.1'
   RFDS-003: 2.0-partial-deviation
   RFDS-004: 2.0-partial-deviation
   RFDS-005: '1.3'
+  RFDS-006: '1.0'
   RFDS-007: '1.0'
   RFDS-009: '1.0'
   RFDS-010: '1.0'
@@ -43,6 +45,7 @@ paths:
   public_api: api/public_api.yaml
   capability_model: capability/capability_model.yaml
   configuration_schema: config/schema.json
+  configuration_lock: config/schema.lock
   ai_contract: ai/hp34401a_ai_contract.yaml
   bench_template: examples/bench/system_ai_contract.template.yaml
   tests: tests
@@ -52,26 +55,29 @@ paths:
   history: history
   review: review
 conformance:
-  public_keyword_count: 108
-  inventory_result: PASS
-  vector_coverage: 108/108
-  simulator_execution: PENDING_OFFICIAL_ROBOT_RUNTIME
+  public_keyword_count: 109
+  inventory_result: REQUIRES_RERUN_AFTER_REMEDIATION
+  vector_coverage: 109/109-static-inventory
+  simulator_execution: REQUIRES_RERUN_AFTER_REMEDIATION
   real_hardware_execution: PENDING
   evidence_path: results/call_protocol_conformance/hp34401a
 validation:
-  python_tests: v26.04 baseline 112 PASS, 2 guarded HIL SKIP; v26.06 hotfix static validation PASS
-  adapter_coverage: 95%
-  ai_contract: PASS
-  static_protocol_conformance: PASS
-  official_robot: PENDING_RELEASE_SITE_RERUN_AFTER_BOOLEAN_HOTFIX
+  python_tests: PENDING_CURRENT_CI_RERUN
+  concrete_driver_coverage: PENDING_CURRENT_CI_RERUN
+  ai_contract: PENDING_CURRENT_CI_RERUN
+  static_protocol_conformance: PENDING_CURRENT_CI_RERUN
+  official_robot: PENDING_CURRENT_CI_RERUN
   real_hardware: PENDING
-approved_deviations:
-- HP34401A-DEV-001
+open_deviations:
 - HP34401A-DEV-002
 - HP34401A-DEV-003
 - HP34401A-DEV-004
 - HP34401A-DEV-005
+closed_deviations:
+- HP34401A-DEV-001
+integrity_status: PENDING_REGENERATION_FROM_FROZEN_COMMIT
 prohibited_claims:
 - D2 hardware validated
 - P1 production approved
 - B1 integrated bench
+- RFDS-003 fully conformant
