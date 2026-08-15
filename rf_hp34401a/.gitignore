@@ -8,5 +8,6 @@ build/
 dist/
 *.egg-info/
 results/
+site/
 generated/libdoc/*.html
 generated/libdoc/*.xml
