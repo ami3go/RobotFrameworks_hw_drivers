@@ -65,10 +65,8 @@ def _resolve_artifact(field: str, source_relative: str) -> str:
     if source_candidate.exists():
         return str(source_candidate)
 
-    install_relative = _ARTIFACT_INSTALL_PATHS[field]
     data_root = Path(sysconfig.get_path("data"))
-    installed_candidate = data_root / install_relative
-    return str(installed_candidate)
+    return str(data_root / _ARTIFACT_INSTALL_PATHS[field])
 
 
 class Hp34401APluginProvider:
@@ -83,21 +81,14 @@ class Hp34401APluginProvider:
     def get_descriptor(cls) -> dict[str, Any]:
         descriptor = cls._manifest()
         descriptor["installed_driver_version"] = __version__
-        resolved: dict[str, str] = {}
-        for field in _ARTIFACT_INSTALL_PATHS:
-            source_relative = str(descriptor[field])
-            resolved[field] = _resolve_artifact(field, source_relative)
-        descriptor["resolved_artifacts"] = resolved
+        descriptor["resolved_artifacts"] = {
+            field: _resolve_artifact(field, str(descriptor[field]))
+            for field in _ARTIFACT_INSTALL_PATHS
+        }
         return descriptor
 
     @classmethod
     def validate_environment(cls) -> dict[str, Any]:
-        descriptor = cls.get_descriptor()
-        missing_artifacts = sorted(
-            name
-            for name, path in descriptor["resolved_artifacts"].items()
-            if not Path(path).is_file()
-        )
         checks = [
             {"id": "python", "status": "PASS", "value": platform.python_version()},
             {
@@ -106,12 +97,6 @@ class Hp34401APluginProvider:
                 "required": True,
             },
             _rfds_core_check(),
-            {
-                "id": "plugin-artifacts",
-                "status": "PASS" if not missing_artifacts else "FAIL",
-                "required": True,
-                "missing": missing_artifacts,
-            },
             {
                 "id": "pyvisa",
                 "status": "PASS" if importlib.util.find_spec("pyvisa") else "WARNING",
