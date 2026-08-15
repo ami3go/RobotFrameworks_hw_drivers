@@ -67,14 +67,15 @@ validation:
   ai_contract: PENDING_CURRENT_CI_RERUN
   static_protocol_conformance: PENDING_CURRENT_CI_RERUN
   official_robot: PENDING_CURRENT_CI_RERUN
+  installed_wheel_plugin: PENDING_CURRENT_CI_RERUN
   real_hardware: PENDING
 open_deviations:
 - HP34401A-DEV-002
 - HP34401A-DEV-003
 - HP34401A-DEV-004
-- HP34401A-DEV-005
 closed_deviations:
 - HP34401A-DEV-001
+- HP34401A-DEV-005
 integrity_status: PENDING_REGENERATION_FROM_FROZEN_COMMIT
 prohibited_claims:
 - D2 hardware validated
