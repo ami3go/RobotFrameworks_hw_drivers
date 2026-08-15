@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased — 2026-08-16
+
+- Activated repository-root GitHub Actions for cross-platform quality gates, manual HIL, and GitHub Pages; removed the inactive driver-local workflow copies.
+- Corrected RFDS-008 evidence integrity so any prior keyword failure keeps the final run status at `FAIL`, diagnostic export remains manifest-valid, simulation evidence is labeled `SIMULATION`, and listener cleanup finalizes unfinished evidence runs.
+- Enforced RFDS-014 Draft 2020-12 JSON Schema validation and structured SHA-256 schema-lock verification; synchronized root/package configuration authorities and added leaf-level configuration source reporting.
+- Applied imported RFDS-014 timeout, retry, logging, raw-I/O, calibration, simulation, and expected-terminal policy to the active runtime path.
+- Added finite-positive RFDS timeout validation and structured `DriverValidationError` conversion at the public argument boundary.
+- Added explicit core methods for communication timeout, raw-response access, transport metadata, and runtime policy so the active Robot facade no longer accesses the core transport privately.
+- Synchronized RFDS-013 capability data with v26.07 and validate capability bindings against the actual decorated Robot keyword surface.
+- Made `rfds-core>=1.0,<2.0` and `jsonschema>=4.20,<5` mandatory runtime dependencies, added runtime rfds-core version checks/reporting, and added installed-wheel plugin resource validation.
+- Replaced the frozen v26.06 release builder with version-derived release packaging and invalidated stale release checksums/provenance until a frozen commit is rebuilt.
+- Removed committed generated MkDocs `site/` output; GitHub Pages now builds from `docs/` and `mkdocs.yml`.
+- Added the missing retrospective v26.07 code-review record and new regression coverage for evidence, configuration integrity, runtime configuration, plugin artifacts, and timeout semantics.
+- RFDS-003 `BaseInstrumentLibrary` inheritance remains blocked until the authoritative shared `rfds-core` implementation is available; this dev branch does not claim full RFDS-003, D2, or P1 conformance.
+
 ## 26.07 — 2026-08-08
 
 - Added an RFDS-008 structured evidence engine (`hp34401a_dmm/evidence.py`): every public keyword call is now recorded with correlated arguments, duration, result/failure, and the literal SCPI commands/responses it caused on whichever of the three transports (VISA, RS-232, Prologix) or the simulator carried it, tagged per DMM alias, finalized into a SHA-256-hashed manifest under `results/session/rf_hp34401a/`.
