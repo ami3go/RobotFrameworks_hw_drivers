@@ -11,9 +11,13 @@ Robot Framework driver for the HP/Agilent/Keysight 34401A 6½-digit DMM.
 | Python | 3.10–3.13 |
 | Robot Framework | 7.x |
 | Public Robot keywords | 109 |
+| RFDS core requirement | `rfds-core>=1.0,<2.0` — mandatory runtime dependency |
+| RFDS-003 open deviations | **2** — BaseInstrumentLibrary migration and runtime core-version reporting |
 | RFDS baseline | RFDS-001 v1.2, RFDS-002 v1.1, RFDS-003 v2.0, RFDS-004 v2.0, RFDS-005 v1.3, RFDS-007 v1.0, RFDS-009 v1.0, RFDS-013 v1.0, RFDS-014 v1.0, RFDS-015 v1.0, RFDS-017 v3.0, RFDS-018 v1.0, RFDS-019 v1.1 |
 
 The public Robot adapter delegates SCPI behavior to the reviewed `hp34401a_dmm` core. It rejects overload, invalid, missing, and unstable readings instead of returning plausible fabricated values. Hardware connection never silently falls back to simulation.
+
+> **RFDS-003 migration status:** `rfds-core` is now a mandatory runtime dependency and the plugin environment validator treats a missing core as a failure. The current `Hp34401ALibrary` still uses its pre-RFDS-003 session/orchestration implementation and does **not yet inherit** `BaseInstrumentLibrary`. `Get Driver Information` also still needs to report the effective installed `rfds-core` version rather than a fixed placeholder. These are tracked as open D0 deviations and this README does not claim RFDS-003 completion.
 
 ## Install with uv
 
@@ -22,6 +26,8 @@ From the extracted folder containing `pyproject.toml`:
 ```powershell
 uv pip install -e ".[hardware]"
 ```
+
+`rfds-core>=1.0,<2.0` is resolved automatically as a mandatory dependency. An offline installation therefore needs access to an approved matching `rfds-core` wheel or package source.
 
 Development and validation dependencies:
 
@@ -168,7 +174,7 @@ python scripts/validate_evidence.py results/session/rf_hp34401a/<run>/
 
 ## Validation status
 
-Validation for this hotfix:
+Validation for the existing 26.07 driver baseline recorded in the repository:
 
 - the inherited core suite passes with 67 software tests and 2 explicitly guarded physical tests skipped;
 - Python compilation passed after the HIL evidence-state correction;
@@ -176,9 +182,11 @@ Validation for this hotfix:
 - RFDS-002/RFDS-017 synchronization passed for 109 keywords;
 - RFDS-019 static inventory/vector validation passed for 109 keywords;
 - the real-hardware suite accounts for all 109 public keyword names;
-- the user's v26.05 physical run proved VISA discovery, real HP34401A connection, identity, health/error/recovery, simulation isolation, and cleanup, and exposed only the now-corrected evidence bookkeeping defect.
+- the user's v26.05 physical run proved VISA discovery, real HP34401A connection, identity, health/error/recovery, simulation isolation, and cleanup, and exposed only the subsequently corrected evidence bookkeeping defect.
 
-Robot Framework is not installed in the package-build container. Rerun the v26.06 packaged launcher in the release-site uv environment to generate corrected Robot and physical-device evidence before promotion to D2 or P1. The package does not claim D2/P1 hardware qualification.
+The 2026-08-15 RFDS-003 dependency correction added mandatory `rfds-core` packaging, plugin environment validation, and regression tests. It has **not** been promoted to a new release and does not close the two RFDS-003 deviations listed above. The connected execution environment used for this repository edit does not contain the authoritative `rfds_core` package, so BaseInstrumentLibrary integration and runtime contract execution were not fabricated or marked PASS.
+
+Robot Framework is not installed in the historical package-build container described by the existing release evidence. Rerun the packaged launcher in the release-site uv environment to generate fresh Robot and physical-device evidence before promotion to D2 or P1. The package does not claim D2/P1 hardware qualification.
 
 ## Project contents
 
