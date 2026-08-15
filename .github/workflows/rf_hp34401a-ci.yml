@@ -47,9 +47,26 @@ jobs:
       - name: Validate HIL coverage state
         run: python scripts/validate_hil_coverage_state.py
       - name: Python tests and concrete-driver coverage
+        id: pytest
+        continue-on-error: true
         run: >-
           python -m pytest
-          --cov=rf_hp34401a --cov=hp34401a_dmm --cov-fail-under=80
+          --junitxml=results/pytest.xml
+          --cov=rf_hp34401a --cov=hp34401a_dmm
+          --cov-report=xml:results/coverage.xml
+          --cov-fail-under=80
+      - name: Upload Python test diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rf-hp34401a-pytest-${{ matrix.os }}-py${{ matrix.python }}-${{ github.sha }}
+          path: |
+            rf_hp34401a/results/pytest.xml
+            rf_hp34401a/results/coverage.xml
+          if-no-files-found: warn
+      - name: Fail when Python tests failed
+        if: steps.pytest.outcome != 'success'
+        run: python -c "raise SystemExit('Python test/coverage gate failed; see uploaded pytest artifact')"
       - name: Robot tests
         run: python -m robot --outputdir results/robot tests/robot
       - name: Offline examples
