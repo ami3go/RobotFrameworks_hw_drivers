@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Validate RFDS-017 and RFDS-002 artifacts against the source keyword surface."""
+"""Validate RFDS-017 and RFDS-002 artifacts against the actual Robot surface."""
 
 from __future__ import annotations
 
-import ast
 import hashlib
+import inspect
 import json
 from pathlib import Path
 from typing import Any
@@ -12,7 +12,6 @@ from typing import Any
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
-LIBRARY = ROOT / "rf_hp34401a" / "library.py"
 MANDATORY_TOP_LEVEL = {
     "rfds017_version", "identity", "mental_model", "state_machine", "resources",
     "dependencies", "capabilities", "errors", "safety", "verification_objectives",
@@ -21,49 +20,46 @@ MANDATORY_TOP_LEVEL = {
 }
 
 
-def _default(node: ast.expr | None) -> Any:
-    if node is None:
-        return None
-    try:
-        return ast.literal_eval(node)
-    except Exception:
-        return ast.unparse(node)
-
-
 def _format(value: Any) -> str:
-    if value is None: return "${NONE}"
-    if value is True: return "${TRUE}"
-    if value is False: return "${FALSE}"
+    if value is None:
+        return "${NONE}"
+    if value is True:
+        return "${TRUE}"
+    if value is False:
+        return "${FALSE}"
     return str(value)
 
 
 def public_keyword_surface() -> list[str]:
-    module = ast.parse(LIBRARY.read_text(encoding="utf-8"))
+    """Return the effective Robot keyword surface, including inherited methods."""
+    from rf_hp34401a import Hp34401ALibrary
+
     lines: list[str] = []
-    for node in module.body:
-        if not isinstance(node, ast.ClassDef) or node.name != "Hp34401ALibrary":
+    seen: set[str] = set()
+    for _python_name, method in inspect.getmembers(Hp34401ALibrary, predicate=callable):
+        name = getattr(method, "robot_name", None)
+        if not name:
             continue
-        for method in node.body:
-            if not isinstance(method, ast.FunctionDef):
+        robot_name = str(name)
+        if robot_name in seen:
+            raise RuntimeError(f"Duplicate Robot keyword export {robot_name!r}")
+        seen.add(robot_name)
+        signature = inspect.signature(method)
+        parts: list[str] = []
+        for parameter in signature.parameters.values():
+            if parameter.name == "self":
                 continue
-            name = None
-            for decorator in method.decorator_list:
-                if isinstance(decorator, ast.Call) and isinstance(decorator.func, ast.Name) and decorator.func.id == "keyword" and decorator.args:
-                    name = str(ast.literal_eval(decorator.args[0]))
-            if name is None:
+            if parameter.kind is inspect.Parameter.VAR_POSITIONAL:
+                parts.append(f"*{parameter.name}")
                 continue
-            positional = list(method.args.posonlyargs) + list(method.args.args[1:])
-            defaults = [None] * (len(positional) - len(method.args.defaults)) + list(method.args.defaults)
-            parts: list[str] = []
-            for arg, default_node in zip(positional, defaults):
-                parts.append(arg.arg if default_node is None else f"{arg.arg}={_format(_default(default_node))}")
-            if method.args.vararg:
-                parts.append(f"*{method.args.vararg.arg}")
-            for arg, default_node in zip(method.args.kwonlyargs, method.args.kw_defaults):
-                parts.append(arg.arg if default_node is None else f"{arg.arg}={_format(_default(default_node))}")
-            if method.args.kwarg:
-                parts.append(f"**{method.args.kwarg.arg}")
-            lines.append(f"{name}({', '.join(parts)})")
+            if parameter.kind is inspect.Parameter.VAR_KEYWORD:
+                parts.append(f"**{parameter.name}")
+                continue
+            if parameter.default is inspect.Parameter.empty:
+                parts.append(parameter.name)
+            else:
+                parts.append(f"{parameter.name}={_format(parameter.default)}")
+        lines.append(f"{robot_name}({', '.join(parts)})")
     return sorted(lines, key=lambda line: line.split("(", 1)[0])
 
 
@@ -99,18 +95,19 @@ def validate(contract_path: Path | None = None, lock_path: Path | None = None) -
     if missing:
         errors.append(f"Missing AI-contract sections: {missing}")
     if live != contract_lines:
-        errors.append("RFDS-017 keyword signatures differ from the source library")
+        errors.append("RFDS-017 keyword signatures differ from the effective Robot library")
     if live != api_lines:
-        errors.append("RFDS-002 public_api keyword signatures differ from the source library")
+        errors.append("RFDS-002 public_api keyword signatures differ from the effective Robot library")
     inventory = load_yaml(ROOT / "tests" / "conformance" / "data" / "keyword_inventory.yaml")
     inventory_names = {str(item.get("keyword")) for item in inventory.get("keywords", [])}
     if inventory_names != live_names:
         errors.append(
-            f"RFDS-019 inventory mismatch: missing={sorted(live_names-inventory_names)}, extra={sorted(inventory_names-live_names)}"
+            f"RFDS-019 inventory mismatch: missing={sorted(live_names-inventory_names)}, "
+            f"extra={sorted(inventory_names-live_names)}"
         )
     expected_hash = surface_hash(live)
     if lock.get("algorithm") != "SHA-256" or lock.get("sha256") != expected_hash:
-        errors.append("hp34401a_ai_contract.lock source-surface hash mismatch")
+        errors.append("hp34401a_ai_contract.lock effective-surface hash mismatch")
     if lock.get("keyword_count") != len(live) or lock.get("surface") != live:
         errors.append("hp34401a_ai_contract.lock keyword surface/count mismatch")
     expected_api_hash = hashlib.sha256((ROOT / "api" / "public_api.yaml").read_bytes()).hexdigest()
@@ -135,7 +132,10 @@ def main() -> int:
             print(f"- {error}")
         return 1
     live = public_keyword_surface()
-    print(f"RFDS-002/RFDS-017 validation PASSED: {len(live)} keywords, SHA-256 {surface_hash(live)}")
+    print(
+        f"RFDS-002/RFDS-017 validation PASSED: {len(live)} keywords, "
+        f"SHA-256 {surface_hash(live)}"
+    )
     return 0
 
 
