@@ -71,7 +71,22 @@ jobs:
         if: steps.pytest.outcome != 'success'
         run: python -c "raise SystemExit('Python test/coverage gate failed; see uploaded pytest artifact')"
       - name: Robot tests
+        id: robot
+        continue-on-error: true
         run: python -m robot --outputdir results/robot tests/robot
+      - name: Upload Robot diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rf-hp34401a-robot-${{ matrix.os }}-py${{ matrix.python }}-${{ github.sha }}
+          path: |
+            rf_hp34401a/results/robot/output.xml
+            rf_hp34401a/results/robot/log.html
+            rf_hp34401a/results/robot/report.html
+          if-no-files-found: warn
+      - name: Fail when Robot tests failed
+        if: steps.robot.outcome != 'success'
+        run: python -c "raise SystemExit('Robot Framework gate failed; see uploaded Robot artifact')"
       - name: Offline examples
         run: python -m robot --exclude hardware --outputdir results/examples examples
       - name: Generate Libdoc
