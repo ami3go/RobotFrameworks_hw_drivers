@@ -24,15 +24,19 @@ The 2026-08-16 deep review found cross-file and release-governance defects that 
 - repository-root GitHub Actions CI/HIL/Pages workflows;
 - fail-closed RFDS-008 evidence run status and manifest-stable diagnostic export;
 - listener cleanup evidence finalization and correct simulation/real-hardware evidence mode;
+- published evidence-schema regression validation;
 - Draft 2020-12 RFDS-014 schema validation and structured schema-lock verification;
 - effective runtime application of imported timeout/retry/safety/logging/simulation/device settings;
 - finite-positive communication timeout enforcement;
-- structured public validation errors;
+- structured public validation errors while preserving ordinary DUT assertion failures;
+- last-known communication health in both `Get Connection State` and `List Connections`;
 - RFDS-013 capability/runtime-model synchronization and real Robot export validation;
+- facade-aware RFDS-002/RFDS-017/RFDS-019 validators and generators;
 - mandatory `rfds-core` version checking/reporting;
 - installed-wheel plugin artifact resolution;
+- per-operation operator authorization for GUI raw-SCPI Query/Write controls;
 - version-derived release building, stale-release-evidence invalidation, and removal of committed generated MkDocs `site/` output;
-- the missing v26.07 retrospective code-review record.
+- synchronized 26.07 compatibility/API-diff/traceability records and the missing v26.07 retrospective code-review record.
 
 The package **does not yet claim full RFDS-003 conformance**. The connected repository/environment does not provide the authoritative shared `rfds-core` implementation needed to integrate `BaseInstrumentLibrary` safely. A local compatibility copy is intentionally not created.
 
@@ -100,6 +104,17 @@ The ten universal keywords are:
 
 Compatibility names such as `Connect DMM`, `Open DMM Via VISA`, `Open DMM Via Serial`, `Close DMM`, and `Identify DMM` remain available.
 
+### Connection health semantics
+
+`connected` means the session/transport is still open. `communication_ok` is the last-known communication result. After a failed bounded communication check, an alias may correctly report:
+
+```text
+connected=True
+communication_ok=False
+```
+
+That last-known result is preserved in both `Get Connection State` and `List Connections`; an open transport is not automatically treated as healthy.
+
 ### `verify_identity` semantics
 
 `verify_identity=False` disables the model-validation step performed during transport connection. Canonical `Connect` still performs the bounded RFDS-002 communication probe required to populate `communication_ok`; therefore it may still issue a safe `*IDN?` probe before returning.
@@ -129,6 +144,8 @@ A validated imported profile can control:
 
 Package-default simulation is disabled. An omitted resource can select simulation only when a validated imported profile explicitly sets `settings.simulation.enabled=true`; a failed or missing real hardware resource is never replaced by simulation.
 
+The current configuration schema version is exactly `1.0.0`; no automatic cross-version migration engine exists. Different schema versions are rejected instead of guessed.
+
 ## RFDS-013 capabilities
 
 ```robotframework
@@ -137,7 +154,7 @@ ${model}=    Get Driver Capability Model    mode=static
 ${matches}=  Find Driver Capabilities    capability_id=measure.    maximum_risk=low
 ```
 
-Capability binding validation compares the RFDS model to the actual decorated Robot export surface rather than validating the model against itself.
+Capability binding validation compares the RFDS model to the actual decorated inherited Robot export surface rather than validating the model against itself.
 
 ## Logging and evidence
 
@@ -152,7 +169,8 @@ The evidence engine records operation arguments/results/failures, identity/envir
 - any failed operation keeps the final run status at `FAIL` even if later cleanup succeeds;
 - simulation is labeled `SIMULATION`, not real hardware;
 - listener cleanup finalizes the run if an explicit disconnect was omitted;
-- diagnostic bundle export writes the export event before hashing the snapshot, so the live manifest remains valid.
+- diagnostic bundle export writes the export event before hashing the snapshot, so the live manifest remains valid;
+- finalized emitted evidence is regression-validated against `schemas/evidence/*.schema.json`.
 
 Disable evidence explicitly only when required:
 
@@ -166,6 +184,12 @@ Validate evidence:
 python scripts/validate_evidence.py results/session/rf_hp34401a/<run>/
 ```
 
+## GUI raw-SCPI service authorization
+
+The Tkinter GUI remains available through `hp34401a_gui.app`. Its mature implementation is preserved in `hp34401a_gui/legacy_app.py`; the active launcher wraps only the two raw-SCPI controls.
+
+Every raw `Query` or `Write` button action requires a fresh operator confirmation warning that the operation can change instrument state and bypass high-level measurement sequencing. Declining the prompt sends no raw command. Calibration commands remain separately guarded by the core driver.
+
 ## RFDS-019 and HIL
 
 Static call/protocol validation:
@@ -173,6 +197,7 @@ Static call/protocol validation:
 ```powershell
 python scripts/validate_ai_contract.py
 python scripts/validate_call_protocol_conformance.py
+python scripts/generate_conformance_data.py --check
 .\scripts\run_call_protocol_conformance.ps1
 ```
 
@@ -194,7 +219,9 @@ Active repository-root workflows are:
 .github/workflows/rf_hp34401a-pages.yml
 ```
 
-The quality workflow runs on Windows/Linux and Python 3.10/3.13, performs static contract checks, Python/Robot tests, >=80% combined adapter+core coverage, offline examples, Libdoc, strict MkDocs build, wheel/sdist build, and installed-wheel plugin-resource validation. It finishes with an explicit shared-core release gate, so release qualification remains blocked when the authoritative `rfds-core` is unavailable.
+The software-quality matrix runs on Windows/Linux and Python 3.10/3.13. It performs static contract/generator checks, Python/Robot tests, >=80% combined adapter+core coverage, offline examples, Libdoc, strict MkDocs build, wheel/sdist build, and installed-wheel plugin-resource validation.
+
+The RFDS-003 shared-core release condition is a **separate release-gate job** after the software-quality matrix. That makes it explicit whether the driver itself is green while still preventing release qualification when the authoritative `rfds-core` implementation/version is unavailable.
 
 GitHub Pages builds `site/` from `docs/` and `mkdocs.yml`; generated `site/` output is not tracked in Git.
 
@@ -202,7 +229,7 @@ GitHub Pages builds `site/` from `docs/` and `mkdocs.yml`; generated `site/` out
 
 `scripts/build_release.py` derives release/distribution versions from the package authorities. It refuses to package a current release when required history/review records are missing and regenerates provenance/checksums from the frozen source commit.
 
-Current `release/` files are deliberately marked as remediation/pending where evidence has not been regenerated. Do not treat them as a production release attestation until CI and real HIL have completed on the exact frozen commit.
+Current `release/` files are deliberately marked as remediation/pending where evidence has not been regenerated. Do not treat them as a production release attestation until software CI, the authoritative shared-core gate, and real HIL have completed on the exact frozen commit.
 
 ## Safety
 
@@ -210,16 +237,20 @@ Current `release/` files are deliberately marked as remediation/pending where ev
 - Current tests require the correct fused current terminal and an approved bounded source.
 - Resistance, continuity and diode tests require a verified de-energized DUT.
 - Reset and self-test can disturb a production setup and require explicit authorization/profile enablement.
-- Raw SCPI is disabled by package default and must be explicitly enabled by constructor, keyword, or validated safety profile.
+- Robot raw SCPI is disabled by package default and must be explicitly enabled by constructor, keyword, or validated safety profile.
+- GUI raw Query/Write requires a fresh operator authorization for each service operation.
 - Calibration commands are separately guarded.
 - The RFDS-018 bench file is a template, not a claim about actual bench wiring or limits.
 
 ## Project contents
 
-- `rf_hp34401a/` — active Robot facade, plugin, RFDS metadata/configuration services;
-- `rf_hp34401a/legacy_library.py` — preserved reviewed 26.07 keyword implementation under the corrected facade;
-- `hp34401a_dmm/` — active core facade and transport/measurement implementation;
-- `hp34401a_dmm/legacy_driver.py` — preserved reviewed 1.2.8 core implementation;
+- `rf_hp34401a/library.py` — final public 109-keyword facade and public-boundary corrections;
+- `rf_hp34401a/runtime_library.py` — runtime RFDS configuration/evidence/metadata/health corrections;
+- `rf_hp34401a/legacy_library.py` — preserved reviewed 26.07 keyword implementation;
+- `hp34401a_dmm/driver.py` — active core runtime-policy facade;
+- `hp34401a_dmm/legacy_driver.py` — preserved reviewed 1.2.8 SCPI implementation;
+- `hp34401a_gui/app.py` — GUI safety launcher with per-operation raw-SCPI authorization;
+- `hp34401a_gui/legacy_app.py` — preserved reviewed GUI implementation;
 - `api/` — RFDS-002 API inventory, compatibility, decisions and deviations;
 - `capability/` — RFDS-013 capability model;
 - `config/` — RFDS-014 schema, lock, defaults and examples;
