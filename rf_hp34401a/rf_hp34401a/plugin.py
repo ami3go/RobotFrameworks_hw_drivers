@@ -35,6 +35,12 @@ class Hp34401APluginProvider:
                 "required": True,
             },
             {
+                "id": "rfds-core",
+                "status": "PASS" if importlib.util.find_spec("rfds_core") else "FAIL",
+                "required": True,
+                "requirement": ">=1.0,<2.0",
+            },
+            {
                 "id": "pyvisa",
                 "status": "PASS" if importlib.util.find_spec("pyvisa") else "WARNING",
                 "required": False,
