@@ -2,7 +2,9 @@
 
 ## 1. Install Python
 
-Install Python 3.10–3.13 and verify:
+Use Python 3.10–3.13. Python 3.13 is the preferred current development target.
+
+Windows:
 
 ```powershell
 py -3.13 --version
@@ -14,15 +16,33 @@ Linux:
 python3 --version
 ```
 
-## 2. Open the project
+## 2. Open the driver project
 
-Unpack `rf_hp34401a_v26.01.zip` and open the fixed internal folder `rf_hp34401a` in PyCharm.
+For an extracted release package, open the fixed internal folder:
 
-## 3. Create the virtual environment
+```text
+rf_hp34401a/
+```
 
-In PyCharm, open **Settings → Project → Python Interpreter → Add Interpreter → Add Local Interpreter → Virtualenv**. Use `.venv` inside the project.
+It is the directory containing `pyproject.toml`, `rf_hp34401a/`, `hp34401a_dmm/`, `examples/`, `tests/`, and `scripts/`.
 
-Equivalent Windows command:
+For the monorepo, either open the repository root and mark `rf_hp34401a` as the working/content root for this driver, or open the `rf_hp34401a` subdirectory directly.
+
+## 3. Provide the authoritative RFDS shared core
+
+The driver requires:
+
+```text
+rfds-core>=1.0,<2.0
+```
+
+The authoritative package must be available to the selected Python package index/environment before a normal dependency-resolving installation can succeed. Do not create a local `rfds_core` compatibility shim inside this driver.
+
+## 4. Create the virtual environment
+
+In PyCharm use **Settings → Project → Python Interpreter → Add Interpreter → Add Local Interpreter → Virtualenv** and create `.venv` inside the driver directory.
+
+Windows:
 
 ```powershell
 py -3.13 -m venv .venv
@@ -38,43 +58,87 @@ python3 -m venv .venv
 ./.venv/bin/python -m pip install -e '.[dev,hardware]'
 ```
 
-## 4. Install a Robot Framework editor plugin
+A normal install resolves mandatory Robot Framework, `rfds-core`, and `jsonschema`; the `hardware` extra adds PyVISA and pyserial.
 
-Install a maintained Robot Framework language-server plugin from **Settings → Plugins**. Restart PyCharm and confirm `.robot` files receive syntax highlighting, keyword completion, and navigation.
+For source-only remediation work on a machine where the authoritative shared core is deliberately unavailable, CI uses `pip install -e . --no-deps` **after** installing all other test dependencies explicitly. That mode is not a production installation and leaves the RFDS shared-core release gate intentionally blocked.
 
-## 5. Configure a run configuration
+## 5. Configure PyCharm
+
+Select the project `.venv` interpreter. Mark the driver directory as a Sources/Content Root if PyCharm has opened the whole monorepo.
+
+Install a maintained Robot Framework language-server/plugin from **Settings → Plugins**. After restart, verify `.robot` files have syntax highlighting, keyword completion, and navigation.
+
+## 6. Create a Robot run configuration
 
 Create a Python run configuration:
 
-- Module name: `robot`
-- Parameters: `--outputdir results examples/02_dc_voltage_limits.robot`
-- Working directory: project root
-- Interpreter: project `.venv`
+- **Module name:** `robot`
+- **Working directory:** the `rf_hp34401a` driver root
+- **Interpreter:** project `.venv`
+- **Parameters:** for example:
 
-For hardware VISA:
+```text
+--outputdir results examples/02_dc_voltage_limits.robot
+```
+
+Real VISA/GPIB example:
 
 ```text
 --variable VISA_RESOURCE:GPIB0::22::INSTR examples/12_visa_gpib_connection.robot
 ```
 
-For serial:
+Serial example on Windows:
 
 ```text
 --variable SERIAL_PORT:COM3 examples/11_rs232_connection.robot
 ```
 
-## 6. Run and inspect results
+## 7. Start with offline validation
 
-Run the simulated example first. Open `results/log.html` and `results/report.html` in a browser.
+Before connecting hardware, run:
 
-## 7. Debug Python library code
+```powershell
+python scripts/validate_ai_contract.py
+python scripts/validate_call_protocol_conformance.py
+python -m pytest
+python -m robot --exclude hardware --outputdir results/examples examples
+```
 
-Set a breakpoint in `rf_hp34401a/library.py`, use the Python run configuration above, and launch it in Debug mode. Robot calls will stop in the adapter before delegation to the core driver.
+Then inspect `results/log.html` and `results/report.html` for Robot runs.
+
+## 8. Debug library/core code
+
+The active Robot facade is:
+
+```text
+rf_hp34401a/library.py
+```
+
+The preserved mature 26.07 keyword implementation is:
+
+```text
+rf_hp34401a/legacy_library.py
+```
+
+The active core facade is `hp34401a_dmm/driver.py`; the reviewed 1.2.8 implementation is in `hp34401a_dmm/legacy_driver.py`.
+
+For cross-cutting RFDS behavior, place breakpoints in the active facade. For measurement/SCPI sequencing, follow the call into the legacy implementation/core transport rather than adding a second protocol path.
+
+## 9. Hardware setup
+
+For VISA/GPIB, install a vendor VISA runtime (for example the approved site Keysight/NI implementation), verify the instrument in the vendor connection utility, and then use `List VISA Resources` or the hardware examples.
+
+For RS-232, verify the instrument-side baud/parity/data-bit/stop-bit settings and close any other application holding the COM/tty device.
+
+Use the dedicated HIL guide and explicit fixture/safety profiles before running all-public-API hardware qualification.
 
 ## Troubleshooting
 
-- **Library not found:** verify PyCharm uses `.venv` and run `python -m pip install -e .`.
-- **PyVISA backend missing:** install a vendor VISA runtime and the `visa` optional dependency.
-- **GPIB resource absent:** verify the adapter and instrument in the vendor connection utility, then run `List VISA Resources`.
-- **COM access denied:** close other terminal applications and confirm Device Manager port assignment.
-- **Keyword not recognized by editor:** invalidate PyCharm caches after selecting the correct interpreter.
+- **`No matching distribution found for rfds-core`:** the authoritative shared-core package/index is not available. Source-only CI can still run with `--no-deps`, but release qualification remains blocked.
+- **Library not found:** verify PyCharm is using the project `.venv` and the working directory is the driver root.
+- **`jsonschema` missing:** reinstall the current package/runtime dependencies; RFDS-014 validation requires it.
+- **PyVISA backend missing:** install the approved VISA runtime plus `.[visa]` or `.[hardware]`.
+- **GPIB resource absent:** verify adapter/instrument addressing in the vendor utility before changing driver code.
+- **COM access denied:** close terminals/vendor tools and verify OS device assignment.
+- **Keyword not recognized:** re-index/invalidate PyCharm caches after selecting the correct interpreter and confirm Libdoc generation succeeds.
+- **Schema lock mismatch:** do not edit `schema.json` alone; update root and packaged authorities together and regenerate the reviewed SHA-256 lock.
