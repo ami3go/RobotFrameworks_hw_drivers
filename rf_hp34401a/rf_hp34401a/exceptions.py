@@ -9,7 +9,7 @@ class RFDSDriverError(RuntimeError):
     """Base error exposed at the public driver boundary.
 
     The string form contains a stable error code while ``to_dict`` provides a
-    Robot/JSON-compatible diagnostic record.  Original exceptions are retained
+    Robot/JSON-compatible diagnostic record. Original exceptions are retained
     using Python exception chaining by the caller.
     """
 
@@ -74,7 +74,14 @@ class Hp34401ARobotError(RFDSDriverError):
     default_code = "HP34401A-DRV-001"
 
 
-class DriverValidationError(Hp34401ARobotError):
+class DriverValidationError(Hp34401ARobotError, ValueError):
+    """Structured RFDS argument/configuration value validation error.
+
+    ``ValueError`` compatibility preserves existing Python callers while the
+    RFDS driver hierarchy and stable error code remain authoritative at the
+    Robot/public boundary.
+    """
+
     default_code = "RFDS-VAL-001"
     default_recovery = "correct the supplied argument or configuration"
 
@@ -129,4 +136,3 @@ class DriverUnsupportedOperationError(Hp34401ARobotError):
 class DriverCleanupError(Hp34401ARobotError):
     default_code = "RFDS-CLEAN-001"
     default_recovery = "verify resource release and perform manual cleanup if necessary"
-
