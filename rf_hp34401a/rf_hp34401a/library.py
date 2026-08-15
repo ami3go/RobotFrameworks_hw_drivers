@@ -3,7 +3,9 @@
 ``runtime_library`` contains the cross-cutting runtime/configuration/evidence
 corrections. This final layer keeps invalid assertion *configuration* inside
 the structured RFDS validation taxonomy while preserving ordinary
-``AssertionError`` for a measured DUT value that fails a valid limit.
+``AssertionError`` for a measured DUT value that fails a valid limit. It also
+ensures multi-connection listings expose the last-known communication result
+instead of silently equating an open transport with healthy communication.
 """
 
 from __future__ import annotations
@@ -22,11 +24,28 @@ from .version import __version__
 
 @library(scope="SUITE", auto_keywords=False, version=__version__)
 class Hp34401ALibrary(_RuntimeHp34401ALibrary):
-    """Effective 26.07 Robot surface with corrected assertion contracts."""
+    """Effective 26.07 Robot surface with corrected public-boundary contracts."""
 
     ROBOT_LIBRARY_SCOPE = "SUITE"
     ROBOT_AUTO_KEYWORDS = False
     ROBOT_LIBRARY_VERSION = __version__
+
+    @keyword("List Connections", tags=["rfds:query", "rfds:low_risk"])
+    @_evidenced
+    def list_connections(self) -> list[dict[str, Any]]:
+        """Return open aliases with their last-known communication health."""
+        states: list[dict[str, Any]] = []
+        active = self._sessions.active_alias
+        for alias in self._sessions.aliases():
+            session = self._sessions.get(alias)
+            key = self._alias_key(session.alias)
+            states.append(
+                session.to_connection_state(
+                    active=session.alias == active,
+                    communication_ok=self._communication_health.get(key),
+                )
+            )
+        return states
 
     @keyword("DMM Reading Should Be Between", tags=["rfds:assertion", "rfds:low_risk"])
     @_evidenced
