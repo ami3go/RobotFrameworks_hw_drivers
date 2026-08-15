@@ -1,0 +1,85 @@
+name: rf_hp34401a CI
+
+on:
+  push:
+    paths:
+      - 'rf_hp34401a/**'
+      - '.github/workflows/rf_hp34401a-ci.yml'
+  pull_request:
+    paths:
+      - 'rf_hp34401a/**'
+      - '.github/workflows/rf_hp34401a-ci.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python: ['3.10', '3.13']
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: rf_hp34401a
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install source-test dependencies
+        run: >-
+          python -m pip install --upgrade pip
+          robotframework>=7,<8
+          jsonschema>=4.20,<5
+          pytest>=8 pytest-cov>=5 ruff>=0.5 black>=24 mypy>=1.10
+          build>=1.2 mkdocs>=1.6 pyyaml>=6.0 types-pyyaml>=6.0
+      - name: Install driver without resolving unavailable shared core
+        run: python -m pip install -e . --no-deps
+      - name: Validate AI contract
+        run: python scripts/validate_ai_contract.py
+      - name: Validate protocol inventory
+        run: python scripts/validate_call_protocol_conformance.py
+      - name: Validate real-HIL source accounting
+        run: python scripts/validate_real_hardware_api_suite.py
+      - name: Validate HIL coverage state
+        run: python scripts/validate_hil_coverage_state.py
+      - name: Python tests and concrete-driver coverage
+        run: >-
+          python -m pytest
+          --cov=rf_hp34401a --cov=hp34401a_dmm --cov-fail-under=80
+      - name: Robot tests
+        run: python -m robot --outputdir results/robot tests/robot
+      - name: Offline examples
+        run: python -m robot --exclude hardware --outputdir results/examples examples
+      - name: Generate Libdoc
+        run: |
+          python -m robot.libdoc rf_hp34401a.Hp34401ALibrary generated/libdoc/Hp34401ALibrary.html
+          python -m robot.libdoc rf_hp34401a.Hp34401ALibrary generated/libdoc/Hp34401ALibrary.xml
+      - name: Build documentation
+        run: python -m mkdocs build --strict
+      - name: Build wheel and sdist without dependency resolution
+        run: python -m build --no-isolation
+      - name: RFDS shared-core release gate
+        shell: python
+        run: |
+          import importlib.metadata
+          import importlib.util
+          import re
+          import sys
+
+          if importlib.util.find_spec('rfds_core') is None:
+              raise SystemExit(
+                  'RFDS-003 BLOCKER: authoritative rfds_core is not installed. '
+                  'Source quality gates above still ran; release qualification is blocked.'
+              )
+          try:
+              version = importlib.metadata.version('rfds-core')
+          except importlib.metadata.PackageNotFoundError:
+              raise SystemExit('RFDS-003 BLOCKER: rfds-core distribution metadata is missing')
+          match = re.match(r'^(\d+)(?:\.(\d+))?', version)
+          if not match or int(match.group(1)) != 1:
+              raise SystemExit(f'RFDS-003 BLOCKER: incompatible rfds-core {version}; expected >=1.0,<2.0')
+          print(f'rfds-core {version} satisfies >=1.0,<2.0')
