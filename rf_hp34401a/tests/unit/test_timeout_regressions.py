@@ -5,11 +5,12 @@ import math
 import pytest
 
 from rf_hp34401a.converters import as_seconds
+from rf_hp34401a.exceptions import DriverValidationError
 
 
 @pytest.mark.parametrize("value", [0, 0.0, "0 s", -1, "-1 ms", math.nan, math.inf, -math.inf])
 def test_public_timeout_converter_rejects_non_positive_or_non_finite_values(value):
-    with pytest.raises(ValueError):
+    with pytest.raises(DriverValidationError):
         as_seconds(value, name="timeout_s")
 
 
