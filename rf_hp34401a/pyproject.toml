@@ -42,7 +42,7 @@ rf_hp34401a = ["resources/plugin_manifest.json", "resources/configuration/*.json
 "share/rf_hp34401a/conformance" = ["tests/conformance/data/protocol_vectors.yaml"]
 
 [tool.pytest.ini_options]
-testpaths = ["tests/unit", "tests/core", "tests/evidence"]
+testpaths = ["tests/unit", "tests/core", "tests/evidence", "tests/plugin"]
 addopts = "-q"
 python_classes = "*Suite"
 
