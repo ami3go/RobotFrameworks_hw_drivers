@@ -11,6 +11,8 @@ instead of silently equating an open transport with healthy communication.
 from __future__ import annotations
 
 import math
+import zipfile
+from pathlib import Path
 from typing import Any
 
 from robot.api.deco import keyword, library
@@ -46,6 +48,56 @@ class Hp34401ALibrary(_RuntimeHp34401ALibrary):
                 )
             )
         return states
+
+    @keyword("Export Diagnostic Bundle", tags=["rfds:diagnostic", "rfds:low_risk"])
+    def export_diagnostic_bundle(self, destination: object = None) -> str | None:
+        """Export a manifest-valid snapshot including this export operation itself."""
+        run = self._ensure_evidence()
+        if getattr(run, "run_id", None) is None:
+            # NullEvidenceRun: keep the same public no-evidence behavior.
+            return run.export_diagnostic_bundle(
+                None if destination in (None, "") else str(destination)
+            )
+
+        requested = None if destination in (None, "") else Path(str(destination)).expanduser().resolve()
+        root = Path(run.root).resolve()
+        if requested is not None:
+            try:
+                requested.relative_to(root)
+            except ValueError:
+                pass
+            else:
+                raise DriverValidationError(
+                    "diagnostic bundle destination must be outside the live evidence run directory",
+                    operation="Export Diagnostic Bundle",
+                )
+
+        result: str | None = None
+        with run.record_operation(
+            "Export Diagnostic Bundle",
+            arguments={"destination": None if destination in (None, "") else str(destination)},
+        ) as operation:
+            result = run.export_diagnostic_bundle(
+                None if destination in (None, "") else str(destination)
+            )
+            operation.set_result(result)
+
+        if result is None:
+            return None
+
+        # record_operation appends OPERATION_COMPLETED only after the inner
+        # export routine created its first snapshot. Refresh the live manifest
+        # now and rebuild the external ZIP so both contain that final record.
+        run._write_manifest()
+        bundle = Path(result)
+        with zipfile.ZipFile(bundle, "w", zipfile.ZIP_DEFLATED) as archive:
+            for path in sorted(Path(run.root).rglob("*")):
+                if path.is_file():
+                    archive.write(
+                        path,
+                        arcname=str(Path(Path(run.root).name) / path.relative_to(run.root)),
+                    )
+        return str(bundle)
 
     @keyword("DMM Reading Should Be Between", tags=["rfds:assertion", "rfds:low_risk"])
     @_evidenced
