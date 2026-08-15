@@ -3,9 +3,8 @@
 
 from __future__ import annotations
 
-import ast
+import inspect
 from pathlib import Path
-import sys
 from typing import Any
 
 import yaml
@@ -15,21 +14,20 @@ DATA = ROOT / "tests" / "conformance" / "data"
 
 
 def live_surface() -> dict[str, str]:
-    module = ast.parse((ROOT / "rf_hp34401a" / "library.py").read_text(encoding="utf-8"))
+    """Return effective Robot keyword -> Python method mapping, including inheritance."""
+    from rf_hp34401a import Hp34401ALibrary
+
     result: dict[str, str] = {}
-    for node in module.body:
-        if isinstance(node, ast.ClassDef) and node.name == "Hp34401ALibrary":
-            for method in node.body:
-                if not isinstance(method, ast.FunctionDef):
-                    continue
-                for decorator in method.decorator_list:
-                    if (
-                        isinstance(decorator, ast.Call)
-                        and isinstance(decorator.func, ast.Name)
-                        and decorator.func.id == "keyword"
-                        and decorator.args
-                    ):
-                        result[str(ast.literal_eval(decorator.args[0]))] = method.name
+    for python_name, method in inspect.getmembers(Hp34401ALibrary, predicate=callable):
+        robot_name = getattr(method, "robot_name", None)
+        if not robot_name:
+            continue
+        name = str(robot_name)
+        if name in result and result[name] != python_name:
+            raise RuntimeError(
+                f"Duplicate Robot keyword {name!r}: {result[name]!r} and {python_name!r}"
+            )
+        result[name] = python_name
     return result
 
 
@@ -68,7 +66,7 @@ def validate() -> list[str]:
     vector_by_name = {str(item.get("keyword")): item for item in vector_items}
     for name, method in actual.items():
         if by_name.get(name, {}).get("driver_method") != method:
-            errors.append(f"{name}: driver_method does not match live adapter")
+            errors.append(f"{name}: driver_method does not match effective adapter")
         vector_id = by_name.get(name, {}).get("protocol_vector")
         if vector_by_name.get(name, {}).get("id") != vector_id:
             errors.append(f"{name}: protocol_vector reference is stale")
