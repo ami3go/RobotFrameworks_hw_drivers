@@ -27,8 +27,8 @@ jobs:
       - name: Install HIL dependencies
         run: >-
           python -m pip install --upgrade pip
-          robotframework>=7,<8 jsonschema>=4.20,<5
-          pyvisa>=1.14 pyserial>=3.5 pytest>=8 pyyaml>=6.0
+          "robotframework>=7,<8" "jsonschema>=4.20,<5"
+          "pyvisa>=1.14" "pyserial>=3.5" "pytest>=8" "pyyaml>=6.0"
       - name: Install driver source without dependency resolution
         run: python -m pip install -e . --no-deps
       - name: Require authoritative rfds-core before HIL
