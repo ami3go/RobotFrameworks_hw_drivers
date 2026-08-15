@@ -32,10 +32,10 @@ jobs:
       - name: Install source-test dependencies
         run: >-
           python -m pip install --upgrade pip
-          robotframework>=7,<8
-          jsonschema>=4.20,<5
-          pytest>=8 pytest-cov>=5 ruff>=0.5 black>=24 mypy>=1.10
-          build>=1.2 mkdocs>=1.6 pyyaml>=6.0 types-pyyaml>=6.0
+          "robotframework>=7,<8"
+          "jsonschema>=4.20,<5"
+          "pytest>=8" "pytest-cov>=5" "ruff>=0.5" "black>=24" "mypy>=1.10"
+          "build>=1.2" "mkdocs>=1.6" "pyyaml>=6.0" "types-pyyaml>=6.0"
       - name: Install driver without resolving unavailable shared core
         run: python -m pip install -e . --no-deps
       - name: Validate AI contract
@@ -62,18 +62,19 @@ jobs:
         run: python -m mkdocs build --strict
       - name: Build wheel and sdist without dependency resolution
         run: python -m build --no-isolation
+      - name: Validate installed wheel artifact resolution
+        run: python scripts/validate_installed_wheel.py
       - name: RFDS shared-core release gate
         shell: python
         run: |
           import importlib.metadata
           import importlib.util
           import re
-          import sys
 
           if importlib.util.find_spec('rfds_core') is None:
               raise SystemExit(
                   'RFDS-003 BLOCKER: authoritative rfds_core is not installed. '
-                  'Source quality gates above still ran; release qualification is blocked.'
+                  'Source quality gates above passed far enough to reach the release gate.'
               )
           try:
               version = importlib.metadata.version('rfds-core')
