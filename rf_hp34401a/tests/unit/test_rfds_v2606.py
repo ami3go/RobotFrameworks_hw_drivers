@@ -74,8 +74,11 @@ def test_driver_information_metadata_capability_discovery_and_filters():
         registry.model(mode="invalid")
     cap = registry.get("measure.voltage.dc", connected=True)
     assert cap["availability"]["available"] is True
+    assert cap["timing"]["retry_safe"] is False
     with pytest.raises(DriverValidationError):
         registry.get("missing")
+    with pytest.raises(DriverValidationError):
+        registry.find(maximum_risk="invalid")
     assert registry.find(capability_id="measure.", maximum_risk="low")
     assert registry.find(keyword="Voltage", available_only=True, connected=True)
     assert registry.find(available_only=True, connected=False)
@@ -85,10 +88,11 @@ def test_driver_information_metadata_capability_discovery_and_filters():
         item["binding"]["robot_keyword"] for item in static["capabilities"]
     )
     assert valid["valid"] is True
+    assert valid["actual_robot_keyword_count"] >= valid["capability_count"]
 
     lib = Hp34401ALibrary()
     info = lib.get_driver_information()
-    assert info["package_version"] == "26.06"
+    assert info["package_version"] == "26.07"
     assert info["release_class"] == "D0"
     assert info["capability_ids"] == ids
     metadata = lib.get_driver_metadata()
@@ -118,8 +122,10 @@ def test_configuration_manager_all_paths(tmp_path, monkeypatch):
     schema = manager.schema()
     default = manager.default()
     assert schema["$id"]
-    assert manager.effective(include_sources=True)["metadata"]["resolved_sources"]
-    assert len(manager.fingerprint()) == 64
+    sources = manager.effective(include_sources=True)["metadata"]["resolved_sources"]
+    assert sources["settings.timeouts.communication_s"] == "PACKAGE_DEFAULT"
+    assert manager.fingerprint().startswith("sha256:")
+    assert len(manager.fingerprint().split(":", 1)[1]) == 64
     assert manager.validate(default) == default
 
     bad_cases = [
@@ -146,7 +152,9 @@ def test_configuration_manager_all_paths(tmp_path, monkeypatch):
     bad["settings"]["unknown"] = {}
     with pytest.raises(DriverValidationError):
         manager.validate(bad, strict=True)
-    assert manager.validate(bad, strict=False)
+    # RFDS-014 non-strict compatibility does not permit unknown core keys.
+    with pytest.raises(DriverValidationError):
+        manager.validate(bad, strict=False)
 
     for section in ("timeouts", "simulation", "transport"):
         bad = json.loads(json.dumps(default))
@@ -165,9 +173,13 @@ def test_configuration_manager_all_paths(tmp_path, monkeypatch):
     bad["settings"]["transport"]["resource"] = 1
     with pytest.raises(DriverValidationError):
         manager.validate(bad)
+    bad = json.loads(json.dumps(default))
+    del bad["settings"]["retry"]
+    with pytest.raises(DriverValidationError):
+        manager.validate(bad)
 
     applied = manager.apply(default)
-    assert applied["metadata"]["resolved_sources"]["settings"] == "RUNTIME_IMPORT"
+    assert applied["metadata"]["resolved_sources"]["settings.retry.max_query_retries"] == "RUNTIME_IMPORT"
     text = json.dumps(default)
     assert manager.import_json(text, validate_only=True)["schema_id"]
     path = tmp_path / "profile.json"
@@ -191,7 +203,8 @@ def test_configuration_manager_all_paths(tmp_path, monkeypatch):
     assert manager.list_profiles() == []
     with pytest.raises(DriverConfigurationError):
         manager.load_profile("missing")
-    assert manager.reset()["metadata"]["resolved_sources"]["settings"] == "PACKAGE_DEFAULT"
+    reset = manager.reset()
+    assert reset["metadata"]["resolved_sources"]["settings.transport.kind"] == "PACKAGE_DEFAULT"
 
 
 def test_library_configuration_keywords_and_raw_guard(tmp_path, monkeypatch):
@@ -202,7 +215,7 @@ def test_library_configuration_keywords_and_raw_guard(tmp_path, monkeypatch):
     assert schema["$id"]
     assert lib.get_driver_configuration("DEFAULT") == default
     effective = lib.get_driver_configuration(include_sources=True)
-    assert "configuration_fingerprint" in effective["metadata"]
+    assert effective["metadata"]["configuration_fingerprint"].startswith("sha256:")
     with pytest.raises(DriverValidationError):
         lib.get_driver_configuration("INVALID")
     assert lib.validate_driver_configuration(default)["valid"] is True
@@ -222,21 +235,23 @@ def test_library_configuration_keywords_and_raw_guard(tmp_path, monkeypatch):
     assert lib.set_raw_io_enabled(True) is True
     assert "34401A" in lib.query_raw_command("*IDN?", timeout_s="1 s")
     lib.write_raw_command("*CLS")
-    # FakeTransport returns a Robot-compatible string even when no scripted raw payload remains.
     assert isinstance(lib.read_raw_response(timeout_s="1 s"), str)
     assert lib.set_raw_io_enabled(False) is False
     lib.disconnect_all()
 
 
-def test_plugin_provider_is_metadata_only(monkeypatch):
+def test_plugin_provider_is_metadata_only():
     descriptor = Hp34401APluginProvider.get_descriptor()
     assert descriptor["plugin_id"] == "rf_hp34401a"
-    assert descriptor["installed_driver_version"] == "26.06"
+    assert descriptor["installed_driver_version"] == "26.07"
     status = Hp34401APluginProvider.validate_environment()
     assert status["status"] in {"PASS", "FAIL"}
     assert {item["id"] for item in status["checks"]} == {
-        "python", "robotframework", "pyvisa", "pyserial"
+        "python", "robotframework", "rfds-core", "pyvisa", "pyserial"
     }
+    core = next(item for item in status["checks"] if item["id"] == "rfds-core")
+    assert core["required"] is True
+    assert core["requirement"] == ">=1.0,<2.0"
     library = Hp34401APluginProvider.create_library()
     assert isinstance(library, Hp34401ALibrary)
     configured = Hp34401APluginProvider.create_library(
@@ -247,6 +262,7 @@ def test_plugin_provider_is_metadata_only(monkeypatch):
 
 def test_real_hardware_all_api_suite_static_inventory():
     import importlib.util
+
     root = Path(__file__).resolve().parents[2]
     path = root / "scripts" / "validate_real_hardware_api_suite.py"
     spec = importlib.util.spec_from_file_location("validate_real_hardware_api_suite", path)
