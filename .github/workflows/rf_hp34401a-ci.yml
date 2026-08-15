@@ -15,6 +15,7 @@ permissions:
 
 jobs:
   quality:
+    name: quality (${{ matrix.os }}, py${{ matrix.python }})
     strategy:
       fail-fast: false
       matrix:
@@ -42,6 +43,8 @@ jobs:
         run: python scripts/validate_ai_contract.py
       - name: Validate protocol inventory
         run: python scripts/validate_call_protocol_conformance.py
+      - name: Validate conformance generator surface
+        run: python scripts/generate_conformance_data.py --check
       - name: Validate real-HIL source accounting
         run: python scripts/validate_real_hardware_api_suite.py
       - name: Validate HIL coverage state
@@ -81,7 +84,16 @@ jobs:
         run: python -m build --no-isolation
       - name: Validate installed wheel artifact resolution
         run: python scripts/validate_installed_wheel.py
-      - name: RFDS shared-core release gate
+
+  rfds-core-release-gate:
+    name: RFDS-003 shared-core release gate
+    needs: quality
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Require authoritative compatible rfds-core
         shell: python
         run: |
           import importlib.metadata
@@ -90,8 +102,8 @@ jobs:
 
           if importlib.util.find_spec('rfds_core') is None:
               raise SystemExit(
-                  'RFDS-003 BLOCKER: authoritative rfds_core is not installed. '
-                  'Source quality gates above passed far enough to reach the release gate.'
+                  'RFDS-003 BLOCKER: authoritative rfds_core is not installed on the release runner. '
+                  'All software quality jobs completed before this release-specific gate.'
               )
           try:
               version = importlib.metadata.version('rfds-core')
