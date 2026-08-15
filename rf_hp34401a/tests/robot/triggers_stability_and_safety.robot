@@ -34,12 +34,14 @@ Invalid NPLC Is Rejected Before SCPI
 Invalid Range Is Rejected Before SCPI
     Run Keyword And Expect Error    *must be positive*    Measure DC Voltage    range_value=0
 
-Raw Query Uses Core Driver
+Raw Query Uses Core Driver After Explicit Authorization
+    Set Raw I/O Enabled    ${TRUE}
     ${idn}=    Query DMM Command    *IDN?
     Should Contain    ${idn}    34401A
 
-Calibration Command Is Blocked
+Calibration Guard Remains Independent Of Raw I/O Authorization
     Run Keyword And Expect Error    *Calibration commands are blocked by default*    Write DMM Command    CALibration:SECure:STATe OFF
+    Set Raw I/O Enabled    ${FALSE}
 
 Overload Is Never Returned As Scalar
     Close All DMMs
