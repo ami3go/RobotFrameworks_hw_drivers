@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import os
 import subprocess
-import sys
 import tempfile
 import venv
 from pathlib import Path
@@ -26,7 +25,10 @@ def main() -> int:
 
     with tempfile.TemporaryDirectory(prefix="rf_hp34401a_wheel_") as tmp:
         env = Path(tmp) / "venv"
-        venv.EnvBuilder(with_pip=True, system_site_packages=True).create(env)
+        # Do not inherit the CI/source-checkout site-packages. The purpose of
+        # this gate is to prove that the built wheel is self-describing and its
+        # RFDS plugin data files resolve without help from an editable install.
+        venv.EnvBuilder(with_pip=True, system_site_packages=False).create(env)
         python = _venv_python(env)
         subprocess.run(
             [str(python), "-m", "pip", "install", "--no-deps", str(wheel)],
