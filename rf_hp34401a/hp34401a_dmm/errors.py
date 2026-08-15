@@ -1,7 +1,7 @@
 """Driver-specific exceptions and SCPI error-code mapping for the HP 34401A.
 
 Raw transport failures are converted to these exceptions with enough context for
-troubleshooting (spec section 20).  Communication errors are never silently
+troubleshooting (spec section 20). Communication errors are never silently
 ignored.
 """
 
@@ -52,8 +52,8 @@ class QueryError(ScpiError):
     """Query-class SCPI error (codes -499..-400)."""
 
 
-class DeviceError(Hp34401AError):
-    """Device-specific error (positive codes) or self-test failure."""
+class DeviceError(ScpiError):
+    """Device-specific SCPI error (positive code) with structured code/message."""
 
 
 class OverloadError(Hp34401AError):
@@ -72,7 +72,6 @@ class RecoveryError(Hp34401AError):
     """Recovery was attempted but the instrument did not return to a good state."""
 
 
-# --- Known error codes from the HP 34401A manual (spec section 20). ----------
 ERROR_MESSAGES: Final[dict[int, str]] = {
     -101: "Invalid character",
     -102: "Syntax error",
@@ -119,15 +118,8 @@ ERROR_MESSAGES: Final[dict[int, str]] = {
 }
 
 
-def scpi_error_for(code: int, message: str = "", raw: str = "") -> ScpiError | DeviceError:
-    """Map a numeric error code to the most specific exception class.
-
-    Standard SCPI ranges:
-        -199..-100 -> CommandError
-        -299..-200 -> ExecutionError
-        -499..-400 -> QueryError
-    Positive (device-specific) codes -> DeviceError-flavoured ScpiError subclass.
-    """
+def scpi_error_for(code: int, message: str = "", raw: str = "") -> ScpiError:
+    """Map a numeric error code to the most specific exception class."""
     msg = message or ERROR_MESSAGES.get(code, "Unknown error")
     if -199 <= code <= -100:
         return CommandError(code, msg, raw)
@@ -135,6 +127,6 @@ def scpi_error_for(code: int, message: str = "", raw: str = "") -> ScpiError | D
         return ExecutionError(code, msg, raw)
     if -499 <= code <= -400:
         return QueryError(code, msg, raw)
-    # Device-specific (positive) codes are reported as a generic ScpiError so the
-    # caller still gets .code/.message; callers may special-case as needed.
+    if code > 0:
+        return DeviceError(code, msg, raw)
     return ScpiError(code, msg, raw)
