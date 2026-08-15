@@ -34,7 +34,7 @@ jobs:
       - name: Install documentation dependencies
         run: >-
           python -m pip install --upgrade pip
-          robotframework>=7,<8 jsonschema>=4.20,<5 mkdocs>=1.6 pyyaml>=6.0
+          "robotframework>=7,<8" "jsonschema>=4.20,<5" "mkdocs>=1.6" "pyyaml>=6.0"
       - name: Install driver source without dependency resolution
         run: python -m pip install -e . --no-deps
       - name: Generate Libdoc
