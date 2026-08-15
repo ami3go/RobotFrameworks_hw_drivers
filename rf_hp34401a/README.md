@@ -4,40 +4,61 @@ Robot Framework driver for the HP/Agilent/Keysight 34401A 6½-digit DMM.
 
 | Item | Value |
 |---|---|
-| Release | **26.07** |
-| Python distribution | `rf-hp34401a` 26.7.0 |
-| Core driver | `hp34401a_dmm` 1.2.8 |
+| Last released API baseline | **26.07** / distribution `26.7.0` |
+| Current branch state | **Unreleased remediation candidate** |
+| Core driver | `hp34401a_dmm` 1.2.8 plus RFDS runtime-policy facade |
 | Release class | **D0 — development candidate** |
 | Python | 3.10–3.13 |
 | Robot Framework | 7.x |
 | Public Robot keywords | 109 |
-| RFDS core requirement | `rfds-core>=1.0,<2.0` — mandatory runtime dependency |
-| RFDS-003 open deviations | **2** — BaseInstrumentLibrary migration and runtime core-version reporting |
-| RFDS baseline | RFDS-001 v1.2, RFDS-002 v1.1, RFDS-003 v2.0, RFDS-004 v2.0, RFDS-005 v1.3, RFDS-007 v1.0, RFDS-009 v1.0, RFDS-013 v1.0, RFDS-014 v1.0, RFDS-015 v1.0, RFDS-017 v3.0, RFDS-018 v1.0, RFDS-019 v1.1 |
+| Runtime dependencies | `robotframework>=7,<8`, `rfds-core>=1.0,<2.0`, `jsonschema>=4.20,<5` |
+| Remaining RFDS-003 blocker | authoritative `BaseInstrumentLibrary` integration |
+| Hardware qualification | **PENDING on exact corrected commit** |
 
-The public Robot adapter delegates SCPI behavior to the reviewed `hp34401a_dmm` core. It rejects overload, invalid, missing, and unstable readings instead of returning plausible fabricated values. Hardware connection never silently falls back to simulation.
+The public Robot adapter delegates SCPI measurement behavior to the reviewed `hp34401a_dmm` core. It rejects overload, invalid, missing, and unstable readings instead of returning plausible fabricated values. Hardware connection never silently falls back to simulation.
 
-> **RFDS-003 migration status:** `rfds-core` is now a mandatory runtime dependency and the plugin environment validator treats a missing core as a failure. The current `Hp34401ALibrary` still uses its pre-RFDS-003 session/orchestration implementation and does **not yet inherit** `BaseInstrumentLibrary`. `Get Driver Information` also still needs to report the effective installed `rfds-core` version rather than a fixed placeholder. These are tracked as open D0 deviations and this README does not claim RFDS-003 completion.
+## Current remediation status
 
-## Install with uv
+The 2026-08-16 deep review found cross-file and release-governance defects that were not visible in the earlier high-level review. The `dev` branch now includes corrections for:
 
-From the extracted folder containing `pyproject.toml`:
+- repository-root GitHub Actions CI/HIL/Pages workflows;
+- fail-closed RFDS-008 evidence run status and manifest-stable diagnostic export;
+- listener cleanup evidence finalization and correct simulation/real-hardware evidence mode;
+- Draft 2020-12 RFDS-014 schema validation and structured schema-lock verification;
+- effective runtime application of imported timeout/retry/safety/logging/simulation/device settings;
+- finite-positive communication timeout enforcement;
+- structured public validation errors;
+- RFDS-013 capability/runtime-model synchronization and real Robot export validation;
+- mandatory `rfds-core` version checking/reporting;
+- installed-wheel plugin artifact resolution;
+- version-derived release building, stale-release-evidence invalidation, and removal of committed generated MkDocs `site/` output;
+- the missing v26.07 retrospective code-review record.
+
+The package **does not yet claim full RFDS-003 conformance**. The connected repository/environment does not provide the authoritative shared `rfds-core` implementation needed to integrate `BaseInstrumentLibrary` safely. A local compatibility copy is intentionally not created.
+
+## Install
+
+From the extracted driver directory containing `pyproject.toml`:
 
 ```powershell
 uv pip install -e ".[hardware]"
 ```
 
-`rfds-core>=1.0,<2.0` is resolved automatically as a mandatory dependency. An offline installation therefore needs access to an approved matching `rfds-core` wheel or package source.
+or:
 
-Development and validation dependencies:
+```bash
+python -m pip install -e ".[hardware]"
+```
+
+An approved `rfds-core>=1.0,<2.0` distribution must be available to the package installer. Real VISA/GPIB access additionally requires a VISA implementation such as Keysight IO Libraries Suite or NI-VISA.
+
+Development environment:
 
 ```powershell
 uv pip install -e ".[dev,hardware]"
 ```
 
-A vendor VISA implementation such as Keysight IO Libraries Suite or NI-VISA is required for real VISA/GPIB/USBTMC access.
-
-## Canonical quick start
+## Canonical RFDS-002 lifecycle
 
 ```robotframework
 *** Settings ***
@@ -52,6 +73,7 @@ Measure A Real DC Voltage
     ...    timeout_s=10 s
     ...    transport=VISA
     Should Be True    ${state}[connected]
+    Should Be True    ${state}[communication_ok]
 
     ${identity}=    Get Identity    alias=dmm
     Log    ${identity}
@@ -63,24 +85,51 @@ Measure A Real DC Voltage
     DMM Reading Should Be Between    11.5    12.5    alias=dmm
 ```
 
-The RFDS-002 canonical lifecycle is:
+The ten universal keywords are:
 
-- `Connect`
-- `Disconnect`
-- `Is Connected`
-- `Get Connection State`
-- `Check Communication`
-- `Get Identity`
-- `Get Driver Information`
-- `Get Driver Capabilities`
-- `Set Communication Timeout`
-- `Get Communication Timeout`
+1. `Connect`
+2. `Disconnect`
+3. `Is Connected`
+4. `Get Connection State`
+5. `Check Communication`
+6. `Get Identity`
+7. `Get Driver Information`
+8. `Get Driver Capabilities`
+9. `Set Communication Timeout`
+10. `Get Communication Timeout`
 
-The older DMM-specific names remain available for compatibility, including `Connect DMM`, `Open DMM Via VISA`, `Open DMM Via Serial`, `Close DMM`, `Identify DMM`, and the complete measurement API.
+Compatibility names such as `Connect DMM`, `Open DMM Via VISA`, `Open DMM Via Serial`, `Close DMM`, and `Identify DMM` remain available.
 
-## Capability and configuration discovery
+### `verify_identity` semantics
 
-RFDS-013 discovery:
+`verify_identity=False` disables the model-validation step performed during transport connection. Canonical `Connect` still performs the bounded RFDS-002 communication probe required to populate `communication_ok`; therefore it may still issue a safe `*IDN?` probe before returning.
+
+## RFDS-014 configuration
+
+Configuration import is host-side only and does not open hardware or write instrument non-volatile state.
+
+```robotframework
+${default}=       Get Driver Default Configuration
+${validation}=    Validate Driver Configuration    ${default}
+${effective}=     Import Driver Configuration      ${default}
+${json}=          Export Driver Configuration
+```
+
+Configuration is validated against `config/schema.json`; the schema SHA-256 is verified against the structured `config/schema.lock` before a `ConfigurationManager` is created.
+
+A validated imported profile can control:
+
+- transport resource and transport kind;
+- communication, self-test and long-measurement timeouts;
+- safe query retry policy;
+- raw traffic logging;
+- explicit simulation selection and deterministic reading/identity;
+- raw-SCPI and calibration authorization;
+- expected model/terminal policy.
+
+Package-default simulation is disabled. An omitted resource can select simulation only when a validated imported profile explicitly sets `settings.simulation.enabled=true`; a failed or missing real hardware resource is never replaced by simulation.
+
+## RFDS-013 capabilities
 
 ```robotframework
 ${ids}=      Get Driver Capabilities
@@ -88,20 +137,38 @@ ${model}=    Get Driver Capability Model    mode=static
 ${matches}=  Find Driver Capabilities    capability_id=measure.    maximum_risk=low
 ```
 
-RFDS-014 JSON configuration:
+Capability binding validation compares the RFDS model to the actual decorated Robot export surface rather than validating the model against itself.
 
-```robotframework
-${default}=      Get Driver Default Configuration
-${validation}=   Validate Driver Configuration    ${default}
-${effective}=    Import Driver Configuration      ${default}
-${json}=         Export Driver Configuration
+## Logging and evidence
+
+Every public keyword call is recorded as RFDS-008 structured evidence under:
+
+```text
+results/session/rf_hp34401a/<run>/
 ```
 
-Configuration import never opens hardware or writes device non-volatile state. Persistence occurs only through `Save Driver Configuration`.
+The evidence engine records operation arguments/results/failures, identity/environment information, and correlated SCPI protocol traffic. Important fail-closed behavior:
 
-## RFDS-019 protocol conformance
+- any failed operation keeps the final run status at `FAIL` even if later cleanup succeeds;
+- simulation is labeled `SIMULATION`, not real hardware;
+- listener cleanup finalizes the run if an explicit disconnect was omitted;
+- diagnostic bundle export writes the export event before hashing the snapshot, so the live manifest remains valid.
 
-The package contains a 109-keyword inventory and protocol-vector set under `tests/conformance/`.
+Disable evidence explicitly only when required:
+
+```robotframework
+Library    rf_hp34401a.Hp34401ALibrary    evidence_enabled=${FALSE}
+```
+
+Validate evidence:
+
+```console
+python scripts/validate_evidence.py results/session/rf_hp34401a/<run>/
+```
+
+## RFDS-019 and HIL
+
+Static call/protocol validation:
 
 ```powershell
 python scripts/validate_ai_contract.py
@@ -109,97 +176,58 @@ python scripts/validate_call_protocol_conformance.py
 .\scripts\run_call_protocol_conformance.ps1
 ```
 
-Simulation conformance is distinct from physical hardware evidence.
+Real-hardware all-public-API verification:
 
-## Verify every public API on real hardware
+```powershell
+.\scripts\run_all_api_hil.ps1 -VisaResource "GPIB0::22::INSTR"
+```
 
-The explicitly enabled suite is:
+The HIL suite inventories all 109 public keywords and requires explicit fixture/authorization profiles for operations that can disturb the DUT or instrument. Simulation evidence is never accepted as a substitute for D2/P1 physical evidence.
+
+## CI and GitHub Pages
+
+Active repository-root workflows are:
 
 ```text
-tests/hil/verify_all_public_api_real_hardware.robot
+.github/workflows/rf_hp34401a-ci.yml
+.github/workflows/rf_hp34401a-hil.yml
+.github/workflows/rf_hp34401a-pages.yml
 ```
 
-Run the read-only/default profile:
+The quality workflow runs on Windows/Linux and Python 3.10/3.13, performs static contract checks, Python/Robot tests, >=80% combined adapter+core coverage, offline examples, Libdoc, strict MkDocs build, wheel/sdist build, and installed-wheel plugin-resource validation. It finishes with an explicit shared-core release gate, so release qualification remains blocked when the authoritative `rfds-core` is unavailable.
 
-```powershell
-.\scripts\run_all_api_hil.ps1 `
-    -VisaResource "GPIB0::22::INSTR"
-```
+GitHub Pages builds `site/` from `docs/` and `mkdocs.yml`; generated `site/` output is not tracked in Git.
 
-The suite inventories all 109 public keywords and gives every one a visible `PASS`, `FAIL`, `EXCLUDED`, or `NOT RUN` result. Measurement, trigger, reset, self-test, raw-I/O, and serial profiles are disabled until their corresponding fixture and authorization variables are explicitly supplied. Use `-FailOnExclusions` for a zero-exclusion qualification run.
+## Release packaging
 
-Example enabling a verified DC-voltage fixture:
+`scripts/build_release.py` derives release/distribution versions from the package authorities. It refuses to package a current release when required history/review records are missing and regenerates provenance/checksums from the frozen source commit.
 
-```powershell
-.\scripts\run_all_api_hil.ps1 `
-    -VisaResource "GPIB0::22::INSTR" `
-    -ExtraRobotArgs @(
-        "--variable", "RUN_DC_VOLTAGE_PROFILE:True"
-    )
-```
-
-The suite produces Robot `output.xml`, `log.html`, and `report.html` plus JSON, CSV, Markdown, environment, and per-keyword coverage evidence in a timestamped result directory. It never falls back to simulation after a real-hardware connection failure.
-
-## Logging and evidence
-
-Every public keyword call is recorded as RFDS-008 structured evidence — arguments, duration,
-result/failure, and the literal SCPI commands/responses it caused on whichever transport
-(VISA, RS-232, or the simulator) carried it — under `results/session/rf_hp34401a/<run>/`
-(override with `RFDS_EVIDENCE_ROOT`). This is a per-session diagnostic layer distinct from
-`logging_utils.py`'s production CSV/JSONL measurement logs, and from the coverage bookkeeping
-in `tests/hil/`/`tests/conformance/` above; see
-[Logging and Evidence](docs/logging_and_evidence.md) and
-[guide/evidence_and_diagnostics.md](guide/evidence_and_diagnostics.md) for what gets recorded
-and how to read it after a failure.
-
-```robotframework
-Library    rf_hp34401a.Hp34401ALibrary    evidence_enabled=${FALSE}    # disables it; on by default
-```
-
-Call the `Export Diagnostic Bundle` keyword to zip the current run for a bug report. Validate a
-run's integrity (hashes, JSONL sequencing) with:
-
-```console
-python scripts/validate_evidence.py results/session/rf_hp34401a/<run>/
-```
+Current `release/` files are deliberately marked as remediation/pending where evidence has not been regenerated. Do not treat them as a production release attestation until CI and real HIL have completed on the exact frozen commit.
 
 ## Safety
 
 - Verify the selected front/rear input terminal before energizing the fixture.
 - Current tests require the correct fused current terminal and an approved bounded source.
-- Resistance, continuity, and diode tests require a verified de-energized DUT.
-- Reset and self-test can disturb a production setup and require explicit profile enablement.
-- Raw SCPI is disabled by default and must be enabled explicitly.
-- The included RFDS-018 file is a template, not a claim about your actual bench wiring or limits.
-
-## Validation status
-
-Validation for the existing 26.07 driver baseline recorded in the repository:
-
-- the inherited core suite passes with 67 software tests and 2 explicitly guarded physical tests skipped;
-- Python compilation passed after the HIL evidence-state correction;
-- a file-backed listener regression proved that executed PASS results override prior EXCLUDED records and that no keyword remains NOT RUN when all unexecuted APIs have approved exclusions;
-- RFDS-002/RFDS-017 synchronization passed for 109 keywords;
-- RFDS-019 static inventory/vector validation passed for 109 keywords;
-- the real-hardware suite accounts for all 109 public keyword names;
-- the user's v26.05 physical run proved VISA discovery, real HP34401A connection, identity, health/error/recovery, simulation isolation, and cleanup, and exposed only the subsequently corrected evidence bookkeeping defect.
-
-The 2026-08-15 RFDS-003 dependency correction added mandatory `rfds-core` packaging, plugin environment validation, and regression tests. It has **not** been promoted to a new release and does not close the two RFDS-003 deviations listed above. The connected execution environment used for this repository edit does not contain the authoritative `rfds_core` package, so BaseInstrumentLibrary integration and runtime contract execution were not fabricated or marked PASS.
-
-Robot Framework is not installed in the historical package-build container described by the existing release evidence. Rerun the packaged launcher in the release-site uv environment to generate fresh Robot and physical-device evidence before promotion to D2 or P1. The package does not claim D2/P1 hardware qualification.
+- Resistance, continuity and diode tests require a verified de-energized DUT.
+- Reset and self-test can disturb a production setup and require explicit authorization/profile enablement.
+- Raw SCPI is disabled by package default and must be explicitly enabled by constructor, keyword, or validated safety profile.
+- Calibration commands are separately guarded.
+- The RFDS-018 bench file is a template, not a claim about actual bench wiring or limits.
 
 ## Project contents
 
-- `rf_hp34401a/` — explicit Robot adapter and RFDS metadata services;
-- `hp34401a_dmm/` — device core and existing VISA/serial/fake transports;
-- `api/` — RFDS-002 API inventory and decisions;
+- `rf_hp34401a/` — active Robot facade, plugin, RFDS metadata/configuration services;
+- `rf_hp34401a/legacy_library.py` — preserved reviewed 26.07 keyword implementation under the corrected facade;
+- `hp34401a_dmm/` — active core facade and transport/measurement implementation;
+- `hp34401a_dmm/legacy_driver.py` — preserved reviewed 1.2.8 core implementation;
+- `api/` — RFDS-002 API inventory, compatibility, decisions and deviations;
 - `capability/` — RFDS-013 capability model;
-- `config/` — RFDS-014 schema, safe defaults, and examples;
+- `config/` — RFDS-014 schema, lock, defaults and examples;
 - `ai/` — RFDS-017 contract and lock;
-- `tests/conformance/` — RFDS-019 inventory, vectors, runners, and schemas;
-- `tests/hil/` — opt-in real-device tests, including all-public-API verification;
+- `tests/conformance/` — RFDS-019 inventory/vectors/runners;
+- `tests/hil/` — opt-in real-device verification;
 - `examples/` — 13 numbered Robot examples;
-- `history/`, `review/`, `release/` — change, review, risk, traceability, and integrity records;
+- `history/`, `review/`, `release/` — lifecycle/change/review/integrity records;
 - `guide/`, `docs/`, `mkdocs.yml` — setup and GitHub Pages sources.
 
 ## License
