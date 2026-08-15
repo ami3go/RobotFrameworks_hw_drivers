@@ -30,6 +30,13 @@ def _format(value: Any) -> str:
     return str(value)
 
 
+def _canonical_text_bytes(path: Path) -> bytes:
+    """Hash reviewed text independently of checkout LF/CRLF conversion."""
+    text = path.read_text(encoding="utf-8")
+    text = text.replace("\r\n", "\n").replace("\r", "\n")
+    return text.encode("utf-8")
+
+
 def public_keyword_surface() -> list[str]:
     """Return the effective Robot keyword surface, including inherited methods."""
     from rf_hp34401a import Hp34401ALibrary
@@ -78,9 +85,10 @@ def validate(contract_path: Path | None = None, lock_path: Path | None = None) -
     errors: list[str] = []
     contract_file = contract_path or (ROOT / "ai" / "hp34401a_ai_contract.yaml")
     lock_file = lock_path or (ROOT / "ai" / "hp34401a_ai_contract.lock")
+    public_api_path = ROOT / "api" / "public_api.yaml"
     contract = load_yaml(contract_file)
     lock = load_yaml(lock_file)
-    public_api = json.loads((ROOT / "api" / "public_api.yaml").read_text(encoding="utf-8"))
+    public_api = json.loads(public_api_path.read_text(encoding="utf-8"))
     live = public_keyword_surface()
     live_names = {line.split("(", 1)[0] for line in live}
     contract_lines = sorted(
@@ -110,7 +118,7 @@ def validate(contract_path: Path | None = None, lock_path: Path | None = None) -
         errors.append("hp34401a_ai_contract.lock effective-surface hash mismatch")
     if lock.get("keyword_count") != len(live) or lock.get("surface") != live:
         errors.append("hp34401a_ai_contract.lock keyword surface/count mismatch")
-    expected_api_hash = hashlib.sha256((ROOT / "api" / "public_api.yaml").read_bytes()).hexdigest()
+    expected_api_hash = hashlib.sha256(_canonical_text_bytes(public_api_path)).hexdigest()
     if lock.get("public_api_sha256") != expected_api_hash:
         errors.append("hp34401a_ai_contract.lock public_api hash mismatch")
     if str(contract.get("identity", {}).get("driver_version")) != "26.7.0":
