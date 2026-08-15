@@ -3,18 +3,16 @@
     "driver_name": "rf_hp34401a",
     "maximum_driver_version_exclusive": "27.0",
     "minimum_driver_version": "26.4",
-    "supported_models": [
-      "34401A"
-    ]
+    "supported_models": ["34401A"]
   },
   "extensions": {},
   "metadata": {
     "created_utc": "2026-07-30T00:00:00Z",
-    "exported_by_driver_version": "26.06",
+    "exported_by_driver_version": "26.07",
     "migration_history": []
   },
   "profile": {
-    "description": "Deterministic offline simulator profile.",
+    "description": "Deterministic offline simulator profile; simulation must be explicitly loaded/imported before Connect can omit resource.",
     "name": "simulator",
     "scope": "PACKAGE"
   },
@@ -22,22 +20,10 @@
   "schema_id": "rf_hp34401a.configuration",
   "schema_version": "1.0.0",
   "settings": {
-    "device": {
-      "expected_model": "34401A",
-      "expected_terminal": "ANY"
-    },
-    "logging": {
-      "raw_traffic": false
-    },
-    "retry": {
-      "max_query_retries": 1,
-      "query_enabled": true,
-      "write_enabled": false
-    },
-    "safety": {
-      "allow_calibration_commands": false,
-      "allow_raw_scpi": false
-    },
+    "device": {"expected_model": "34401A", "expected_terminal": "ANY"},
+    "logging": {"raw_traffic": false},
+    "retry": {"max_query_retries": 1, "query_enabled": true, "write_enabled": false},
+    "safety": {"allow_calibration_commands": false, "allow_raw_scpi": false},
     "simulation": {
       "enabled": true,
       "identity": "HEWLETT-PACKARD,34401A,SIM0001,11-05-01",
