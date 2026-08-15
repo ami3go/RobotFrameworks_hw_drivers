@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://rfds.local/schemas/rf_hp34401a/run_summary.schema.json",
+  "$id": "urn:rfds:rf_hp34401a:evidence:run-summary:1.0.0",
   "title": "rfds.run_summary",
   "description": "RFDS-008 run summary for one rf_hp34401a evidence run. Written once by EvidenceRun.finalize().",
   "type": "object",
@@ -19,7 +19,7 @@
     "start_timestamp_utc": {"type": "string", "format": "date-time"},
     "end_timestamp_utc": {"type": "string", "format": "date-time"},
     "duration_s": {"type": "number", "minimum": 0},
-    "execution_mode": {"enum": ["SIMULATOR", "REPLAY", "FAKE", "REAL_HARDWARE", "MIXED", "NO_HARDWARE"]},
+    "execution_mode": {"enum": ["UNKNOWN", "SIMULATION", "REPLAY", "REAL_HARDWARE", "MIXED", "NO_HARDWARE"]},
     "final_status": {"enum": ["PASS", "FAIL", "ERROR", "SKIP", "EXCLUDED", "ABORTED", "NOT_RUN", "UNKNOWN"]},
     "error_count": {"type": "integer", "minimum": 0},
     "warning_count": {"type": "integer", "minimum": 0},
