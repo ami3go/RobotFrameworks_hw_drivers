@@ -1,12 +1,12 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://rfds.local/schemas/rf_hp34401a/error.schema.json",
+  "$id": "urn:rfds:rf_hp34401a:evidence:error:1.0.0",
   "title": "rfds.error",
   "description": "One line of events/errors.jsonl, written by EvidenceRun.record_error().",
   "type": "object",
   "required": [
     "schema", "schema_version", "run_id", "error_id", "timestamp_utc",
-    "category", "exception_type", "message", "traceback", "sequence"
+    "category", "error_code", "exception_type", "message", "traceback", "sequence"
   ],
   "properties": {
     "schema": {"const": "rfds.error"},
@@ -18,7 +18,13 @@
     "operation_id": {"type": ["string", "null"]},
     "capability": {"type": ["string", "null"]},
     "session_alias": {"type": ["string", "null"]},
-    "category": {"enum": ["ENVIRONMENT", "VALIDATION", "STATE", "HARDWARE", "ASSERTION", "UNKNOWN"]},
+    "category": {
+      "enum": [
+        "VALIDATION", "CONFIGURATION", "STATE", "TIMEOUT", "CONNECTION",
+        "PROTOCOL", "CLEANUP", "UNSUPPORTED", "SAFETY", "DEVICE", "UNKNOWN"
+      ]
+    },
+    "error_code": {"type": ["string", "null"]},
     "exception_type": {"type": "string"},
     "message": {"type": "string"},
     "traceback": {"type": "string"},
