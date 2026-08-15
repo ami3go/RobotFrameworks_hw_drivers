@@ -1,28 +1,10 @@
 """RFDS-008 structured evidence engine for rf_hp34401a.
 
-``logging_utils.py`` (spec section 25) already provides append-only
-`CsvMeasurementLog`/`JsonlEventLog` writers for production measurement runs.
-This module is a complementary, deeper layer: one **evidence run** per
-`Hp34401ALibrary` instance (SUITE-scoped, matching `ROBOT_LIBRARY_SCOPE`),
-correlating every public-keyword call (arguments, duration, result/failure)
-with the literal SCPI commands/responses it sent across whichever of the
-three transports (VISA, serial RS232, Prologix, or the in-process simulator)
-carried it, tagged per DMM alias (`session_alias`), and finalized into a
-SHA-256-hashed manifest + `run_summary.json` you can hand to someone
-troubleshooting a failure without needing the original bench. It does not
-replace `logging_utils.py`'s production CSV/JSONL logs (those remain the
-authoritative long-running measurement record for a station); this is a
-per-Robot-session diagnostic layer, on by default, aimed at "why did this
-keyword just fail" rather than "log every reading for a 8-hour soak test".
-
-Scope notes (mirrors the rf_phidget_relay reference implementation this was
-adapted from — see that package's docs/logging_and_evidence.md for the full
-rationale): no shared cross-driver package exists in this repository yet, so
-this module is self-contained rather than importing one; log rotation/
-backpressure policy, cryptographic signing, and literal RFDS-007 error codes
-are out of scope for a single driver package. `errors.jsonl`'s `category`
-field is a pragmatic mapping of this driver's own `hp34401a_dmm.errors` /
-`rf_hp34401a.exceptions` hierarchy, not literal RFDS-007 codes.
+One evidence run is created per ``Hp34401ALibrary`` instance and correlates
+public keyword calls with literal SCPI traffic.  Run status is fail-closed:
+once any recorded operation fails, later cleanup success cannot turn the run
+back into PASS.  Integrity manifests are generated only after all events that
+belong to the exported snapshot have been recorded.
 """
 
 from __future__ import annotations
@@ -106,7 +88,7 @@ def _json_safe(value: Any) -> Any:
 
 
 def redact_mapping(data: Mapping[str, Any]) -> dict:
-    """Redact keys that look sensitive; recurse into nested mappings (RFDS-008 §29.3)."""
+    """Redact credential-shaped keys recursively."""
     result: dict = {}
     for key, value in data.items():
         if _looks_sensitive(str(key)):
@@ -117,15 +99,12 @@ def redact_mapping(data: Mapping[str, Any]) -> dict:
 
 
 def _classify_exception(exc: BaseException) -> str:
-    """Approximate error category from this driver's own exception hierarchy.
-
-    RFDS-008 §17 calls for RFDS-007 error categories; RFDS-007 wasn't
-    available while writing this, so this maps `hp34401a_dmm.errors` /
-    `rf_hp34401a.exceptions` class names to a small stable category set.
-    """
+    """Map the public/core exception hierarchy to a stable RFDS category."""
     name = type(exc).__name__
     if "Validation" in name:
         return "VALIDATION"
+    if "Configuration" in name:
+        return "CONFIGURATION"
     if "State" in name:
         return "STATE"
     if "Timeout" in name:
@@ -138,6 +117,8 @@ def _classify_exception(exc: BaseException) -> str:
         return "CLEANUP"
     if "Unsupported" in name:
         return "UNSUPPORTED"
+    if "Safety" in name:
+        return "SAFETY"
     if "Device" in name or "Overload" in name or "Stable" in name:
         return "DEVICE"
     return "UNKNOWN"
@@ -181,7 +162,7 @@ class _NullOperationContext:
 
 
 class EvidenceRun:
-    """Owns one RFDS-008 result directory for one `Hp34401ALibrary` instance."""
+    """Own one RFDS-008 result directory for one library instance."""
 
     SCHEMA = "rfds.run_summary"
 
@@ -191,12 +172,12 @@ class EvidenceRun:
         driver_id: str = "rf_hp34401a",
         activity: str = "session",
         result_root: Path | None = None,
-        execution_mode: str = "REAL_HARDWARE",
+        execution_mode: str = "UNKNOWN",
     ) -> None:
         self.run_id = _new_run_id()
         self.driver_id = driver_id
         self.activity = activity
-        self.execution_mode = execution_mode
+        self.execution_mode = str(execution_mode).upper()
         base = result_root or Path(os.environ.get("RFDS_EVIDENCE_ROOT", "results"))
         timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
         self.root = base / activity / driver_id / f"{timestamp}_{self.run_id}"
@@ -208,6 +189,7 @@ class EvidenceRun:
         self._start_time = _utc_now_iso()
         self._error_count = 0
         self._warning_count = 0
+        self._run_failed = False
         self._finalized = False
         self._device_identities: dict[str, dict] = {}
         self._make_dirs()
@@ -218,8 +200,8 @@ class EvidenceRun:
         for sub in ("events", "protocol", "cleanup", "integrity", "attachments"):
             (self.root / sub).mkdir(parents=True, exist_ok=True)
 
-    def _write_environment(self) -> None:
-        payload = {
+    def _environment_payload(self) -> dict[str, Any]:
+        return {
             "schema": "rfds.environment",
             "schema_version": SCHEMA_VERSION,
             "run_id": self.run_id,
@@ -233,10 +215,13 @@ class EvidenceRun:
             or _safe_distribution_version("rf_hp34401a"),
             "driver_source_version": _safe_module_version("rf_hp34401a"),
             "core_driver_version": _safe_module_version("hp34401a_dmm"),
+            "rfds_core_version": _safe_distribution_version("rfds-core"),
             "execution_mode": self.execution_mode,
             "clock_synchronization": "UNKNOWN",
         }
-        self._write_json(self.root / "environment.json", payload)
+
+    def _write_environment(self) -> None:
+        self._write_json(self.root / "environment.json", self._environment_payload())
 
     def _write_json(self, path: Path, payload: dict) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -300,9 +285,6 @@ class EvidenceRun:
         logger.log(python_level, "[%s] %s", event_type, message)
         if level == "WARN":
             self._warning_count += 1
-        # ERROR/CRITICAL is intentionally not counted here — every current
-        # ERROR/CRITICAL emit_event call is paired with record_error(), which is
-        # the sole owner of _error_count (avoids double-counting one failure).
 
     @contextlib.contextmanager
     def record_operation(
@@ -337,6 +319,7 @@ class EvidenceRun:
             yield ctx
         except Exception as exc:
             status = "FAIL"
+            self._run_failed = True
             error_summary = f"{type(exc).__name__}: {exc}"
             self.record_error(
                 exc,
@@ -384,14 +367,6 @@ class EvidenceRun:
         *,
         session_alias: str | None = None,
     ) -> None:
-        """Record one outbound/inbound SCPI command or response.
-
-        ``transport_kind`` identifies which of this driver's interchangeable
-        transports carried it (``VISA``, ``SERIAL_RS232``, ``PROLOGIX``, or
-        ``simulation``) — worth recording explicitly here because, unlike most
-        drivers in this repository, the same SCPI command set can reach the
-        instrument through three different physical paths.
-        """
         if direction not in ("outbound", "inbound"):
             raise ValueError("direction must be 'outbound' or 'inbound'")
         exchange_id = f"pex-{uuid.uuid4().hex[:10]}"
@@ -426,6 +401,7 @@ class EvidenceRun:
         with self._lock:
             self._error_counter += 1
             error_id = f"err-{self._error_counter:06d}"
+        self._run_failed = True
         record = {
             "schema": "rfds.error",
             "schema_version": SCHEMA_VERSION,
@@ -437,6 +413,7 @@ class EvidenceRun:
             "capability": capability,
             "session_alias": session_alias,
             "category": _classify_exception(exc),
+            "error_code": getattr(exc, "code", None),
             "exception_type": type(exc).__qualname__,
             "message": str(exc),
             "traceback": traceback.format_exc(),
@@ -450,6 +427,13 @@ class EvidenceRun:
         existing = self._device_identities.get(session_alias, {})
         existing.update({key: value for key, value in fields.items() if value is not None})
         self._device_identities[session_alias] = existing
+        transport = str(fields.get("transport") or "").lower()
+        if transport == "simulation":
+            self.execution_mode = "SIMULATION"
+            self._write_environment()
+        elif transport and self.execution_mode == "UNKNOWN":
+            self.execution_mode = "REAL_HARDWARE"
+            self._write_environment()
         payload = {
             "schema": "rfds.device_identity",
             "schema_version": SCHEMA_VERSION,
@@ -494,7 +478,9 @@ class EvidenceRun:
     def finalize(self, status: str = "PASS") -> Path:
         if self._finalized:
             return self.root
-        self.emit_event("RUN_FINISHING", f"Evidence run finalizing with status {status}", level="INFO")
+        requested = str(status).strip().upper() or "PASS"
+        effective = "FAIL" if self._run_failed or self._error_count > 0 or requested == "FAIL" else requested
+        self.emit_event("RUN_FINISHING", f"Evidence run finalizing with status {effective}", level="INFO")
         duration_s = time.monotonic() - self._start_monotonic
         summary = {
             "schema": self.SCHEMA,
@@ -506,7 +492,7 @@ class EvidenceRun:
             "end_timestamp_utc": _utc_now_iso(),
             "duration_s": round(duration_s, 3),
             "execution_mode": self.execution_mode,
-            "final_status": status,
+            "final_status": effective,
             "error_count": self._error_count,
             "warning_count": self._warning_count,
             "dropped_events": 0,
@@ -542,17 +528,25 @@ class EvidenceRun:
         (self.root / "run_summary.md").write_text("\n".join(lines), encoding="utf-8")
 
     def export_diagnostic_bundle(self, destination: str | None = None) -> str:
-        self._write_manifest()
         if destination:
             zip_path = Path(destination)
             zip_path.parent.mkdir(parents=True, exist_ok=True)
         else:
             zip_path = self.root.parent / f"{self.root.name}_diagnostic_bundle.zip"
+
+        # The export event belongs to the snapshot, so write it before the
+        # manifest and archive.  Nothing under the evidence root is mutated
+        # after the manifest is generated.
+        self.emit_event(
+            "DIAGNOSTIC_BUNDLE_EXPORTED",
+            f"Diagnostic bundle snapshot requested at {zip_path}",
+            level="INFO",
+        )
+        self._write_manifest()
         with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as archive:
             for path in sorted(self.root.rglob("*")):
                 if path.is_file():
                     archive.write(path, arcname=str(Path(self.root.name) / path.relative_to(self.root)))
-        self.emit_event("DIAGNOSTIC_BUNDLE_EXPORTED", f"Diagnostic bundle written to {zip_path}", level="INFO")
         return str(zip_path)
 
 
@@ -579,7 +573,7 @@ def _role_for(relative_path: Path) -> str:
 
 
 class NullEvidenceRun:
-    """Used when ``evidence_enabled=False``: same interface, writes nothing to disk."""
+    """Used when ``evidence_enabled=False``: same interface, writes nothing."""
 
     run_id: str | None = None
 
@@ -608,8 +602,7 @@ class NullEvidenceRun:
 
 
 class EvidenceListener:
-    """Register with ``--listener hp34401a_dmm.evidence.EvidenceListener`` for
-    suite/test/keyword correlation. Entirely optional."""
+    """Optional Robot listener for suite/test/keyword correlation."""
 
     ROBOT_LISTENER_API_VERSION = 3
 
