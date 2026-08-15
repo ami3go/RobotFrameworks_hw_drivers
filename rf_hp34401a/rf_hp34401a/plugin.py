@@ -7,23 +7,23 @@ import importlib.util
 import json
 import platform
 import re
+import sysconfig
 from pathlib import Path
 from typing import Any, Mapping
 
 from .version import __version__
 
 _RFDS_CORE_REQUIREMENT = ">=1.0,<2.0"
+_ARTIFACT_INSTALL_PATHS = {
+    "capability_model": Path("share/rf_hp34401a/capability/capability_model.yaml"),
+    "configuration_schema": Path("share/rf_hp34401a/config/schema.json"),
+    "ai_contract": Path("share/rf_hp34401a/ai/hp34401a_ai_contract.yaml"),
+    "protocol_vectors": Path("share/rf_hp34401a/conformance/protocol_vectors.yaml"),
+}
 
 
 def _rfds_core_check() -> dict[str, Any]:
-    """Return a side-effect-free rfds-core compatibility check.
-
-    RFDS-003 requires the effective shared-core version to be resolved at
-    runtime.  The currently approved compatibility window is the complete 1.x
-    series, so validation deliberately rejects missing, malformed, pre-1.0,
-    and 2.x+ installations instead of merely checking that ``rfds_core`` can
-    be imported.
-    """
+    """Return a side-effect-free rfds-core compatibility check."""
 
     check: dict[str, Any] = {
         "id": "rfds-core",
@@ -58,6 +58,19 @@ def _rfds_core_check() -> dict[str, Any]:
     return check
 
 
+def _resolve_artifact(field: str, source_relative: str) -> str:
+    """Resolve a manifest artifact from a source checkout or installed wheel."""
+
+    source_candidate = Path(__file__).resolve().parents[1] / source_relative
+    if source_candidate.exists():
+        return str(source_candidate)
+
+    install_relative = _ARTIFACT_INSTALL_PATHS[field]
+    data_root = Path(sysconfig.get_path("data"))
+    installed_candidate = data_root / install_relative
+    return str(installed_candidate)
+
+
 class Hp34401APluginProvider:
     """Expose driver metadata without constructing or connecting the driver."""
 
@@ -70,10 +83,21 @@ class Hp34401APluginProvider:
     def get_descriptor(cls) -> dict[str, Any]:
         descriptor = cls._manifest()
         descriptor["installed_driver_version"] = __version__
+        resolved: dict[str, str] = {}
+        for field in _ARTIFACT_INSTALL_PATHS:
+            source_relative = str(descriptor[field])
+            resolved[field] = _resolve_artifact(field, source_relative)
+        descriptor["resolved_artifacts"] = resolved
         return descriptor
 
     @classmethod
     def validate_environment(cls) -> dict[str, Any]:
+        descriptor = cls.get_descriptor()
+        missing_artifacts = sorted(
+            name
+            for name, path in descriptor["resolved_artifacts"].items()
+            if not Path(path).is_file()
+        )
         checks = [
             {"id": "python", "status": "PASS", "value": platform.python_version()},
             {
@@ -82,6 +106,12 @@ class Hp34401APluginProvider:
                 "required": True,
             },
             _rfds_core_check(),
+            {
+                "id": "plugin-artifacts",
+                "status": "PASS" if not missing_artifacts else "FAIL",
+                "required": True,
+                "missing": missing_artifacts,
+            },
             {
                 "id": "pyvisa",
                 "status": "PASS" if importlib.util.find_spec("pyvisa") else "WARNING",
