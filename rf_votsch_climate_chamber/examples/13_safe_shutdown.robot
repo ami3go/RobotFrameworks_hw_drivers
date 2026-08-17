@@ -12,5 +12,13 @@ Put Chamber Into Safe State
     ${result}=    Safe Shutdown
     Should Be True    ${result}[safe]
     Chamber Should Be Stopped
-    Should Not Be True    ${result}[dryer]
-    Should Not Be True    ${result}[compressed_air]
+    # Safe Shutdown reports per-output outcomes under "actions"; there are no
+    # top-level "dryer"/"compressed_air" keys.
+    ${statuses}=    Evaluate    {a['action']: a['status'] for a in $result['actions']}
+    Should Be Equal    ${statuses}[dryer_off]    PASS
+    Should Be Equal    ${statuses}[compressed_air_off]    PASS
+    Should Be Equal    ${statuses}[chamber_stop]    PASS
+    ${dryer}=    Get Dryer
+    ${air}=      Get Compressed Air
+    Should Not Be True    ${dryer}
+    Should Not Be True    ${air}
