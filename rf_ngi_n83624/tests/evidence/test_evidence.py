@@ -157,6 +157,42 @@ def test_closing_one_alias_does_not_finalize_another(library):
     assert len(open_still) == 1
 
 
+def test_suite_end_finalizes_a_run_whose_alias_never_had_a_session(tmp_path, monkeypatch):
+    """Regression: a keyword called before any Open creates an evidence run for
+    the resolved alias, but _finalize_closed_sessions only finalizes aliases
+    that *lost* a session. Such a run was left on disk with environment.json and
+    events/ but no run_summary.json, evidence_manifest.json or checksums."""
+    monkeypatch.setenv("RFDS_EVIDENCE_ROOT", str(tmp_path / "results"))
+    lib = NGI_N83624(auto_close_on_suite_end=False)
+
+    lib.close_all_n83624_connections()  # no session was ever opened
+    lib._end_suite("Suite", {})
+
+    root = _run_root(tmp_path)
+    for expected in (
+        "run_summary.json",
+        "evidence_manifest.json",
+        "integrity/checksums.sha256",
+    ):
+        assert (root / expected).exists(), f"missing {expected}"
+    assert _load_validator().validate(root) == []
+
+
+def test_suite_end_finalizes_evidence_even_when_auto_close_is_disabled(tmp_path, monkeypatch):
+    """auto_close_on_suite_end governs closing connections, never whether the
+    evidence record is left complete."""
+    monkeypatch.setenv("RFDS_EVIDENCE_ROOT", str(tmp_path / "results"))
+    lib = NGI_N83624(auto_close_on_suite_end=False)
+    lib.open_n83624_emulator(alias="emu", max_voltage_v=5.0, max_current_ma=500)
+    lib.identify_n83624(alias="emu")
+
+    lib._end_suite("Suite", {})  # session deliberately left open
+
+    root = _run_root(tmp_path)
+    assert (root / "run_summary.json").exists()
+    assert _load_validator().validate(root) == []
+
+
 # ---------------------------------------------------------------------------
 # JSONL correctness: valid JSON, gap-free monotonic sequence per stream
 # ---------------------------------------------------------------------------

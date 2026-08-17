@@ -196,6 +196,32 @@ class NGI_N83624:
             if run is not None:
                 run.finalize(status=status)
 
+    def _finalize_remaining_evidence_runs(self, status: str = "PASS") -> None:
+        """Finalize every evidence run still open, whatever its alias's state.
+
+        :meth:`_finalize_closed_sessions` only finalizes aliases that *had* a
+        session and lost it, so a run created for an alias that never got one
+        — any keyword called before ``Open N83624 * Connection``, e.g. a query
+        or ``Close All N83624 Connections`` on an empty registry — was never
+        finalized. That left an evidence directory on disk holding
+        ``environment.json`` and ``events/`` but no ``run_summary.json``,
+        ``evidence_manifest.json`` or ``integrity/checksums.sha256``: an
+        unverifiable, permanently incomplete RFDS-008 record.
+
+        Runs still bound to a live session are finalized here too, so evidence
+        is complete even when ``auto_close_on_suite_end`` is false and the
+        caller never closes its connections. ``finalize`` is idempotent, so
+        anything already finalized is unaffected.
+        """
+        for alias in list(self._evidence_runs):
+            run = self._evidence_runs.pop(alias, None)
+            if run is None:
+                continue
+            try:
+                run.finalize(status=status)
+            except Exception as exc:  # evidence must never mask a test result
+                logger.error(f"Finalizing N83624 evidence run for '{alias}' failed: {exc}")
+
     # Robot listener -------------------------------------------------------------
     def _end_suite(self, name: str, attributes: Mapping[str, Any]) -> None:
         if self.auto_close_on_suite_end:
@@ -203,12 +229,16 @@ class NGI_N83624:
                 self.close_all_n83624_connections()
             except Exception as exc:  # listener cleanup must not hide test failures
                 logger.error(f"Automatic N83624 suite cleanup failed: {exc}")
+        # Unconditional: auto_close_on_suite_end governs closing *connections*,
+        # never whether the evidence record is left complete on disk.
+        self._finalize_remaining_evidence_runs()
 
     def _close(self) -> None:
         try:
             self.close_all_n83624_connections()
         except Exception as exc:
             logger.error(f"Automatic N83624 library cleanup failed: {exc}")
+        self._finalize_remaining_evidence_runs()
 
     # Connection management -----------------------------------------------------
     @keyword("Open N83624 TCP Connection")

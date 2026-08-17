@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Fixed evidence runs never being finalized when their alias never held a session. `_finalize_closed_sessions` only finalizes aliases that *lost* a session, but `_evidenced` creates a run for whatever alias a keyword resolves to — so any keyword called before `Open N83624 * Connection` (a query, or `Close All N83624 Connections` on an empty registry) left an evidence directory containing `environment.json` and `events/` but no `run_summary.json`, `evidence_manifest.json` or `integrity/checksums.sha256`: a permanently incomplete, unverifiable RFDS-008 record. `_end_suite`/`_close` now finalize every remaining run via `_finalize_remaining_evidence_runs`, unconditionally — `auto_close_on_suite_end` governs closing *connections*, never whether evidence is left complete on disk. This also completes evidence for sessions intentionally left open under `auto_close_on_suite_end=False`.
+
 ## v26.01 - 2026-07-18
 
 - Added production-oriented Robot Framework library over the supplied NGI N83624 Python driver.
