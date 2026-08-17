@@ -436,6 +436,20 @@ capabilities:
   side_effects: none_intended
   timeout: finite; see signature/configuration
   errors: RFDS-007 DriverError hierarchy
+- id: keyword.get_fan
+  keyword: Get Fan
+  canonical_keyword: Get Fan
+  signature: '(self, alias: ''str | None'' = None) -> ''bool'''
+  return_type: bool
+  device_facing: false
+  protocol_vector: null
+  deprecated: false
+  risk: none_risk
+  preconditions: []
+  resources: []
+  side_effects: none_intended
+  timeout: finite; see signature/configuration
+  errors: RFDS-007 DriverError hierarchy
 - id: keyword.get_heating_gradient
   keyword: Get Heating Gradient
   canonical_keyword: Get Heating Gradient
@@ -730,6 +744,20 @@ capabilities:
   - connected
   resources:
   - climate_chamber_session
+  side_effects: device_or_connection_state_may_change
+  timeout: finite; see signature/configuration
+  errors: RFDS-007 DriverError hierarchy
+- id: keyword.set_fan
+  keyword: Set Fan
+  canonical_keyword: Set Fan
+  signature: '(self, enabled: ''bool | str'', alias: ''str | None'' = None) -> ''None'''
+  return_type: None
+  device_facing: false
+  protocol_vector: null
+  deprecated: false
+  risk: medium_risk
+  preconditions: []
+  resources: []
   side_effects: device_or_connection_state_may_change
   timeout: finite; see signature/configuration
   errors: RFDS-007 DriverError hierarchy

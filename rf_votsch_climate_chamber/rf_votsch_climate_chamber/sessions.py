@@ -120,6 +120,7 @@ class SessionRegistry:
         is_simulator = actual_resource.upper().startswith("SIM::")
         dryer_output_channel = settings.get("dryer_output_channel")
         compressed_air_output_channel = settings.get("compressed_air_output_channel")
+        fan_output_channel = settings.get("fan_output_channel")
         # The deterministic simulator implements the documented reference mapping.
         # Real chambers remain capability-gated until their physical mapping is
         # explicitly configured by the operator.
@@ -128,6 +129,8 @@ class SessionRegistry:
                 dryer_output_channel = 8
             if compressed_air_output_channel is None:
                 compressed_air_output_channel = 7
+            if fan_output_channel is None:
+                fan_output_channel = 6
         core = ClimateChamberCore(
             transport,
             temperature_min_c=to_float(settings.get("temperature_min_c", -40.0), "temperature_min_c"),
@@ -152,6 +155,7 @@ class SessionRegistry:
             ),
             dryer_output_channel=dryer_output_channel,
             compressed_air_output_channel=compressed_air_output_channel,
+            fan_output_channel=fan_output_channel,
         )
         handle = SessionHandle(record=record, core=core, lock=threading.RLock())
         try:

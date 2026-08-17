@@ -25,6 +25,7 @@ ${ALLOW_CHAMBER_CONTROL}        ${FALSE}
 ${ALLOW_AUXILIARY_OUTPUTS}      ${FALSE}
 ${DRYER_OUTPUT_CHANNEL}          ${NONE}
 ${COMPRESSED_AIR_OUTPUT_CHANNEL}    ${NONE}
+${FAN_OUTPUT_CHANNEL}             ${NONE}
 ${SETPOINT_VERIFY_TIMEOUT_S}     30.0
 
 *** Test Cases ***
@@ -50,9 +51,11 @@ ${SETPOINT_VERIFY_TIMEOUT_S}     30.0
     IF    ${ALLOW_AUXILIARY_OUTPUTS}
         ${dryer}=       Get Dryer
         ${air}=         Get Compressed Air
+        ${fan}=         Get Fan
     ELSE
         ${dryer}=       Set Variable    NOT CONFIGURED
         ${air}=         Set Variable    NOT CONFIGURED
+        ${fan}=         Set Variable    NOT CONFIGURED
     END
     ${diagnostics}=    Get Diagnostics
     ${export}=      Export Diagnostics    ${OUTPUT DIR}${/}hardware_diagnostics.json
@@ -61,7 +64,7 @@ ${SETPOINT_VERIFY_TIMEOUT_S}     30.0
     Should Be True    isinstance($setpoint, (int, float))
     Should Be True    isinstance($temperature, (int, float))
     File Should Exist    ${export}[path]
-    Log Many    ${limits}    ${heat_gradient}    ${cool_gradient}    ${dryer}    ${air}    ${running}
+    Log Many    ${limits}    ${heat_gradient}    ${cool_gradient}    ${dryer}    ${air}    ${fan}    ${running}
     Log Dictionary    ${diagnostics}
 
 03 Verify Connection And Session API
@@ -168,16 +171,22 @@ ${SETPOINT_VERIFY_TIMEOUT_S}     30.0
     Skip If    not ${ALLOW_AUXILIARY_OUTPUTS}    Enable only after hardware output mapping is confirmed.
     Set Dryer    ${TRUE}
     Set Compressed Air    ${TRUE}
+    Set Fan    ${TRUE}
     ${dryer}=    Get Dryer
     ${air}=    Get Compressed Air
+    ${fan}=    Get Fan
     Should Be True    ${dryer}
     Should Be True    ${air}
+    Should Be True    ${fan}
     Set Dryer    ${FALSE}
     Set Compressed Air    ${FALSE}
+    Set Fan    ${FALSE}
     ${dryer}=    Get Dryer
     ${air}=    Get Compressed Air
+    ${fan}=    Get Fan
     Should Not Be True    ${dryer}
     Should Not Be True    ${air}
+    Should Not Be True    ${fan}
 
 10 Verify Cancellation And Safe Shutdown API
     Skip If    not ${ALLOW_CHAMBER_CONTROL}    Safe shutdown changes physical chamber state and requires operator approval.
@@ -206,6 +215,7 @@ Connect To Hardware Chamber
     ...    setpoint_verify_timeout_s=${SETPOINT_VERIFY_TIMEOUT_S}
     ...    dryer_output_channel=${DRYER_OUTPUT_CHANNEL}
     ...    compressed_air_output_channel=${COMPRESSED_AIR_OUTPUT_CHANNEL}
+    ...    fan_output_channel=${FAN_OUTPUT_CHANNEL}
     RETURN    ${state}
 
 Connect And Capture Original Chamber State
@@ -224,15 +234,18 @@ Connect And Capture Original Chamber State
     IF    ${ALLOW_AUXILIARY_OUTPUTS}
         ${dryer}=       Get Dryer
         ${air}=         Get Compressed Air
+        ${fan}=         Get Fan
     ELSE
         ${dryer}=       Set Variable    ${NONE}
         ${air}=         Set Variable    ${NONE}
+        ${fan}=         Set Variable    ${NONE}
     END
     Set Suite Variable    ${ORIGINAL_SETPOINT}    ${setpoint}
     Set Suite Variable    ${ORIGINAL_HEATING_GRADIENT}    ${heating}
     Set Suite Variable    ${ORIGINAL_COOLING_GRADIENT}    ${cooling}
     Set Suite Variable    ${ORIGINAL_DRYER}    ${dryer}
     Set Suite Variable    ${ORIGINAL_COMPRESSED_AIR}    ${air}
+    Set Suite Variable    ${ORIGINAL_FAN}    ${fan}
     Set Suite Variable    ${ORIGINAL_RUNNING}    ${running}
 
 Restore Original Chamber State And Disconnect
@@ -246,6 +259,7 @@ Restore Original Chamber State And Disconnect
     ${original_cooling}=    Get Variable Value    $ORIGINAL_COOLING_GRADIENT    ${NONE}
     ${original_dryer}=    Get Variable Value    $ORIGINAL_DRYER    ${NONE}
     ${original_air}=    Get Variable Value    $ORIGINAL_COMPRESSED_AIR    ${NONE}
+    ${original_fan}=    Get Variable Value    $ORIGINAL_FAN    ${NONE}
     ${original_running}=    Get Variable Value    $ORIGINAL_RUNNING    ${NONE}
     IF    $ALLOW_CHAMBER_CONTROL and $original_setpoint is not None
         Run Keyword And Ignore Error    Set Heating Gradient    ${original_heating}
@@ -254,6 +268,7 @@ Restore Original Chamber State And Disconnect
         IF    $ALLOW_AUXILIARY_OUTPUTS and $original_dryer is not None
             Run Keyword And Ignore Error    Set Dryer    ${original_dryer}
             Run Keyword And Ignore Error    Set Compressed Air    ${original_air}
+            Run Keyword And Ignore Error    Set Fan    ${original_fan}
         END
         IF    $original_running is not None
             IF    ${original_running}

@@ -22,9 +22,10 @@ settings:
   auxiliary_outputs:
     dryer_output_channel: null
     compressed_air_output_channel: null
+    fan_output_channel: null
 ```
 
-`null` is the safe default for real hardware. Configure a channel only after confirming the mapping for the exact chamber model and firmware. The two functions may not share one channel and channel 1 is reserved for chamber running state.
+`null` is the safe default for real hardware. Configure a channel only after confirming the mapping for the exact chamber model and firmware. No two of these functions may share one channel and channel 1 is reserved for chamber running state.
 
 ## Round-trip behavior
 

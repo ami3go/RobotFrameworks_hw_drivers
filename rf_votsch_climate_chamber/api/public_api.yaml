@@ -585,6 +585,25 @@ keywords:
   introduced_in: '26.04'
   protocol_vector: VCC-GET_DRYER-001
   documentation: Read the configured dryer output; fail if no mapping was qualified.
+- keyword: Get Fan
+  canonical_keyword: Get Fan
+  python_method: get_fan
+  signature: '(self, alias: ''str | None'' = None) -> ''bool'''
+  arguments:
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: bool
+  tags:
+  - rfds:digital_io
+  - rfds:none_risk
+  device_facing: false
+  deprecated: false
+  introduced_in: '26.04'
+  protocol_vector: null
+  documentation: Read the fan output; fail if no physical channel mapping was qualified.
 - keyword: Get Heating Gradient
   canonical_keyword: Get Heating Gradient
   python_method: get_heating_gradient
@@ -1095,6 +1114,41 @@ keywords:
     Real hardware defaults to unsupported until ``dryer_output_channel`` is
 
     supplied through configuration or ``Connect`` options.'
+- keyword: Set Fan
+  canonical_keyword: Set Fan
+  python_method: set_fan
+  signature: '(self, enabled: ''bool | str'', alias: ''str | None'' = None) -> ''None'''
+  arguments:
+  - name: enabled
+    kind: positional_or_keyword
+    required: true
+    default: null
+    annotation: bool | str
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: None
+  tags:
+  - rfds:digital_io
+  - rfds:medium_risk
+  device_facing: false
+  deprecated: false
+  introduced_in: '26.04'
+  protocol_vector: null
+  documentation: 'Switch the fan output using the explicitly configured physical channel.
+
+
+    Real hardware defaults to unsupported until ``fan_output_channel`` is
+
+    supplied through configuration or ``Connect`` options. Note that some
+
+    chamber models regulate ventilation as a percentage setpoint rather than
+
+    a binary digital output; this keyword covers the digital-output wiring
+
+    only.'
 - keyword: Set Heating Gradient
   canonical_keyword: Set Heating Gradient
   python_method: set_heating_gradient

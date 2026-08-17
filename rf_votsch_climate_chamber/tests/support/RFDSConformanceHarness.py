@@ -187,6 +187,7 @@ class RFDSConformanceHarness:
         state.running = False
         state.dryer = False
         state.compressed_air = False
+        state.digital_outputs.clear()
         state.gradient_up_c_per_min = 2.5
         state.gradient_down_c_per_min = 2.0
         state.status = "READY"
@@ -202,6 +203,7 @@ class RFDSConformanceHarness:
         if name in {"Safe Shutdown", "Disconnect", "Disconnect All"}:
             state.dryer = True
             state.compressed_air = True
+            state.digital_outputs[6] = True  # simulator's reference fan channel
         if name in RFDSConformanceHarness._STOPPED_ASSERTIONS or name == "Start Chamber":
             state.running = False
         if name in RFDSConformanceHarness._TEMPERATURE_ASSERTIONS:
@@ -404,6 +406,7 @@ class RFDSConformanceHarness:
             "Set Cooling Gradient": [2.0],
             "Set Dryer": [True],
             "Set Compressed Air": [True],
+            "Set Fan": [True],
             "Temperature Should Be": [30, 0.1],
             "Temperature Should Be Within": [-40, 180],
             "Temperature Setpoint Should Be": [30, 0.1],

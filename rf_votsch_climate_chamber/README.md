@@ -14,7 +14,7 @@ Release **v26.09** (`26.9` in Python metadata) adds an RFDS-008 live evidence en
 
 - setpoint writes now use bounded polling because real hardware can acknowledge before readback changes;
 - effective configuration is round-trippable, so close-only hardware teardown is actually applied;
-- `Safe Shutdown` stops the chamber but skips dryer/compressed-air commands until physical channels are explicitly qualified;
+- `Safe Shutdown` stops the chamber but skips dryer/compressed-air/fan commands until physical channels are explicitly qualified;
 - hardware suites verify configuration application and gate auxiliary I/O by authorization and mapping;
 - targeted regression tests cover the two reported hardware failures.
 
@@ -81,7 +81,7 @@ Connect
 ...    temperature_max_c=180
 ```
 
-Use named arguments for `Connect`. Real hardware defaults to no dryer or compressed-air mapping. Supply `dryer_output_channel` or `compressed_air_output_channel` only after qualification.
+Use named arguments for `Connect`. Real hardware defaults to no dryer, compressed-air or fan mapping. Supply `dryer_output_channel`, `compressed_air_output_channel` or `fan_output_channel` only after qualification.
 
 ## Validation
 

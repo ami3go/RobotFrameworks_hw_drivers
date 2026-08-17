@@ -13,3 +13,6 @@ Exercise Simulator Auxiliary Outputs
     Set Compressed Air    ${TRUE}
     ${air}=    Get Compressed Air
     Should Be True    ${air}
+    Set Fan    ${TRUE}
+    ${fan}=    Get Fan
+    Should Be True    ${fan}

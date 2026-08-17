@@ -10,11 +10,12 @@ Some chamber controllers acknowledge the write before the public setpoint regist
 4. Keep `setpoint_verify_tolerance_c` narrow enough to prove the write was accepted.
 5. Increase `setpoint_verify_timeout_s` only when controller behavior justifies it; do not disable verification.
 
-## Dryer or compressed-air command is rejected
+## Dryer, compressed-air or fan command is rejected
 
-Auxiliary output channels are model- and wiring-dependent. The driver no longer assumes channels 7 and 8 for real TCP hardware.
+Auxiliary output channels are model- and wiring-dependent. The driver no longer assumes channels 7 and 8 for real TCP hardware, and makes no assumption at all about the fan.
 
-- Leave `settings.auxiliary_outputs.dryer_output_channel` and `compressed_air_output_channel` as `null` until the exact mapping is qualified.
+- Leave `settings.auxiliary_outputs.dryer_output_channel`, `compressed_air_output_channel` and `fan_output_channel` as `null` until the exact mapping is qualified.
+- `Set Fan`/`Get Fan` drive a digital output. A chamber that regulates ventilation as a percentage setpoint is not supported by these keywords; leave `fan_output_channel` as `null`.
 - An unconfigured auxiliary keyword fails locally with `DriverUnsupportedOperationError`; no command is transmitted.
 - Safe shutdown marks an unconfigured auxiliary action `SKIP` and still stops the chamber.
 - Configure a channel only after verifying the chamber model, firmware, electrical function, and safe-state polarity.

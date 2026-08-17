@@ -378,6 +378,19 @@ keywords:
   device_facing: true
   protocol_vector: VCC-GET_DRYER-001
   deprecated: false
+- keyword: Get Fan
+  canonical_keyword: Get Fan
+  python_method: get_fan
+  arguments:
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: bool
+  device_facing: false
+  protocol_vector: null
+  deprecated: false
 - keyword: Get Heating Gradient
   canonical_keyword: Get Heating Gradient
   python_method: get_heating_gradient
@@ -749,6 +762,24 @@ keywords:
   return_type: None
   device_facing: true
   protocol_vector: VCC-SET_DRYER-001
+  deprecated: false
+- keyword: Set Fan
+  canonical_keyword: Set Fan
+  python_method: set_fan
+  arguments:
+  - name: enabled
+    kind: positional_or_keyword
+    required: true
+    default: null
+    annotation: bool | str
+  - name: alias
+    kind: positional_or_keyword
+    required: false
+    default: null
+    annotation: str | None
+  return_type: None
+  device_facing: false
+  protocol_vector: null
   deprecated: false
 - keyword: Set Heating Gradient
   canonical_keyword: Set Heating Gradient

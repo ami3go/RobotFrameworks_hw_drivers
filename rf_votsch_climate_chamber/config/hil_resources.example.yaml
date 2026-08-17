@@ -9,3 +9,4 @@ chamber:
   # Keep null until the exact chamber mapping is qualified.
   dryer_output_channel: null
   compressed_air_output_channel: null
+  fan_output_channel: null

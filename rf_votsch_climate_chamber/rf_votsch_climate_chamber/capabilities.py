@@ -61,12 +61,19 @@ CAPABILITY_MODEL: list[dict[str, Any]] = [
     },
     {
         "capability_id": "io.auxiliary_outputs",
-        "display_name": "Dryer and compressed-air outputs",
+        "display_name": "Dryer, compressed-air and fan outputs",
         "category": "digital_io",
         "support": "CONDITIONAL",
         "availability": "REQUIRES_CONNECTION_AND_CONFIGURED_CHANNEL_MAPPING",
         "risk": "MEDIUM",
-        "keywords": ["Set Dryer", "Get Dryer", "Set Compressed Air", "Get Compressed Air"],
+        "keywords": [
+            "Set Dryer",
+            "Get Dryer",
+            "Set Compressed Air",
+            "Get Compressed Air",
+            "Set Fan",
+            "Get Fan",
+        ],
         "configuration": "settings.auxiliary_outputs",
     },
     {
