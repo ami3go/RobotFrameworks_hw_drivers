@@ -32,8 +32,7 @@
     },
     "auxiliary_outputs": {
       "dryer_output_channel": null,
-      "compressed_air_output_channel": null,
-      "fan_output_channel": null
+      "compressed_air_output_channel": null
     }
   },
   "extensions": {},

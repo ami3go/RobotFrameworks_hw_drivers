@@ -111,73 +111,14 @@ def test_simulator_models_whichever_auxiliary_channel_was_configured(channel: in
     assert core.get_dryer() is False
 
 
-def test_fan_is_unsupported_until_its_channel_mapping_is_qualified() -> None:
-    core, _ = _connected_core()
-
-    with pytest.raises(DriverUnsupportedOperationError):
-        core.get_fan()
-    with pytest.raises(DriverUnsupportedOperationError):
-        core.set_fan(True)
-
-
-def test_fan_round_trips_on_its_configured_channel() -> None:
-    core, _ = _connected_core(fan_output_channel=6)
-
-    core.set_fan(True)
-    assert core.get_fan() is True
-    core.set_fan(False)
-    assert core.get_fan() is False
-
-
-def test_fan_is_independent_of_the_other_auxiliary_outputs() -> None:
-    core, _ = _connected_core(
-        fan_output_channel=6, dryer_output_channel=8, compressed_air_output_channel=7
-    )
-
-    core.set_fan(True)
-
-    assert core.get_fan() is True
-    assert core.get_dryer() is False
-    assert core.get_compressed_air() is False
-
-
-def test_safe_shutdown_switches_off_a_configured_fan() -> None:
-    core, _ = _connected_core(fan_output_channel=6)
-    core.start()
-    core.set_fan(True)
-
-    result = core.safe_shutdown()
-
-    assert result["safe"] is True
-    by_action = {item["action"]: item for item in result["actions"]}
-    assert by_action["fan_off"]["status"] == "PASS"
-    assert core.get_fan() is False
-
-
-def test_safe_shutdown_skips_an_unconfigured_fan() -> None:
-    core, _ = _connected_core()
-
-    result = core.safe_shutdown()
-
-    by_action = {item["action"]: item for item in result["actions"]}
-    assert by_action["fan_off"]["status"] == "SKIP"
-
-
-@pytest.mark.parametrize(
-    "channels",
-    [
-        {"dryer_output_channel": 2, "compressed_air_output_channel": 2},
-        {"dryer_output_channel": 2, "fan_output_channel": 2},
-        {"compressed_air_output_channel": 3, "fan_output_channel": 3},
-    ],
-)
-def test_mapping_two_auxiliary_outputs_to_one_channel_is_rejected(channels) -> None:
-    """One physical output cannot drive two loads; the features would alias."""
+def test_mapping_both_auxiliary_outputs_to_one_channel_is_rejected() -> None:
+    """One physical output cannot drive two loads; the two features would alias."""
     with pytest.raises(DriverLimitViolationError) as captured:
-        _connected_core(**channels)
+        _connected_core(dryer_output_channel=2, compressed_air_output_channel=2)
 
     error = captured.value
-    assert sorted(error.details["conflicting_settings"]) == sorted(channels)
+    assert error.details["dryer_output_channel"] == 2
+    assert error.details["compressed_air_output_channel"] == 2
     assert "different channels" in str(error)
 
 

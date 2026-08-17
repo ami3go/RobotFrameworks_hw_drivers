@@ -50,7 +50,6 @@ class ClimateChamberCore:
         state_change_timeout_s: float = 15.0,
         dryer_output_channel: int | None = None,
         compressed_air_output_channel: int | None = None,
-        fan_output_channel: int | None = None,
         sleep: Callable[[float], None] = time.sleep,
         monotonic: Callable[[], float] = time.monotonic,
     ) -> None:
@@ -96,10 +95,25 @@ class ClimateChamberCore:
         self.compressed_air_output_channel = self._validate_optional_output_channel(
             compressed_air_output_channel, "compressed_air_output_channel"
         )
-        self.fan_output_channel = self._validate_optional_output_channel(
-            fan_output_channel, "fan_output_channel"
-        )
-        self._reject_shared_output_channels()
+        if (
+            self.dryer_output_channel is not None
+            and self.dryer_output_channel == self.compressed_air_output_channel
+        ):
+            # One physical output cannot drive two independent loads: the two
+            # features would silently alias, and Safe Shutdown would report
+            # having switched both off after touching only one.
+            raise DriverLimitViolationError(
+                "dryer and compressed-air outputs must use different channels",
+                operation="Configure Auxiliary Outputs",
+                details={
+                    "dryer_output_channel": self.dryer_output_channel,
+                    "compressed_air_output_channel": self.compressed_air_output_channel,
+                },
+                recovery_action=(
+                    "confirm the physical mapping and give each auxiliary output its own "
+                    "channel, or leave the unused one unset"
+                ),
+            )
         self._sleep = sleep
         self._monotonic = monotonic
         self._operation_lock = threading.RLock()
@@ -371,38 +385,6 @@ class ClimateChamberCore:
             details=details,
         )
 
-    def _reject_shared_output_channels(self) -> None:
-        """Refuse a configuration that points two features at one output.
-
-        One physical output cannot drive two independent loads: the features
-        would silently alias, and ``Safe Shutdown`` would report having switched
-        every one of them off after touching a single channel.
-        """
-        configured = {
-            "dryer_output_channel": self.dryer_output_channel,
-            "compressed_air_output_channel": self.compressed_air_output_channel,
-            "fan_output_channel": self.fan_output_channel,
-        }
-        seen: dict[int, str] = {}
-        for name, channel in configured.items():
-            if channel is None:
-                continue
-            if channel in seen:
-                raise DriverLimitViolationError(
-                    "auxiliary outputs must use different channels",
-                    operation="Configure Auxiliary Outputs",
-                    details={
-                        "channel": channel,
-                        "conflicting_settings": [seen[channel], name],
-                        **{key: value for key, value in configured.items()},
-                    },
-                    recovery_action=(
-                        "confirm the physical mapping and give each auxiliary output its own "
-                        "channel, or leave the unused ones unset"
-                    ),
-                )
-            seen[channel] = name
-
     @staticmethod
     def _validate_optional_output_channel(channel: int | None, name: str) -> int | None:
         if channel is None:
@@ -508,14 +490,6 @@ class ClimateChamberCore:
             self.compressed_air_output_channel, "compressed_air", "Set Compressed Air"
         )
         self._set_digital_output(channel, bool(enabled), "Set Compressed Air")
-
-    def get_fan(self) -> bool:
-        channel = self._require_output_channel(self.fan_output_channel, "fan", "Get Fan")
-        return self._get_digital_output(channel, "Get Fan")
-
-    def set_fan(self, enabled: bool) -> None:
-        channel = self._require_output_channel(self.fan_output_channel, "fan", "Set Fan")
-        self._set_digital_output(channel, bool(enabled), "Set Fan")
 
     def get_heating_gradient_c_per_min(self) -> float:
         return float(self._query("GET GRADIENT_UP VALUE", 1, retry_safe=True, operation_id="Get Heating Gradient")[0])
@@ -670,7 +644,6 @@ class ClimateChamberCore:
         for name, channel, action in (
             ("compressed_air_off", self.compressed_air_output_channel, lambda: self.set_compressed_air(False)),
             ("dryer_off", self.dryer_output_channel, lambda: self.set_dryer(False)),
-            ("fan_off", self.fan_output_channel, lambda: self.set_fan(False)),
         ):
             if channel is None:
                 actions.append(

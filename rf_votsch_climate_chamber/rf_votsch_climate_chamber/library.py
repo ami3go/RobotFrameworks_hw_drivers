@@ -173,7 +173,6 @@ class VotschClimateChamberLibrary:
             "compressed_air_output_channel": settings["auxiliary_outputs"][
                 "compressed_air_output_channel"
             ],
-            "fan_output_channel": settings["auxiliary_outputs"]["fan_output_channel"],
         }
         merged.update(options)
         return merged
@@ -556,25 +555,6 @@ class VotschClimateChamberLibrary:
     def get_compressed_air(self, alias: str | None = None) -> bool:
         """Read compressed air; fail if no physical channel mapping was qualified."""
         return self._handle(alias).core.get_compressed_air()
-
-    @keyword("Set Fan", tags=["rfds:digital_io", "rfds:medium_risk"])
-    @_evidenced
-    def set_fan(self, enabled: bool | str, alias: str | None = None) -> None:
-        """Switch the fan output using the explicitly configured physical channel.
-
-        Real hardware defaults to unsupported until ``fan_output_channel`` is
-        supplied through configuration or ``Connect`` options. Note that some
-        chamber models regulate ventilation as a percentage setpoint rather than
-        a binary digital output; this keyword covers the digital-output wiring
-        only.
-        """
-        self._handle(alias).core.set_fan(to_bool(enabled, "enabled"))
-
-    @keyword("Get Fan", tags=["rfds:digital_io", "rfds:none_risk"])
-    @_evidenced
-    def get_fan(self, alias: str | None = None) -> bool:
-        """Read the fan output; fail if no physical channel mapping was qualified."""
-        return self._handle(alias).core.get_fan()
 
     @keyword("Get Chamber Status", tags=["rfds:diagnostics", "rfds:none_risk"])
     @_evidenced

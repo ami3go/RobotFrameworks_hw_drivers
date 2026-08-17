@@ -174,8 +174,7 @@
           "type": "object",
           "required": [
             "dryer_output_channel",
-            "compressed_air_output_channel",
-            "fan_output_channel"
+            "compressed_air_output_channel"
           ],
           "additionalProperties": false,
           "properties": {
@@ -188,14 +187,6 @@
               "maximum": 999
             },
             "compressed_air_output_channel": {
-              "type": [
-                "integer",
-                "null"
-              ],
-              "minimum": 2,
-              "maximum": 999
-            },
-            "fan_output_channel": {
               "type": [
                 "integer",
                 "null"

@@ -6,19 +6,14 @@ Begin with `Check Communication`, `Get Identity`, and read-only queries. Configu
 
 ## Auxiliary outputs
 
-Do not assume that digital outputs 7 and 8 represent compressed air and dryer, or that the fan is a digital output at all. Configure these only after the mapping is qualified on the exact chamber:
+Do not assume that digital outputs 7 and 8 represent compressed air and dryer. Configure these only after the mapping is qualified on the exact chamber:
 
 ```yaml
 settings:
   auxiliary_outputs:
     dryer_output_channel: null
     compressed_air_output_channel: null
-    fan_output_channel: null
 ```
-
-Some chamber models regulate ventilation as a percentage setpoint rather than a
-binary digital output. `fan_output_channel` covers the digital-output wiring
-only; leave it `null` on a model that has no switchable fan output.
 
 Replace `null` only with verified channel numbers. Until then, auxiliary keywords are unavailable and safe shutdown skips those actions rather than transmitting an unqualified command.
 

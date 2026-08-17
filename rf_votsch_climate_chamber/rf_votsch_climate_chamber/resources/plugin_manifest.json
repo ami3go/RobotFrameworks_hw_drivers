@@ -29,14 +29,14 @@
     "package": "rf_votsch_climate_chamber",
     "path": "resources/config.schema.json",
     "canonical_source": "config/schema.json",
-    "sha256": "0a052df30675260c99fedb32e10e8c497019744859941bdfe4515e76eb4fb7c1"
+    "sha256": "3bb44da579f51f3c1338dc49dd3c54689167b982cf4c16b9e288ae8c8eb5c878"
   },
   "ai_contract": {
     "kind": "package_resource",
     "package": "rf_votsch_climate_chamber",
     "path": "resources/votsch_climate_chamber_ai_contract.yaml",
     "canonical_source": "ai/votsch_climate_chamber_ai_contract.yaml",
-    "sha256": "def68570f7f5bc429a3dbead007beee78046f6ca6dec1c6b55279e0e54a75cff"
+    "sha256": "99a0496640439817a718446813695080354bf1c8ba484bbbb89281ad8669f3d8"
   },
   "documentation": {
     "kind": "repository_path",

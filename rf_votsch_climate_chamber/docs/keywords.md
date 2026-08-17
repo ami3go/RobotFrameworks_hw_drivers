@@ -1,6 +1,6 @@
 # Canonical Robot Framework Keywords — v26.09
 
-This API contains **60 canonical keywords**. API 2 compatibility aliases
+This API contains **58 canonical keywords**. API 2 compatibility aliases
 were removed in v26.07; see [migration.md](migration.md).
 
 ## Cancel Current Operation
@@ -315,17 +315,6 @@ Return static driver metadata without device I/O.
 
 Read the configured dryer output; fail if no mapping was qualified.
 
-## Get Fan
-
-- Python method: `get_fan`
-- Signature: `(self, alias: 'str | None' = None) -> 'bool'`
-- Return type: `bool`
-- Device-facing: `no`
-- Protocol vector: `N/A`
-- Tags: `rfds:digital_io, rfds:none_risk`
-
-Read the fan output; fail if no physical channel mapping was qualified.
-
 ## Get Heating Gradient
 
 - Python method: `get_heating_gradient`
@@ -540,23 +529,6 @@ Set the dryer output using the explicitly configured physical channel.
 
 Real hardware defaults to unsupported until ``dryer_output_channel`` is
 supplied through configuration or ``Connect`` options.
-
-## Set Fan
-
-- Python method: `set_fan`
-- Signature: `(self, enabled: 'bool | str', alias: 'str | None' = None) -> 'None'`
-- Return type: `None`
-- Device-facing: `no`
-- Protocol vector: `N/A`
-- Tags: `rfds:digital_io, rfds:medium_risk`
-
-Switch the fan output using the explicitly configured physical channel.
-
-Real hardware defaults to unsupported until ``fan_output_channel`` is
-supplied through configuration or ``Connect`` options. Note that some
-chamber models regulate ventilation as a percentage setpoint rather than
-a binary digital output; this keyword covers the digital-output wiring
-only.
 
 ## Set Heating Gradient
 

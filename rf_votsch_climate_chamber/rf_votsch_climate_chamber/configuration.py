@@ -104,26 +104,15 @@ class ConfigurationManager:
         if isinstance(minimum, (int, float)) and isinstance(maximum, (int, float)) and minimum >= maximum:
             errors.append({"path": "/settings/safety", "message": "temperature_min_c must be lower than temperature_max_c"})
         auxiliary = document.get("settings", {}).get("auxiliary_outputs", {}) if isinstance(document, dict) else {}
-        seen_channels: dict[Any, str] = {}
-        for setting in (
-            "dryer_output_channel",
-            "compressed_air_output_channel",
-            "fan_output_channel",
-        ):
-            channel = auxiliary.get(setting)
-            if channel is None:
-                continue
-            if channel in seen_channels:
-                errors.append(
-                    {
-                        "path": "/settings/auxiliary_outputs",
-                        "message": (
-                            f"{seen_channels[channel]} and {setting} must not use the same channel"
-                        ),
-                    }
-                )
-                continue
-            seen_channels[channel] = setting
+        dryer_channel = auxiliary.get("dryer_output_channel")
+        air_channel = auxiliary.get("compressed_air_output_channel")
+        if dryer_channel is not None and air_channel is not None and dryer_channel == air_channel:
+            errors.append(
+                {
+                    "path": "/settings/auxiliary_outputs",
+                    "message": "dryer and compressed-air outputs must not use the same channel",
+                }
+            )
         return self._result(
             valid=not errors,
             source=source,
