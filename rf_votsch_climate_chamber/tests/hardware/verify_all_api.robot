@@ -232,18 +232,31 @@ Connect And Capture Original Chamber State
     Set Suite Variable    ${ORIGINAL_RUNNING}    ${running}
 
 Restore Original Chamber State And Disconnect
-    IF    ${ALLOW_CHAMBER_CONTROL}
-        Run Keyword And Ignore Error    Set Heating Gradient    ${ORIGINAL_HEATING_GRADIENT}
-        Run Keyword And Ignore Error    Set Cooling Gradient    ${ORIGINAL_COOLING_GRADIENT}
-        Run Keyword And Ignore Error    Set Temperature    ${ORIGINAL_SETPOINT}
-        IF    ${ALLOW_AUXILIARY_OUTPUTS}
-            Run Keyword And Ignore Error    Set Dryer    ${ORIGINAL_DRYER}
-            Run Keyword And Ignore Error    Set Compressed Air    ${ORIGINAL_COMPRESSED_AIR}
+    # Suite Setup may have failed before it reached its "Set Suite Variable"
+    # calls (e.g. Get Dryer failing because ALLOW_AUXILIARY_OUTPUTS is TRUE but
+    # DRYER_OUTPUT_CHANNEL was never set) — read each ORIGINAL_* value defensively
+    # so a partial setup doesn't crash teardown with an unrelated "variable not
+    # found" error and skip the unconditional Disconnect below.
+    ${original_setpoint}=    Get Variable Value    $ORIGINAL_SETPOINT    ${NONE}
+    ${original_heating}=    Get Variable Value    $ORIGINAL_HEATING_GRADIENT    ${NONE}
+    ${original_cooling}=    Get Variable Value    $ORIGINAL_COOLING_GRADIENT    ${NONE}
+    ${original_dryer}=    Get Variable Value    $ORIGINAL_DRYER    ${NONE}
+    ${original_air}=    Get Variable Value    $ORIGINAL_COMPRESSED_AIR    ${NONE}
+    ${original_running}=    Get Variable Value    $ORIGINAL_RUNNING    ${NONE}
+    IF    $ALLOW_CHAMBER_CONTROL and $original_setpoint is not None
+        Run Keyword And Ignore Error    Set Heating Gradient    ${original_heating}
+        Run Keyword And Ignore Error    Set Cooling Gradient    ${original_cooling}
+        Run Keyword And Ignore Error    Set Temperature    ${original_setpoint}
+        IF    $ALLOW_AUXILIARY_OUTPUTS and $original_dryer is not None
+            Run Keyword And Ignore Error    Set Dryer    ${original_dryer}
+            Run Keyword And Ignore Error    Set Compressed Air    ${original_air}
         END
-        IF    ${ORIGINAL_RUNNING}
-            Run Keyword And Ignore Error    Start Chamber
-        ELSE
-            Run Keyword And Ignore Error    Stop Chamber
+        IF    $original_running is not None
+            IF    ${original_running}
+                Run Keyword And Ignore Error    Start Chamber
+            ELSE
+                Run Keyword And Ignore Error    Stop Chamber
+            END
         END
     END
     Run Keyword And Ignore Error    Disconnect    alias=default

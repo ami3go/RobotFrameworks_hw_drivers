@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Fixed `run_summary.json`/`run_summary.md` always reporting `final_status: "PASS"` even when the run recorded an operation failure (e.g. `Get Dryer`/`Set Dryer` raising `DriverUnsupportedOperationError` because no `dryer_output_channel` was configured). `_finalize_evidence` (`library.py`) now derives the finalized status from the evidence run's own `has_errors` (new `EvidenceRun` property, `evidence.py`), so any recorded error surfaces as `final_status: "FAIL"` instead of being silently swallowed at suite end.
+- Fixed `tests/hardware/verify_all_api.robot`'s `Restore Original Chamber State And Disconnect` suite teardown crashing with an unrelated `Invalid IF condition: ... '${ORIGINAL_RUNNING}' not found` error whenever `Connect And Capture Original Chamber State` (suite setup) failed before reaching its `Set Suite Variable` calls — e.g. `ALLOW_AUXILIARY_OUTPUTS=True` with no `DRYER_OUTPUT_CHANNEL` configured. Teardown now reads each `ORIGINAL_*` value defensively via `Get Variable Value` and skips restoring only what was never captured, so the original setup failure is reported instead of being masked, and the unconditional `Disconnect` still runs.
 
 ## v26.09 — 2026-08-07
 
