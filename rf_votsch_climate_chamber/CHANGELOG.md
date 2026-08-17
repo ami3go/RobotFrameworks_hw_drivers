@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Fixed `run_summary.json`/`run_summary.md` always reporting `final_status: "PASS"` even when the run recorded an operation failure (e.g. `Get Dryer`/`Set Dryer` raising `DriverUnsupportedOperationError` because no `dryer_output_channel` was configured). `_finalize_evidence` (`library.py`) now derives the finalized status from the evidence run's own `has_errors` (new `EvidenceRun` property, `evidence.py`), so any recorded error surfaces as `final_status: "FAIL"` instead of being silently swallowed at suite end.
+
 ## v26.09 — 2026-08-07
 
 - Added an RFDS-008 live evidence engine (`rf_votsch_climate_chamber/evidence.py`): every public keyword call is recorded as a correlated operation (arguments, duration, result/failure), and `Connect` attaches the run as an additional `TraceObserver` on that session's transport, capturing every SimServ protocol frame — no transport or protocol code changed to add this.

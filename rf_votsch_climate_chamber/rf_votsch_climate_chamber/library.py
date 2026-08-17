@@ -139,9 +139,15 @@ class VotschClimateChamberLibrary:
         return self._evidence
 
     def _finalize_evidence(self) -> None:
-        """Called from ``SuiteLifecycleListener.end_suite`` (best-effort, after cleanup)."""
+        """Called from ``SuiteLifecycleListener.end_suite`` (best-effort, after cleanup).
+
+        ``final_status`` must reflect whether any recorded operation actually
+        failed; a run that logged an error (e.g. ``Get Dryer`` raising because
+        no aux-output channel was configured) must not be reported as PASS.
+        """
         if self._evidence is not None:
-            self._evidence.finalize(status="PASS")
+            status = "FAIL" if self._evidence.has_errors else "PASS"
+            self._evidence.finalize(status=status)
 
     def _handle(self, alias: str | None = None):  # type: ignore[no-untyped-def]
         return self._registry.get(alias)

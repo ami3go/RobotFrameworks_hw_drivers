@@ -178,6 +178,21 @@ def test_error_is_recorded_with_this_drivers_exception_category(chamber):
     assert summary["error_count"] == 1
 
 
+def test_finalize_reports_fail_when_an_operation_recorded_an_error(chamber):
+    """Regression: ``_finalize_evidence`` used to hardcode ``status="PASS"``,
+    so a run with a recorded error (e.g. ``Get Dryer`` on an unconfigured
+    aux-output channel) was still reported as an overall PASS."""
+    lib, tmp_path = chamber
+    with pytest.raises(DriverSafetyError):
+        lib.set_temperature(9999)
+    lib._registry.disconnect_all(safe_shutdown=False)
+    lib._finalize_evidence()
+    root = _run_root(tmp_path)
+    summary = json.loads((root / "run_summary.json").read_text())
+    assert summary["error_count"] == 1
+    assert summary["final_status"] == "FAIL"
+
+
 def test_evidence_disabled_writes_nothing_to_disk(tmp_path):
     lib = VotschClimateChamberLibrary(evidence_enabled=False)
     lib.connect("SIM::default", alias="default")

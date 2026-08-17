@@ -482,6 +482,16 @@ class EvidenceRun:
         self._error_count += 1
         logger.error("[%s] %s (%s): %s", error_id, capability or "?", type(exc).__name__, exc)
 
+    @property
+    def has_errors(self) -> bool:
+        """Whether :meth:`record_error` has fired at least once this run.
+
+        Used by callers (see ``library.py``'s ``_finalize_evidence``) that
+        finalize without an explicit pass/fail verdict of their own, so a run
+        containing a recorded failure is never reported as a blanket PASS.
+        """
+        return self._error_count > 0
+
     def record_device_identity(self, **fields: Any) -> None:
         self._device_identity.update(
             {key: value for key, value in fields.items() if value is not None}
@@ -635,6 +645,7 @@ class NullEvidenceRun:
     """Used when evidence is disabled: same interface, writes nothing to disk."""
 
     run_id: str | None = None
+    has_errors: bool = False
 
     @contextlib.contextmanager
     def record_operation(self, capability: str, *, arguments=None, session_alias=None):
