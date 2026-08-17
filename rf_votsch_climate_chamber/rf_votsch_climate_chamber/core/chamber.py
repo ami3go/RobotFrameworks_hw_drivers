@@ -95,6 +95,25 @@ class ClimateChamberCore:
         self.compressed_air_output_channel = self._validate_optional_output_channel(
             compressed_air_output_channel, "compressed_air_output_channel"
         )
+        if (
+            self.dryer_output_channel is not None
+            and self.dryer_output_channel == self.compressed_air_output_channel
+        ):
+            # One physical output cannot drive two independent loads: the two
+            # features would silently alias, and Safe Shutdown would report
+            # having switched both off after touching only one.
+            raise DriverLimitViolationError(
+                "dryer and compressed-air outputs must use different channels",
+                operation="Configure Auxiliary Outputs",
+                details={
+                    "dryer_output_channel": self.dryer_output_channel,
+                    "compressed_air_output_channel": self.compressed_air_output_channel,
+                },
+                recovery_action=(
+                    "confirm the physical mapping and give each auxiliary output its own "
+                    "channel, or leave the unused one unset"
+                ),
+            )
         self._sleep = sleep
         self._monotonic = monotonic
         self._operation_lock = threading.RLock()
@@ -407,12 +426,50 @@ class ClimateChamberCore:
                 retry_safe=False,
                 operation_id=operation,
             )
-            if self.verify_writes and self._get_digital_output(channel, operation) is not enabled:
+            if self.verify_writes:
+                self._wait_for_digital_output_readback(channel, enabled, operation)
+
+    def _wait_for_digital_output_readback(
+        self, channel: int, requested: bool, operation: str
+    ) -> None:
+        """Poll a digital output's readback until it reports the requested state.
+
+        Same controller behaviour that ``_wait_for_setpoint_readback`` above
+        already compensates for: the SimServ acknowledgement for 14001 can land
+        before the 14003 readback register reflects the new state, and a relay
+        output additionally needs time to physically settle. A single immediate
+        query therefore produced false ``RFDS-SAF-001`` failures on real
+        hardware. Verification stays strict, but is bounded and eventual.
+        """
+        started = self._monotonic()
+        deadline = started + self.state_change_timeout_s
+        attempts = 0
+        actual = self._get_digital_output(channel, operation)
+        while True:
+            attempts += 1
+            if actual is requested:
+                return
+            now = self._monotonic()
+            if now >= deadline:
                 raise DriverSafetyError(
                     "digital-output readback verification failed",
                     operation=operation,
-                    details={"channel": channel, "requested": enabled},
+                    details={
+                        "channel": channel,
+                        "requested": requested,
+                        "reported": actual,
+                        "verification_timeout_s": self.state_change_timeout_s,
+                        "verification_attempts": attempts,
+                        "elapsed_s": now - started,
+                    },
+                    recovery_action=(
+                        "confirm the physical mapping of this output channel and that the "
+                        "chamber grants remote control of it; increase state_change_timeout_s "
+                        "only when the output is known to switch slowly"
+                    ),
                 )
+            self._sleep(min(self.setpoint_verify_poll_interval_s, max(0.0, deadline - now)))
+            actual = self._get_digital_output(channel, operation)
 
     def get_dryer(self) -> bool:
         channel = self._require_output_channel(self.dryer_output_channel, "dryer", "Get Dryer")

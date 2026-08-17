@@ -6,6 +6,7 @@ import pytest
 
 from rf_votsch_climate_chamber.core import ClimateChamberCore
 from rf_votsch_climate_chamber.exceptions import (
+    DriverLimitViolationError,
     DriverSafetyError,
     DriverUnsupportedOperationError,
 )
@@ -62,6 +63,72 @@ def test_setpoint_verification_timeout_contains_actionable_evidence(monkeypatch)
     assert error.details["reported_c"] == 15.0
     assert error.details["verification_attempts"] >= 3
     assert "local-control mode" in (error.recovery_action or "")
+
+
+def test_digital_output_verification_polls_until_delayed_readback(monkeypatch) -> None:
+    """Same delayed-readback tolerance the setpoint path has: the SimServ ack for
+    14001 can arrive before the 14003 readback register reflects it."""
+    core, _ = _connected_core(
+        dryer_output_channel=2,
+        state_change_timeout_s=2.0,
+        setpoint_verify_poll_interval_s=0.1,
+    )
+    readings = iter([False, False, True])
+    monkeypatch.setattr(core, "_get_digital_output", lambda channel, operation: next(readings))
+
+    core.set_dryer(True)
+
+
+def test_digital_output_verification_timeout_contains_actionable_evidence(monkeypatch) -> None:
+    core, _ = _connected_core(
+        dryer_output_channel=2,
+        state_change_timeout_s=0.3,
+        setpoint_verify_poll_interval_s=0.1,
+    )
+    monkeypatch.setattr(core, "_get_digital_output", lambda channel, operation: False)
+
+    with pytest.raises(DriverSafetyError) as captured:
+        core.set_dryer(True)
+
+    error = captured.value
+    assert error.details["channel"] == 2
+    assert error.details["requested"] is True
+    assert error.details["reported"] is False
+    assert error.details["verification_attempts"] >= 3
+    assert "physical mapping" in (error.recovery_action or "")
+
+
+@pytest.mark.parametrize("channel", [2, 3, 5, 7, 8, 12])
+def test_simulator_models_whichever_auxiliary_channel_was_configured(channel: int) -> None:
+    """The simulator used to hardcode channels 7/8: a write to any other channel
+    was acknowledged but discarded, and the readback then reported 0 forever, so
+    a SIM:: round trip failed for wiring the docs explicitly allow."""
+    core, _ = _connected_core(dryer_output_channel=channel)
+
+    core.set_dryer(True)
+    assert core.get_dryer() is True
+    core.set_dryer(False)
+    assert core.get_dryer() is False
+
+
+def test_mapping_both_auxiliary_outputs_to_one_channel_is_rejected() -> None:
+    """One physical output cannot drive two loads; the two features would alias."""
+    with pytest.raises(DriverLimitViolationError) as captured:
+        _connected_core(dryer_output_channel=2, compressed_air_output_channel=2)
+
+    error = captured.value
+    assert error.details["dryer_output_channel"] == 2
+    assert error.details["compressed_air_output_channel"] == 2
+    assert "different channels" in str(error)
+
+
+def test_simulator_keeps_auxiliary_output_channels_independent() -> None:
+    core, _ = _connected_core(dryer_output_channel=2, compressed_air_output_channel=3)
+
+    core.set_dryer(True)
+
+    assert core.get_dryer() is True
+    assert core.get_compressed_air() is False
 
 
 def test_auxiliary_outputs_are_disabled_by_default_on_unqualified_hardware_profile() -> None:

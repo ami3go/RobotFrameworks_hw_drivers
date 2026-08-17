@@ -28,6 +28,9 @@ class FakeChamberState:
     running: bool = False
     dryer: bool = False
     compressed_air: bool = False
+    # Auxiliary digital outputs other than the three named above; see the same
+    # field on SimulatorState for why arbitrary channels must be modelled.
+    digital_outputs: dict[int, bool] = field(default_factory=dict)
     gradient_up: float = 2.0
     gradient_down: float = 2.0
     status: str = "READY"
@@ -214,6 +217,8 @@ class _Handler(socketserver.BaseRequestHandler):
                 state.compressed_air = value
             elif channel == 8:
                 state.dryer = value
+            else:
+                state.digital_outputs[channel] = value
             return self._response()
         if command == "14003":
             channel = int(args[0])
@@ -222,7 +227,9 @@ class _Handler(socketserver.BaseRequestHandler):
                 7: state.compressed_air,
                 8: state.dryer,
             }
-            return self._response(1 if values.get(channel, False) else 0)
+            if channel in values:
+                return self._response(1 if values[channel] else 0)
+            return self._response(1 if state.digital_outputs.get(channel, False) else 0)
         if command == "11066":
             return self._response(f"{state.gradient_up:.2f}")
         if command == "11068":

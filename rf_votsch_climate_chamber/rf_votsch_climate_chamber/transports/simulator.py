@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import datetime as dt
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from ..exceptions import DriverReadError, DriverTimeoutError
 from .base import BaseTransport
@@ -24,6 +24,11 @@ class SimulatorState:
     running: bool = False
     dryer: bool = False
     compressed_air: bool = False
+    # Auxiliary digital outputs other than the three named above. Channel
+    # numbering is model- and wiring-dependent on real chambers (see
+    # docs/TROUBLESHOOTING.md), so the simulator models whichever channel the
+    # caller configured rather than only the historical 7/8 pair.
+    digital_outputs: dict[int, bool] = field(default_factory=dict)
     gradient_up_c_per_min: float = 2.0
     gradient_down_c_per_min: float = 2.0
     status: str = "READY"
@@ -189,10 +194,16 @@ class SimulatorTransport(BaseTransport):
                 state.compressed_air = value
             elif channel == 8:
                 state.dryer = value
+            else:
+                state.digital_outputs[channel] = value
             return self._response()
         if command == "14003":
             channel = int(args[0])
-            value = {1: state.running, 7: state.compressed_air, 8: state.dryer}.get(channel, False)
+            named = {1: state.running, 7: state.compressed_air, 8: state.dryer}
+            if channel in named:
+                value = named[channel]
+            else:
+                value = state.digital_outputs.get(channel, False)
             return self._response(1 if value else 0)
         if command == "11066":
             return self._response(f"{state.gradient_up_c_per_min:.2f}")

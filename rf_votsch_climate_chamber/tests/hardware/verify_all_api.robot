@@ -65,10 +65,14 @@ ${SETPOINT_VERIFY_TIMEOUT_S}     30.0
     Log Dictionary    ${diagnostics}
 
 03 Verify Connection And Session API
-    Should Be True    Is Connected
+    # "Should Be True    Is Connected" evaluates the literal string as a Python
+    # expression rather than calling the keyword — assign the result first.
+    ${connected}=    Is Connected
+    Should Be True    ${connected}
     ${state}=    Get Connection State    refresh=${TRUE}
     Should Be True    ${state}[connected]
-    Should Be True    Check Communication
+    ${communication_ok}=    Check Communication
+    Should Be True    ${communication_ok}
     ${connections}=    List Connections
     Should Not Be Empty    ${connections}
     ${selected}=    Select Connection    default
@@ -90,7 +94,7 @@ ${SETPOINT_VERIFY_TIMEOUT_S}     30.0
     Should Be True    ${validation}[valid]
     ${imported}=    Import Driver Configuration    ${effective}
     ${exported}=    Export Driver Configuration    ${OUTPUT DIR}${/}driver_configuration.json    overwrite=${TRUE}
-    File Should Exist    ${exported}[path]
+    File Should Exist    ${exported}[destination]
     ${saved}=    Save Driver Configuration    hardware_api_profile    overwrite=${TRUE}
     ${profiles}=    List Driver Configuration Profiles
     Should Not Be Empty    ${profiles}
