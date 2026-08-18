@@ -10,8 +10,23 @@
 # the map against its own extractor output, which is circular. See
 # task/ARTIFACT_REVIEW_v1.6.md findings R1 and R2.
 #
-# Commands declared in reference Syntax sections : 347
-# Commands dispositioned                        : 347
+# EXTRACTION IS RECONCILED FROM TWO INDEPENDENT SOURCES (v1.9):
+#   A. per-block Syntax sections                      -> 347 commands
+#   B. the reference Commands A-Z index (line 14158)  -> 342 commands
+#
+# Neither is a superset of the other. Method A missed the four RTD/FRTD
+# OCOMpensated forms; method B missed 12 colon-free commands (ABORt, FETCh?,
+# INITiate, CONFigure?, DISPlay, CALibration?, [SENSe:]FUNCtion, ...).
+# The set below is their reconciled union. Every A/B discrepancy was resolved
+# to a real command or a documented notation artifact -- the latter being
+# abbreviated aliases (SYST:LFRequency?) and optional-node bracket differences
+# (SYSTem:SECurity[:IMMediate] vs SYSTem:SECurity:IMMediate).
+#
+# KNOWN LIMIT: completeness is asserted only against these two extractions.
+# A third method may still find more. That is why RFDS spec §9.2 requires
+# reconciliation of at least two extractions rather than a single one.
+#
+# Commands dispositioned : 351
 #
 # Status counts:
 #   PUBLIC       272
@@ -22,10 +37,10 @@
 # Distinct planned keywords: 121
 
 generated_from: reference/Keysight_34970A_34972A_Command_Reference.md
-extraction: "per-block Syntax sections"
+extraction: "reconciled union of per-block Syntax sections and the Commands A-Z index"
 reference_version: "Keysight version 2.00, 2009-2014"
-spec_version: "1.7"
-command_count: 347
+spec_version: "1.9"
+command_count: 351
 
 commands:
   - command: "*CLS"
@@ -1649,6 +1664,30 @@ commands:
     spec_section: "§14"
     capability_group: measurement
     note: "2-wire RTD - R2a: was unbound"
+  - command: "[SENSe:]TEMPerature:TRANsducer:FRTD:OCOMpensated"
+    status: PUBLIC
+    keyword: "Configure RTD"
+    spec_section: "§14"
+    capability_group: measurement
+    note: "4-wire RTD offset compensation; E2 - missed by both earlier extractions"
+  - command: "[SENSe:]TEMPerature:TRANsducer:FRTD:OCOMpensated?"
+    status: PUBLIC
+    keyword: "Configure RTD"
+    spec_section: "§14"
+    capability_group: measurement
+    note: "4-wire RTD offset compensation query; E2"
+  - command: "[SENSe:]TEMPerature:TRANsducer:RTD:OCOMpensated"
+    status: PUBLIC
+    keyword: "Configure RTD"
+    spec_section: "§14"
+    capability_group: measurement
+    note: "2-wire RTD offset compensation; E2 - missed by both earlier extractions"
+  - command: "[SENSe:]TEMPerature:TRANsducer:RTD:OCOMpensated?"
+    status: PUBLIC
+    keyword: "Configure RTD"
+    spec_section: "§14"
+    capability_group: measurement
+    note: "2-wire RTD offset compensation query; E2"
   - command: "[SENSe:]TEMPerature:TRANsducer:RTD:TYPE"
     status: PUBLIC
     keyword: "Configure RTD"

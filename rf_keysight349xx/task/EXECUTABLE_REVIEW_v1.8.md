@@ -1,5 +1,14 @@
 # Executable Review — Spec v1.8
 
+> **STATUS: CLOSED — all findings resolved.** E1–E4 applied in **v1.9**. The four RTD/FRTD
+> `OCOMpensated` commands are added (map now 351), guard 1 requires reconciling two independent
+> extractions, §29.1 steps declare their required deliverables and report `NOT_RUN` rather than
+> `PASS` when an input is missing, and the map header states its known limits.
+> Guard 1 is now implemented at `scripts/validate_command_coverage.py` and **passes with 0
+> unresolved discrepancies**.
+> **The current specification is `RF_Keysight349xx_Driver_Implementation_Plan_v1.9.md`.**
+> Retained as the historical record — do not read the findings below as open.
+
 **Reviewed:** `RF_Keysight349xx_Driver_Implementation_Plan_v1.8.md`, `protocol/vendor_command_coverage.yaml`
 **Review date:** 2026-08-18
 **Predecessors:** `SPEC_REVIEW.md`, `DEEP_REVIEW_v1.1.md`, `GUIDE_CONFORMANCE_REVIEW_v1.2.md`,

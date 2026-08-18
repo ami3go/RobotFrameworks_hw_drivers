@@ -26,8 +26,10 @@ Planning artifacts for the Keysight / Agilent 34970A and 34972A driver.
 | `ARTIFACT_REVIEW_v1.6.md` | v1.6 + the generated protocol artifacts | Closed — R1–R5 resolved in v1.7 |
 | `RF_Keysight349xx_Driver_Implementation_Plan_v1.7.md` | v1.6 + corrected command extraction | Superseded |
 | `DEEP_REVIEW_v1.7.md` | v1.7 — implementability axis | Closed — D1–D4 resolved in v1.8 |
-| `RF_Keysight349xx_Driver_Implementation_Plan_v1.8.md` | v1.7 + authoritative inventory corrected | **Current draft** |
-| `EXECUTABLE_REVIEW_v1.8.md` | v1.8 — ran the mandated checks instead of reading | **OPEN — 1 critical, 3 major** |
+| `RF_Keysight349xx_Driver_Implementation_Plan_v1.8.md` | v1.7 + authoritative inventory corrected | Superseded |
+| `EXECUTABLE_REVIEW_v1.8.md` | v1.8 — ran the mandated checks instead of reading | Closed — E1–E4 resolved in v1.9 |
+| `RF_Keysight349xx_Driver_Implementation_Plan_v1.9.md` | v1.8 + reconciled extraction, gated checks | **Current** |
+| `../scripts/validate_command_coverage.py` | Guard 1, implemented and passing | **Runnable now** |
 | `../protocol/vendor_command_coverage.yaml` | 347 vendor commands → dispositions and 121 keywords | **Authoritative binding** |
 | `../reference/Keysight_34970A_34972A_Command_Reference.md` | Vendor command reference (§2.2 device source) | Held verbatim |
 | `../reference/SOURCE_VERIFICATION.md` | Per-item verification record with line citations | Complete |
@@ -105,23 +107,26 @@ treating a single-source derivation as a complete inventory — v1.6's extractor
 titles, v1.7's generator knew only SCPI. §9.2 now states the rule: *an inventory assembled from one
 source is authoritative only over that source's domain.*
 
-## Known defects in the current draft
+## Verification status
 
-`EXECUTABLE_REVIEW_v1.8.md` is the first pass to **run** the checks §9.2 mandates rather than read
-the spec. Both findings were invisible to seven reading passes:
+**Guard 1 is implemented and passing.** `scripts/validate_command_coverage.py` reconciles the
+coverage map against the reference's own `Commands A-Z` index — a source independent of the
+Syntax-section extraction the map was built from — and reports **0 unresolved discrepancies** across
+351 commands.
 
-- **E1 (critical)** — 2 of the 3 drift guards cannot execute: `api/public_api.yaml` does not exist
-  (nor `capability_model.yaml` or `ai_contract.yaml`). §29.1 step 24 is unrunnable as written, and
-  nothing records that the checks are gated on Gate 1 deliverables. A check that passes because its
-  input is missing is the failure RFDS-008 §6.1 exists to prevent.
-- **E2 (major)** — running guard 1 against the reference's own `Commands A-Z` index — a source no
-  previous extractor used — found **4 genuinely missing commands**: the RTD and FRTD
-  `OCOMpensated` set/query forms. Offset compensation is an RTD measurement-accuracy feature, so
-  `Configure RTD` would have shipped unable to control it. The `RESistance` families *do* carry
-  `OCOMpensated`; only the RTD forms were dropped, making the gap invisible by inspection.
-- **E3 (major)** — no single extraction is complete. Three methods have now been used and each
-  found commands the others missed (193 → 347 → 342, none a superset). §9.2's "an independent
-  extraction" should require **reconciling at least two**.
+```
+$ python3 scripts/validate_command_coverage.py
+  map commands            : 351
+  A-Z index commands      : 342
+  unresolved discrepancies: 0
+  RESULT: PASS
+```
+
+Guards 2 and 3 (map → `api/public_api.yaml`, guides → `api/public_api.yaml`) **cannot run yet** —
+that file is a Phase 1 Gate 1 deliverable. v1.9 §29.1 now records which steps are gated on which
+deliverables and requires them to report `NOT_RUN` rather than `PASS` while their inputs are absent.
+
+Eight review passes have been run; all are closed.
 
 ## Open before Phase 1 Gate 1
 
