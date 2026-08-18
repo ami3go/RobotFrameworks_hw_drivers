@@ -23,7 +23,8 @@ Planning artifacts for the Keysight / Agilent 34970A and 34972A driver.
 | `RF_Keysight349xx_Driver_Implementation_Plan_v1.4.md` | v1.3 + both cycling-review cycles | Superseded |
 | `RF_Keysight349xx_Driver_Implementation_Plan_v1.5.md` | v1.4 + all device-source resolutions | Superseded |
 | `RF_Keysight349xx_Driver_Implementation_Plan_v1.6.md` | v1.5 + keyword inventory reconciled with the vendor audit | **Current** |
-| `../protocol/vendor_command_coverage.yaml` | All 193 vendor commands → dispositions and keywords | **Authoritative** binding |
+| `../protocol/vendor_command_coverage.yaml` | Vendor commands → dispositions and keywords | **Authoritative binding — but incomplete, see below** |
+| `ARTIFACT_REVIEW_v1.6.md` | v1.6 + the generated protocol artifacts | **OPEN — 2 critical, 3 major** |
 | `../reference/Keysight_34970A_34972A_Command_Reference.md` | Vendor command reference (§2.2 device source) | Held verbatim |
 | `../reference/SOURCE_VERIFICATION.md` | Per-item verification record with line citations | Complete |
 
@@ -81,6 +82,24 @@ classes, RFDS-012 GUI-L1, RFDS-018's ten bench sections, and RFDS-010's severity
 
 **Phase 1 Gate 1 is unblocked on guide conformance.** The remaining prerequisite is the device
 command reference, below.
+
+## Known defects in the current artifacts
+
+`ARTIFACT_REVIEW_v1.6.md` reviewed the artifacts generated in v1.4–v1.6 — the first pass to examine
+them — and found two critical defects, both self-inflicted:
+
+- **R1** — the coverage map omits `CALCulate:AVERage:MINimum?`, `:AVERage?` and `:MINimum:TIME?`, so
+  §9.2's generated table silently **deleted** `Get Channel Minimum`, `Get Channel Average` and
+  `Get Minimum Timestamp` from the public API. §13's statistics return schema still has `minimum`
+  and `average` fields that nothing now produces.
+- **R2** — the "193 commands, 100% coverage" claim is false. The extractor counted command *blocks*;
+  the reference documents several commands per block. Roughly 30 long-form commands are unlisted,
+  including the whole 2-wire `RESistance`, `FREQuency` and 2-wire `RTD` families.
+
+Also: the drift guard added in v1.6 checks map ↔ `public_api.yaml`, not reference ↔ map — the edge
+that actually failed.
+
+**Do not treat the coverage map as complete until v1.7 lands.**
 
 ## Open before Phase 1 Gate 1
 
