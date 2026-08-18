@@ -1,5 +1,12 @@
 # Deep Review — Spec v1.7
 
+> **STATUS: CLOSED — all findings resolved.** D1–D4 applied in **v1.8**: `api/public_api.yaml` is
+> now the sole authoritative inventory as the union of the device-facing map and the 34 mandatory
+> driver-level keywords, the drift guard no longer punishes conformance, precedence is scoped to the
+> command↔keyword binding, and `capability_group` is on every mapped command.
+> **The current specification is `RF_Keysight349xx_Driver_Implementation_Plan_v1.8.md`.**
+> Retained as the historical record — do not read the findings below as open.
+
 **Reviewed:** `RF_Keysight349xx_Driver_Implementation_Plan_v1.7.md`, `protocol/vendor_command_coverage.yaml`
 **Review date:** 2026-08-18
 **Predecessors:** `SPEC_REVIEW.md` (v1.0), `DEEP_REVIEW_v1.1.md` (v1.1),
