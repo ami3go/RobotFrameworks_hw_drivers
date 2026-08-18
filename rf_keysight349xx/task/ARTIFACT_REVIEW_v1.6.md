@@ -1,5 +1,13 @@
 # Artifact Review — Spec v1.6 and the generated protocol artifacts
 
+> **STATUS: CLOSED — all findings resolved.** R1–R5 were applied in **v1.7**: the three missing
+> `CALCulate:AVERage` commands added and their keywords restored, the extraction corrected from
+> block titles to per-block Syntax sections (193 → 347 commands), 2-wire RTD bound, families
+> expanded to explicit rows, and the drift guard moved to the edge that had failed.
+> R4 was only partly resolved in v1.7 and was completed in **v1.8**; see `DEEP_REVIEW_v1.7.md` D1.
+> **The current specification is `RF_Keysight349xx_Driver_Implementation_Plan_v1.10.md`.**
+> Retained as the historical record — do not read the findings below as open.
+
 **Reviewed:** `RF_Keysight349xx_Driver_Implementation_Plan_v1.6.md`,
 `protocol/vendor_command_coverage.yaml`, `reference/SOURCE_VERIFICATION.md`
 **Review date:** 2026-08-18

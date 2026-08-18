@@ -710,32 +710,6 @@ The implementation shall:
 - produce observable protocol evidence;
 - avoid unsafe implicit retries.
 
-### 5.5 Resource declaration and access mode (RFDS-001-RES)
-
-**RFDS-001-RES-001** requires each driver *and* bench contract to identify resources requiring
-controlled access. Delegating entirely to the §26 bench contract does not discharge it — the
-requirement names both.
-
-| Resource | Scope | Access mode | Notes |
-|---|---|---|---|
-| Communication session | per alias | exclusive | one transport per alias (§5.2) |
-| Mainframe | whole instrument | exclusive while held | device lock via `SYSTem:LOCK:REQuest?` |
-| GPIB address / LAN socket / USB / serial port | per transport | exclusive | declared in §23 configuration |
-| Internal DMM | whole instrument | exclusive | contended by scan **and** monitor mode (§4.4, §12.1) |
-| Scan engine | whole instrument | exclusive | one scan at a time |
-| Reading memory | whole instrument | exclusive | consumed destructively by `R?` / `DATA:REMove?` (§22.3) |
-| Routing channels | per channel | exclusive, ownership-declared | owned set per §21 |
-| Digital I/O ports | per port | exclusive, ownership-declared | 34907A |
-| DAC channels | per channel | exclusive, ownership-declared | 34907A channels 04/05 |
-| Totalizer | per module | exclusive | destructive read mode (§16.3) |
-| Configuration profile files | per path | shared read / exclusive write | §23 |
-| Evidence result directory | per run | exclusive | atomic allocation, RFDS-008 §11.1 |
-
-**RFDS-001-RES-003 — default concurrency posture.** Concurrency is **disabled by default**.
-Concurrent access shall not be enabled for any resource above until it is proven safe for that
-resource on this instrument family. OQ-14 (concurrent scans from different sessions) is therefore
-**refused by default** until decided, not permitted-pending-decision.
-
 ### 5.3 `rfds-core` base package (RFDS-003 §8)
 
 The approved `BaseInstrumentLibrary` is delivered as the separately versioned distribution
@@ -778,6 +752,32 @@ rely on an undeclared interpreter version or implementation-specific behaviour.
 Source rules (RFDS-006 §5.2, §5.3): UTF-8 encoding; LF line endings except where a platform script
 requires otherwise; exactly one trailing newline; no tabs for Python indentation; `from __future__
 import annotations` where forward references benefit.
+
+### 5.5 Resource declaration and access mode (RFDS-001-RES)
+
+**RFDS-001-RES-001** requires each driver *and* bench contract to identify resources requiring
+controlled access. Delegating entirely to the §26 bench contract does not discharge it — the
+requirement names both.
+
+| Resource | Scope | Access mode | Notes |
+|---|---|---|---|
+| Communication session | per alias | exclusive | one transport per alias (§5.2) |
+| Mainframe | whole instrument | exclusive while held | device lock via `SYSTem:LOCK:REQuest?` |
+| GPIB address / LAN socket / USB / serial port | per transport | exclusive | declared in §23 configuration |
+| Internal DMM | whole instrument | exclusive | contended by scan **and** monitor mode (§4.4, §12.1) |
+| Scan engine | whole instrument | exclusive | one scan at a time |
+| Reading memory | whole instrument | exclusive | consumed destructively by `R?` / `DATA:REMove?` (§22.3) |
+| Routing channels | per channel | exclusive, ownership-declared | owned set per §21 |
+| Digital I/O ports | per port | exclusive, ownership-declared | 34907A |
+| DAC channels | per channel | exclusive, ownership-declared | 34907A channels 04/05 |
+| Totalizer | per module | exclusive | destructive read mode (§16.3) |
+| Configuration profile files | per path | shared read / exclusive write | §23 |
+| Evidence result directory | per run | exclusive | atomic allocation, RFDS-008 §11.1 |
+
+**RFDS-001-RES-003 — default concurrency posture.** Concurrency is **disabled by default**.
+Concurrent access shall not be enabled for any resource above until it is proven safe for that
+resource on this instrument family. OQ-14 (concurrent scans from different sessions) is therefore
+**refused by default** until decided, not permitted-pending-decision.
 
 ### 5.2 Concurrency and resource locking
 
@@ -2235,6 +2235,34 @@ Requirements:
 Where reconciliation is impossible on the affected transport, the operation shall be excluded rather
 than left unverifiable — see §18.1.
 
+### 22.3 Destructive reads
+
+A third category exists between §22.1 and §22.2: operations that are read-only with respect to
+device *configuration* but state-changing with respect to device *buffers*.
+
+```text
+SYST:ERR?          pops an entry from the error queue
+R?                 reads and removes readings from memory
+DATA:REMove?       removes a specified count from reading memory
+```
+
+```yaml
+retry: PROHIBITED
+```
+
+Automatic retry of a destructive read is prohibited. If the command was transmitted and the response
+was lost, the removed data is gone; a retry returns the *next* entry, or an empty result, and the
+loss is invisible.
+
+For `SYST:ERR?` this is not merely a lost diagnostic. The error queue is how the driver learns that a
+**previous state-changing command failed**, so silently discarding an entry can mask a failed relay
+or DAC write and produce a false clean state — exactly what §10.1 exists to prevent.
+
+On timeout or malformed response, a destructive read shall surface the failure and report the
+affected buffer state as `UNKNOWN`. It shall never be reported as empty or error-free.
+
+---
+
 ### 22.4 Device performance contract (RFDS-001-PERF-001)
 
 Required fields. Values marked `TBM` shall be **measured** during Phase 2 HIL and recorded here; they
@@ -2268,34 +2296,6 @@ Per RFDS-001-PERF-001 these are a *contract*, not a target: performance optimiza
 compromise safety, correctness, or evidence. §25's per-keyword `timing` / `timeout` /
 `stabilization` fields, and RFDS-018 §6.9's bench scheduling rules, both roll up from this table and
 shall remain consistent with it.
-
-### 22.3 Destructive reads
-
-A third category exists between §22.1 and §22.2: operations that are read-only with respect to
-device *configuration* but state-changing with respect to device *buffers*.
-
-```text
-SYST:ERR?          pops an entry from the error queue
-R?                 reads and removes readings from memory
-DATA:REMove?       removes a specified count from reading memory
-```
-
-```yaml
-retry: PROHIBITED
-```
-
-Automatic retry of a destructive read is prohibited. If the command was transmitted and the response
-was lost, the removed data is gone; a retry returns the *next* entry, or an empty result, and the
-loss is invisible.
-
-For `SYST:ERR?` this is not merely a lost diagnostic. The error queue is how the driver learns that a
-**previous state-changing command failed**, so silently discarding an entry can mask a failed relay
-or DAC write and produce a false clean state — exactly what §10.1 exists to prevent.
-
-On timeout or malformed response, a destructive read shall surface the failure and report the
-affected buffer state as `UNKNOWN`. It shall never be reported as empty or error-free.
-
----
 
 ## 23. Driver Configuration Model
 
