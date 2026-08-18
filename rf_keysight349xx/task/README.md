@@ -20,7 +20,10 @@ Planning artifacts for the Keysight / Agilent 34970A and 34972A driver.
 | `GUIDE_CONFORMANCE_REVIEW_v1.2.md` | v1.2 checked against all 19 RFDS guides in `AI_Guides/` | Closed — G1–G15 all resolved in v1.3 |
 | `RF_Keysight349xx_Driver_Implementation_Plan_v1.3.md` | v1.2 + all guide-conformance fixes | Superseded |
 | `CYCLING_REVIEW_v1.3.md` | v1.3 checked guide-by-guide, one RFDS document at a time | Closed — all findings resolved in v1.4 |
-| `RF_Keysight349xx_Driver_Implementation_Plan_v1.4.md` | v1.3 + both cycling-review cycles | **Current** |
+| `RF_Keysight349xx_Driver_Implementation_Plan_v1.4.md` | v1.3 + both cycling-review cycles | Superseded |
+| `RF_Keysight349xx_Driver_Implementation_Plan_v1.5.md` | v1.4 + all device-source resolutions | **Current** |
+| `../reference/Keysight_34970A_34972A_Command_Reference.md` | Vendor command reference (§2.2 device source) | Held verbatim |
+| `../reference/SOURCE_VERIFICATION.md` | Per-item verification record with line citations | Complete |
 
 All three review documents carry a status banner and are historical. Do not read their findings as open —
 each has a disposition table showing where it was resolved.
@@ -79,20 +82,18 @@ command reference, below.
 
 ## Open before Phase 1 Gate 1
 
-The **Keysight / Agilent 34970A / 34972A Command Reference** (§2.2) was not available to either
-review. Several items are consequently recorded as `SOURCE_VERIFICATION_REQUIRED` rather than
-answered, and carried as open questions 3, 4, and 11–15:
+**The device source is now held** at `reference/Keysight_34970A_34972A_Command_Reference.md`, and
+every device-behaviour question is resolved — see `reference/SOURCE_VERIFICATION.md`.
 
-- per-card switching topology class (multiplexer, actuator, matrix, RF);
-- current-capable channel set per card;
-- four-wire pairing offset per card;
-- monitor mode disposition;
-- permitted DAC output range;
-- whether continuity and diode measurement are supported;
-- the exact side effect of `Preset Device`.
+Notable resolutions: continuity and diode do **not** exist on this family (`NOT_APPLICABLE`);
+monitor mode does (`ROUTe:MONitor`); current measurement is restricted to channels 21–22 of the
+34901A; four-wire pairing is n+10 (34901A) / n+8 (34902A); the DAC range is −12 V to +12 V; there is
+no queryable digital-direction command; and `SYSTem:PRESet` has the **identical** module hardware
+effect to `*RST` — all relays open, both DACs zeroed, totalizer cleared.
 
-§1 of the plan forbids resolving device behaviour by assumption, so these are deliberately left
-open rather than filled in from inference.
+What remains open is deployment facts and project policy, which the command reference cannot answer:
+available HIL hardware, firmware exceptions, concurrent-scan policy, calibration-diagnostic
+exposure, and relay-cycle-count exposure.
 
 ## Next step
 
