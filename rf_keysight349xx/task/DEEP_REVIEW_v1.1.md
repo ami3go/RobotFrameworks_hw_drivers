@@ -1,5 +1,12 @@
 # Deep Review — RF Keysight 349xx Driver Implementation Plan v1.1
 
+> **STATUS: CLOSED — all findings resolved.** This review covers **v1.1**. Every finding below
+> (C1–C3, M1–M12, X1–X5) was applied in **v1.2** across 24 verified edits; see the v1.2 revision
+> history for the finding-to-section mapping, and section 9 of this document for per-finding
+> disposition.
+> **The current specification is `RF_Keysight349xx_Driver_Implementation_Plan_v1.2.md`.**
+> Retained as the historical record — do not read the findings below as open.
+
 **Reviewed document:** `RF_Keysight349xx_Driver_Implementation_Plan_v1.1.md`
 **Review date:** 2026-08-18
 **Predecessor review:** `SPEC_REVIEW.md` (reviewed v1.0; findings B1–B4 and N1–N8)
@@ -390,8 +397,43 @@ claim in §4 above is therefore flagged for source confirmation rather than asse
 Reviewed:               RF_Keysight349xx_Driver_Implementation_Plan_v1.1.md
 Implementation:         NOT STARTED — no code written
 v1.0 findings:          B1-B4 resolved, N1/N2/N3/N5/N7/N8 resolved, N4/N6 deferred as intended
-New critical findings:  3  (C1-C3)
-New major findings:     12 (M1-M12)
-New consistency issues: 5  (X1-X5, X1 is v1.1 fallout)
-Recommended next step:  spec v1.2 applying items 1-6, then Phase 1 Gate 1
+New critical findings:  3  (C1-C3)   — all resolved in v1.2
+New major findings:     12 (M1-M12)  — all resolved in v1.2
+New consistency issues: 5  (X1-X5)   — all resolved in v1.2
+Current specification:  RF_Keysight349xx_Driver_Implementation_Plan_v1.2.md
+Next step:              Phase 1 Gate 1, once the command reference closes the
+                        SOURCE_VERIFICATION_REQUIRED items
 ```
+
+---
+
+## 9. Disposition in v1.2
+
+| ID | Resolution in v1.2 | Section |
+|---|---|---|
+| C1 | Destructive-read category added; retry prohibited for `SYST:ERR?`, `R?`, `DATA:REMove?`; §22.1 narrowed to operations changing no buffer or queue state | §22.1, §22.3 |
+| C2 | `Reset Device` / `Preset Device` reclassified high-risk and confirmation-gated; all-relay side effect stated; `Clear Status` documented as the safe member | §9.1 |
+| C3 | LAN family split into `lan_query: PUBLIC` and `lan_configuration: EXCLUDED`; any future promotion forbidden over the transport being reconfigured | §18.1, §18.2 |
+| M1 | Raw protocol I/O fully specified: default-disabled enable gate, risk classes, evidence capture, no exemption from §19/§21, no internal use | §8.1 |
+| M2 | `generate_metadata` and `validate_ai_contract` added; stale lock is release-blocking | §32, §32.1, §29.1, §53 |
+| M3 | Card-class-aware switching required; four topology classes named; same-bank multiplexer conflicts rejected pre-transmission; matrix needs a crosspoint model or exclusion | §15.2 |
+| M4 | Reconciliation is a bounded poll with configurable timeout and interval; error carries requested, observed, attempts, elapsed | §22.2 |
+| M5 | Simulator must model or reject; acknowledging an unperformed write prohibited; conformance check ties simulator coverage to the capability model | §27.2 |
+| M6 | Locking model specified: granularity, acquisition, contention, scan exclusivity, release on failure; never silently advisory | §5.2 |
+| M7 | No-ownership safe shutdown defined: abort scan, `SKIP` every ownership-dependent action with a reason, per-action outcome list, never claim an unachieved safe state | §21.2 |
+| M8 | Current-capable channel set per card made a `SOURCE_VERIFICATION_REQUIRED` capability-model field with pre-transmission enforcement | §11.3 |
+| M9 | Four-wire pairing offset and reduced channel set made per-card sourced data affecting channel enumeration | §14.1 |
+| M10 | Monitor mode added as a required disposition; DMM contention with the scan engine noted | §12.1, §54 |
+| M11 | Drain bound configurable; truncation reported explicitly; `Device Error Queue Should Be Empty` fails on truncation | §10.2 |
+| M12 | `Recover Connection` defined, including scan abort and the prohibition on re-applying owned safe states | §8.2 |
+| X1 | Definition of Done reconciled to fifteen examples | §53 |
+| X2 | Evidence-completeness and metadata-synchronization steps added to the verification sequence | §29.1 |
+| X3 | DMM-present / DMM-absent dimension added to the HIL matrix | §30.4 |
+| X4 | `34972a_usb.json` added; one config example required per qualified transport | §23 |
+| X5 | DAC range validation required pre-transmission; unknown range blocks writes | §16.4 |
+
+**Not resolved by document edit, by design.** M3, M8, M9, M10 and the DAC range in X5 are recorded
+as `SOURCE_VERIFICATION_REQUIRED` rather than answered, and carried as open questions 11–15. The
+Keysight command reference was unavailable to this review; §1 forbids resolving device behaviour by
+assumption, so recording the requirement is the correct resolution and answering it from memory
+would not have been.

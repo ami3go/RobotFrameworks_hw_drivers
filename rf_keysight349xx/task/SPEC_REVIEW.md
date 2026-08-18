@@ -1,5 +1,12 @@
 # Specification Review — RF Keysight 349xx Driver Implementation Plan
 
+> **STATUS: CLOSED — superseded.** This review covers **v1.0**. All findings below (B1–B4,
+> N1–N3, N5, N7, N8) were resolved in **v1.1**; N4 and N6 were deferred to
+> `release/open_questions.yaml` as intended. v1.1 was then re-reviewed in `DEEP_REVIEW_v1.1.md`,
+> whose findings are resolved in **v1.2**.
+> **The current specification is `RF_Keysight349xx_Driver_Implementation_Plan_v1.2.md`.**
+> Retained as the historical record — do not read the findings below as open.
+
 **Reviewed document:** `RF_Keysight349xx_Driver_Implementation_Plan_v1.0.md` (v1.0, 2026-08-17)
 **Planned driver:** `rf_keysight349xx`
 **Target instruments:** Keysight / Agilent 34970A, 34972A
