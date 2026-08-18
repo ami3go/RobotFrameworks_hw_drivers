@@ -24,7 +24,8 @@ Planning artifacts for the Keysight / Agilent 34970A and 34972A driver.
 | `RF_Keysight349xx_Driver_Implementation_Plan_v1.5.md` | v1.4 + all device-source resolutions | Superseded |
 | `RF_Keysight349xx_Driver_Implementation_Plan_v1.6.md` | v1.5 + keyword inventory reconciled with the vendor audit | Superseded |
 | `ARTIFACT_REVIEW_v1.6.md` | v1.6 + the generated protocol artifacts | Closed — R1–R5 resolved in v1.7 |
-| `RF_Keysight349xx_Driver_Implementation_Plan_v1.7.md` | v1.6 + corrected command extraction | **Current** |
+| `RF_Keysight349xx_Driver_Implementation_Plan_v1.7.md` | v1.6 + corrected command extraction | **Current draft** |
+| `DEEP_REVIEW_v1.7.md` | v1.7 — implementability axis | **OPEN — 1 critical, 3 major** |
 | `../protocol/vendor_command_coverage.yaml` | 347 vendor commands → dispositions and 121 keywords | **Authoritative binding** |
 | `../reference/Keysight_34970A_34972A_Command_Reference.md` | Vendor command reference (§2.2 device source) | Held verbatim |
 | `../reference/SOURCE_VERIFICATION.md` | Per-item verification record with line citations | Complete |
@@ -84,20 +85,27 @@ classes, RFDS-012 GUI-L1, RFDS-018's ten bench sections, and RFDS-010's severity
 **Phase 1 Gate 1 is unblocked on guide conformance.** The remaining prerequisite is the device
 command reference, below.
 
-## Artifact defects found and fixed
+## Known defect in the current draft
 
-`ARTIFACT_REVIEW_v1.6.md` was the first pass to examine v1.4–v1.6 and the generated protocol
-artifacts. It found two critical defects, both self-inflicted, both fixed in v1.7:
+`DEEP_REVIEW_v1.7.md` asked whether the plan is *implementable* and found the largest defect of the
+seven passes:
 
-- **R1** — the map omitted three `CALCulate:AVERage` commands, so §9.2's generated table had
-  **deleted** `Get Channel Minimum`, `Get Channel Average` and `Get Minimum Timestamp` from the
-  public API while §13's return schema still declared `minimum` and `average` fields.
-- **R2** — "193 commands, 100% coverage" was false. The extractor read block *titles*; the reference
-  declares **347** commands in its per-block Syntax sections. The generator had asserted the map
-  against its own output, which is circular.
+- **D1 (critical)** — §9.2 is declared authoritative for the keyword inventory but is generated from
+  the *vendor command map*. Driver-level keywords emit no SCPI, so **33 of the 34 mandatory RFDS
+  keywords are absent from it** — every RFDS-014 configuration keyword, every RFDS-013 capability
+  keyword, 9 of 10 RFDS-002 universal keywords, `Safe Shutdown`, `Recover Connection` and all raw
+  I/O. Only `Get Identity` survives, via `*IDN?`. Anyone building `api/public_api.yaml` from the
+  authoritative artifact would ship a driver with no `Connect`.
+- The v1.7 drift guard compounds it: it would **fail the build for correctly implementing the
+  mandatory API**, and the obvious way to make it pass is to delete the keywords.
 
-v1.7 re-extracts from the Syntax sections and replaces the drift guard with two checks, the second
-of which compares reference ↔ map using an independent extraction — the edge R1 and R2 fell through.
+The information is not lost — §7, §8 and §23 still list these keywords in prose. The *authority
+claim* is what is wrong. Real public surface is ~155 keywords, not 121.
+
+**Do not build `api/public_api.yaml` from §9.2 until v1.8 lands.**
+
+Earlier artifact defects (R1–R5, found in `ARTIFACT_REVIEW_v1.6.md`) were fixed in v1.7 and
+independently re-verified in this pass.
 
 ## Open before Phase 1 Gate 1
 
