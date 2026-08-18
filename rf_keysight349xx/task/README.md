@@ -21,7 +21,9 @@ Planning artifacts for the Keysight / Agilent 34970A and 34972A driver.
 | `RF_Keysight349xx_Driver_Implementation_Plan_v1.3.md` | v1.2 + all guide-conformance fixes | Superseded |
 | `CYCLING_REVIEW_v1.3.md` | v1.3 checked guide-by-guide, one RFDS document at a time | Closed — all findings resolved in v1.4 |
 | `RF_Keysight349xx_Driver_Implementation_Plan_v1.4.md` | v1.3 + both cycling-review cycles | Superseded |
-| `RF_Keysight349xx_Driver_Implementation_Plan_v1.5.md` | v1.4 + all device-source resolutions | **Current** |
+| `RF_Keysight349xx_Driver_Implementation_Plan_v1.5.md` | v1.4 + all device-source resolutions | Superseded |
+| `RF_Keysight349xx_Driver_Implementation_Plan_v1.6.md` | v1.5 + keyword inventory reconciled with the vendor audit | **Current** |
+| `../protocol/vendor_command_coverage.yaml` | All 193 vendor commands → dispositions and keywords | **Authoritative** binding |
 | `../reference/Keysight_34970A_34972A_Command_Reference.md` | Vendor command reference (§2.2 device source) | Held verbatim |
 | `../reference/SOURCE_VERIFICATION.md` | Per-item verification record with line citations | Complete |
 
