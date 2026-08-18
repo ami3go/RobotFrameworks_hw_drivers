@@ -30,6 +30,7 @@ Planning artifacts for the Keysight / Agilent 34970A and 34972A driver.
 | `EXECUTABLE_REVIEW_v1.8.md` | v1.8 — ran the mandated checks instead of reading | Closed — E1–E4 resolved in v1.9 |
 | `RF_Keysight349xx_Driver_Implementation_Plan_v1.9.md` | v1.8 + reconciled extraction, gated checks | **Current** |
 | `../scripts/validate_command_coverage.py` | Guard 1, implemented and passing | **Runnable now** |
+| `RFDS001_AUDIT_v1.9.md` | v1.9 audited per-requirement against RFDS-001's 132 IDs | **OPEN — 6 major** |
 | `../protocol/vendor_command_coverage.yaml` | 347 vendor commands → dispositions and 121 keywords | **Authoritative binding** |
 | `../reference/Keysight_34970A_34972A_Command_Reference.md` | Vendor command reference (§2.2 device source) | Held verbatim |
 | `../reference/SOURCE_VERIFICATION.md` | Per-item verification record with line citations | Complete |
@@ -127,6 +128,27 @@ that file is a Phase 1 Gate 1 deliverable. v1.9 §29.1 now records which steps a
 deliverables and requires them to report `NOT_RUN` rather than `PASS` while their inputs are absent.
 
 Eight review passes have been run; all are closed.
+
+## Requirement audit
+
+`RFDS001_AUDIT_v1.9.md` audited v1.9 against RFDS-001's **132 numbered requirements** — the only
+guide carrying stable requirement IDs. No critical findings; **six major gaps**, all in areas the
+plan had never visited rather than areas it got wrong:
+
+| ID | Gap |
+|---|---|
+| **A6** | Only **4 of 132** RFDS-001 IDs are cited. Nothing binds the requirement set into §52's traceability matrix — which is *why* A1–A5 went unnoticed |
+| A1 | No deviation schema and none of RFDS-001-DEV-002's five constraints, though the plan already contemplates two deviations |
+| A2 | No device-specific performance contract — none of PERF-001's ten fields (latency, stabilization, throughput, cancellation latency, …) |
+| A3 | §53's Definition of Done is not derived from RFDS-001-ACC-001's P1 acceptance criteria |
+| A4 | No driver-level resource declaration or access modes; default concurrency posture unstated |
+| A5 | Supply-chain evidence lacks licences, vulnerability-review status, and binary provenance |
+
+**A6 is the systemic one.** Fix it first: seeding the traceability CSV with all 132 identifiers
+converts the rest from "things nobody looked for" into rows that are visibly `NOT_RUN`.
+
+The other 18 guides carry ~3,195 unnumbered `shall` statements and cannot be audited by ID; they
+were covered by `CYCLING_REVIEW_v1.3.md`.
 
 ## Open before Phase 1 Gate 1
 
