@@ -438,6 +438,16 @@ class EvidenceRun:
         self._error_count += 1
         logger.error("[%s] %s (%s): %s", error_id, capability or "?", type(exc).__name__, exc)
 
+    @property
+    def has_errors(self) -> bool:
+        """Whether :meth:`record_error` has fired at least once this run.
+
+        Used by callers that finalize without a pass/fail verdict of their own
+        (see ``library.py``'s ``_finalize_remaining_evidence_runs``), so a run
+        holding a recorded failure is never reported as a blanket PASS.
+        """
+        return self._error_count > 0
+
     def record_device_identity(self, **fields: Any) -> None:
         self._device_identity.update({key: value for key, value in fields.items() if value is not None})
         payload = {
@@ -586,6 +596,8 @@ class NullEvidenceRun:
 
     def record_error(self, exc: BaseException, **_kwargs: Any) -> None:
         logger.error("%s: %s", type(exc).__name__, exc)
+
+    has_errors: bool = False
 
     def record_device_identity(self, **_kwargs: Any) -> None:
         pass

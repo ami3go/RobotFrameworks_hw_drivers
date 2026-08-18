@@ -218,7 +218,10 @@ class NGI_N83624:
             if run is None:
                 continue
             try:
-                run.finalize(status=status)
+                # A run that recorded an error is never a blanket PASS, whatever
+                # the caller's default -- each alias is judged on its own record.
+                run_status = "FAIL" if getattr(run, "has_errors", False) else status
+                run.finalize(status=run_status)
             except Exception as exc:  # evidence must never mask a test result
                 logger.error(f"Finalizing N83624 evidence run for '{alias}' failed: {exc}")
 

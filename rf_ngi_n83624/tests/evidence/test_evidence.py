@@ -178,6 +178,35 @@ def test_suite_end_finalizes_a_run_whose_alias_never_had_a_session(tmp_path, mon
     assert _load_validator().validate(root) == []
 
 
+def test_suite_end_derives_fail_status_from_recorded_errors(tmp_path, monkeypatch):
+    """Regression: _finalize_remaining_evidence_runs defaulted to status="PASS"
+    for every remaining run, so an alias whose only operation failed was still
+    summarised as PASS with error_count 1. Each alias is judged on its own
+    record."""
+    monkeypatch.setenv("RFDS_EVIDENCE_ROOT", str(tmp_path / "results"))
+    lib = NGI_N83624(auto_close_on_suite_end=False)
+
+    with contextlib.suppress(Exception):
+        lib.open_n83624_tcp_connection(
+            "bench", host="10.255.255.1", port=7000, timeout=0.2
+        )
+    lib._end_suite("Suite", {})
+
+    summaries = [
+        json.loads((root / "run_summary.json").read_text())
+        for root in _run_roots(tmp_path)
+        if (root / "run_summary.json").exists()
+    ]
+    assert summaries, "no finalized run was written"
+    failed = [s for s in summaries if s["error_count"] > 0]
+    assert failed, "expected the unreachable-host run to record an error"
+    for summary in failed:
+        assert summary["final_status"] == "FAIL"
+    for summary in summaries:
+        if summary["error_count"] == 0:
+            assert summary["final_status"] == "PASS"
+
+
 def test_suite_end_finalizes_evidence_even_when_auto_close_is_disabled(tmp_path, monkeypatch):
     """auto_close_on_suite_end governs closing connections, never whether the
     evidence record is left complete."""
