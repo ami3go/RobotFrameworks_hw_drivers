@@ -18,8 +18,9 @@ Planning artifacts for the Keysight / Agilent 34970A and 34972A driver.
 | `DEEP_REVIEW_v1.1.md` | Deep review of v1.1 | Closed — C1–C3, M1–M12, X1–X5 all resolved in v1.2 |
 | `RF_Keysight349xx_Driver_Implementation_Plan_v1.2.md` | v1.1 + all deep-review fixes | Superseded |
 | `GUIDE_CONFORMANCE_REVIEW_v1.2.md` | v1.2 checked against all 19 RFDS guides in `AI_Guides/` | Closed — G1–G15 all resolved in v1.3 |
-| `RF_Keysight349xx_Driver_Implementation_Plan_v1.3.md` | v1.2 + all guide-conformance fixes | **Current draft** |
-| `CYCLING_REVIEW_v1.3.md` | v1.3 checked guide-by-guide, one RFDS document at a time | **OPEN — 3 critical, 12 major, 6 minor; 4 guides still unreviewed** |
+| `RF_Keysight349xx_Driver_Implementation_Plan_v1.3.md` | v1.2 + all guide-conformance fixes | Superseded |
+| `CYCLING_REVIEW_v1.3.md` | v1.3 checked guide-by-guide, one RFDS document at a time | Closed — all findings resolved in v1.4 |
+| `RF_Keysight349xx_Driver_Implementation_Plan_v1.4.md` | v1.3 + both cycling-review cycles | **Current** |
 
 All three review documents carry a status banner and are historical. Do not read their findings as open —
 each has a disposition table showing where it was resolved.
@@ -60,19 +61,21 @@ a reset confirmation gate, and an error-queue bound that each diverged from mech
 already specifies. All are corrected in v1.3, and §55 now records the underlying lesson — revisions
 must cite a source, not reason from precedent.
 
-**Phase 1 Gate 1 is still blocked.** A fourth pass — `CYCLING_REVIEW_v1.3.md`, taking one RFDS
-document at a time — found 21 further findings in v1.3 across seven guides, including three
-critical ones:
+**All 19 RFDS guides have now been reviewed and every finding applied.** Four review passes:
 
-- **C003-1** — `rfds-core` is never declared as a dependency, though RFDS-003 §8.2 requires it and
-  `rf_hp34401a` already ships `rfds-core>=1.0,<2.0`;
-- **C004-1** — the transport module layout is `transports/{factory,simulator}.py` where RFDS-004 §6
-  mandates a `transport/` tree with seven modules and a `backends/` layer;
-- **C007-1** — the RFDS-007 §6 canonical exception hierarchy (~30 classes) is never adopted; the
-  plan names four exception types in passing.
+| Pass | Scope | Findings | Resolved in |
+|---|---|---:|---|
+| `SPEC_REVIEW.md` | v1.0, structural + repository convention | 4 blocking, 8 minor | v1.1 |
+| `DEEP_REVIEW_v1.1.md` | v1.1, technical + safety coherence | 3 critical, 12 major, 5 consistency | v1.2 |
+| `GUIDE_CONFORMANCE_REVIEW_v1.2.md` | v1.2, sampled across the guide set | 4 critical, 11 major | v1.3 |
+| `CYCLING_REVIEW_v1.3.md` | v1.3, one guide at a time, all 19 | 3 critical, 12 major, 6 minor | v1.4 |
 
-**Four guides remain unreviewed** (RFDS-006, 010, 012, 018) plus partials. Every completed cycle so
-far has produced findings, so v1.3 should not be treated as final.
+v1.4 adopts `rfds-core` as a pinned dependency, the RFDS-004 `transport/` tree, the RFDS-007
+canonical exception hierarchy and error-code standard, RFDS-001's closed disposition set and release
+classes, RFDS-012 GUI-L1, RFDS-018's ten bench sections, and RFDS-010's severity model.
+
+**Phase 1 Gate 1 is unblocked on guide conformance.** The remaining prerequisite is the device
+command reference, below.
 
 ## Open before Phase 1 Gate 1
 

@@ -1,5 +1,11 @@
 # Cycling Guide Review — Spec v1.3, one RFDS document at a time
 
+> **STATUS: CLOSED — all findings resolved.** Cycle 1 (21 findings) and cycle 2 (RFDS-006, 010,
+> 012, 018) were both applied in **v1.4**; see the v1.4 revision-history table for the
+> finding-to-section mapping. **The current specification is
+> `RF_Keysight349xx_Driver_Implementation_Plan_v1.4.md`.** All 19 RFDS guides have now been
+> reviewed. Retained as the historical record — do not read the findings below as open.
+
 **Reviewed document:** `RF_Keysight349xx_Driver_Implementation_Plan_v1.3.md`
 **Method:** each RFDS guide in `AI_Guides/` taken in turn and checked against the spec in isolation
 **Review date:** 2026-08-18
