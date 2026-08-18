@@ -16,7 +16,8 @@ Planning artifacts for the Keysight / Agilent 34970A and 34972A driver.
 | `SPEC_REVIEW.md` | Review of v1.0 | Closed — B1–B4, N1–N3, N5, N7, N8 resolved in v1.1; N4, N6 deferred |
 | `RF_Keysight349xx_Driver_Implementation_Plan_v1.1.md` | v1.0 + B1–B4 fixes | Superseded |
 | `DEEP_REVIEW_v1.1.md` | Deep review of v1.1 | Closed — C1–C3, M1–M12, X1–X5 all resolved in v1.2 |
-| `RF_Keysight349xx_Driver_Implementation_Plan_v1.2.md` | v1.1 + all deep-review fixes | **Current** |
+| `RF_Keysight349xx_Driver_Implementation_Plan_v1.2.md` | v1.1 + all deep-review fixes | **Current draft — NOT conformant** |
+| `GUIDE_CONFORMANCE_REVIEW_v1.2.md` | v1.2 checked against all 19 RFDS guides in `AI_Guides/` | **OPEN — 4 critical, 11 major** |
 
 Both review documents carry a status banner and are historical. Do not read their findings as open —
 each has a disposition table showing where it was resolved.
@@ -36,6 +37,27 @@ shape — a safety principle stated in one section and contradicted in another:
   what the ownership safety model forbids;
 - 34972A LAN configuration keywords that sever the transport delivering them, making the plan's own
   reconciliation strategy impossible to execute.
+
+## Conformance status
+
+**v1.2 is not conformant with the RFDS guide set.** `GUIDE_CONFORMANCE_REVIEW_v1.2.md` checked it
+against all 19 specifications in `AI_Guides/` and found 15 defects, 4 critical:
+
+- **G1** — §2.1 cites four RFDS versions that do not exist (RFDS-001 v1.2, 002 v1.1, 003 v2.0,
+  004 v2.0; the guide set holds v1.1, v1.0, v1.0, v1.0). The traceability matrix §52 requires is
+  unbuildable against them.
+- **G2** — release identity violates RFDS-011 §6 in every artifact name. Gate ZIPs use an invented
+  `-gN` suffix where the standard encodes the gate in `vYY.PP.GG`.
+- **G3** — RFDS-013 Capability Model is mandatory and omitted. Six required discovery keywords are
+  missing from the public API inventory, and the `capability/` artifact tree is absent.
+- **G4** — RFDS-011 Release Process is omitted although RFDS-020, which the plan does cite, lists
+  it as a normative reference.
+
+Three further findings (G7–G9) are defects in the v1.2 edits themselves: raw-I/O keyword names,
+a reset confirmation gate, and an error-queue bound that each diverge from mechanisms RFDS-002
+already specifies.
+
+**Do not enter Phase 1 Gate 1 until v1.3 resolves these.**
 
 ## Open before Phase 1 Gate 1
 
