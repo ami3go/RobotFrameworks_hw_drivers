@@ -1,5 +1,10 @@
 # Guide Conformance Review — Spec v1.2 against `AI_Guides/`
 
+> **STATUS: CLOSED — all findings resolved.** This review covers **v1.2**. Every finding below
+> (G1–G15) was applied in **v1.3**; see the v1.3 revision-history table for the finding-to-section
+> mapping. **The current specification is `RF_Keysight349xx_Driver_Implementation_Plan_v1.3.md`.**
+> Retained as the historical record — do not read the findings below as open.
+
 **Reviewed document:** `RF_Keysight349xx_Driver_Implementation_Plan_v1.2.md`
 **Reviewed against:** all 19 RFDS specifications in `AI_Guides/` (28,501 lines)
 **Review date:** 2026-08-18
