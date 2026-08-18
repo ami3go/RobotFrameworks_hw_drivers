@@ -256,11 +256,14 @@ are available for HIL).
 
 ## 1. Purpose
 
-This document defines the implementation plan for a production-grade Robot Framework driver for the Keysight / Agilent 34970A and 34972A data acquisition / switch units.
+This document defines the implementation plan for a production-grade Robot Framework driver for the
+Keysight / Agilent 34970A and 34972A data acquisition / switch units.
 
-The driver shall be implemented against the uploaded project RFDS specifications and the supplied Keysight/Agilent 34970A/34972A Command Reference.
+The driver shall be implemented against the uploaded project RFDS specifications and the supplied
+Keysight/Agilent 34970A/34972A Command Reference.
 
-The implementation shall not silently invent device capabilities or protocol behavior. Every supported public capability shall be traceable to:
+The implementation shall not silently invent device capabilities or protocol behavior. Every
+supported public capability shall be traceable to:
 
 1. a project RFDS requirement;
 2. a documented device command or behavior;
@@ -268,7 +271,8 @@ The implementation shall not silently invent device capabilities or protocol beh
 4. a protocol vector;
 5. verification evidence.
 
-Any device behavior that cannot be established from the available authoritative sources shall be marked `UNKNOWN`, `NOT_APPLICABLE`, `EXCLUDED`, or an approved deviation.
+Any device behavior that cannot be established from the available authoritative sources shall be
+marked `UNKNOWN`, `NOT_APPLICABLE`, `EXCLUDED`, or an approved deviation.
 
 ---
 
@@ -930,7 +934,8 @@ per-card topology, current-channel, and pairing data recorded in §11.3, §14.1,
 
 ## 8. Conditional RFDS API Groups
 
-Where the corresponding capability is implemented, the complete applicable keyword group shall also be implemented.
+Where the corresponding capability is implemented, the complete applicable keyword group shall also
+be implemented.
 
 Expected groups include:
 
@@ -945,7 +950,8 @@ Expected groups include:
 - configuration;
 - diagnostics.
 
-Partial implementation of a declared RFDS capability group shall not be accepted without an approved deviation.
+Partial implementation of a declared RFDS capability group shall not be accepted without an approved
+deviation.
 
 ### 8.1 Raw protocol I/O
 
@@ -1440,7 +1446,8 @@ capability group is missing any keyword of its group.
 All checks are part of the §29.1 verification sequence.
 
 **Counts.** ~155 public keywords total — ~121 device-facing across **351** dispositioned vendor
-commands, plus ~34 mandatory driver-level keywords carrying no command. That is roughly **two and a half times** the keyword surface of the
+commands, plus ~34 mandatory driver-level keywords carrying no command. That is roughly **two and a
+half times** the keyword surface of the
 largest existing driver in the repository (`rf_ngi_n83624`, 62 keywords), and the §38 twelve-phase
 estimate was made before any of these numbers were known. Scope shall be re-assessed at Phase 1
 Gate 5 against the actual Gate 1–5 effort, using ~155 rather than 121.
@@ -1583,7 +1590,8 @@ producing `DriverUnsupportedOperationError` rather than a device error.
 
 ### 11.2 Unsupported or unverified functions
 
-Continuity and diode measurement shall not be implemented unless an authoritative device source establishes corresponding supported behavior.
+Continuity and diode measurement shall not be implemented unless an authoritative device source
+establishes corresponding supported behavior.
 
 Initial disposition:
 
@@ -1637,7 +1645,8 @@ R?
 DATA:REMove?
 ```
 
-These commands shall not be treated as interchangeable because they have different acquisition, buffering, and reading-memory behavior.
+These commands shall not be treated as interchangeable because they have different acquisition,
+buffering, and reading-memory behavior.
 
 `R?` and `DATA:REMove?` remove readings from memory and are therefore **destructive reads** subject
 to §22.3, not ordinary queries.
@@ -1838,7 +1847,8 @@ The driver shall track resources owned by the current session.
 
 It shall not assume ownership of every relay or switch channel in the mainframe.
 
-Safe shutdown shall act only on explicitly owned resources unless the bench contract explicitly grants broader ownership.
+Safe shutdown shall act only on explicitly owned resources unless the bench contract explicitly
+grants broader ownership.
 
 ---
 
@@ -1959,7 +1969,8 @@ Configure Digital Pattern Alarm
 Configure Digital Pattern Mask
 ```
 
-All documented state changes caused by alarm configuration shall be recorded in the AI contract and protocol vectors.
+All documented state changes caused by alarm configuration shall be recorded in the AI contract and
+protocol vectors.
 
 ---
 
@@ -2447,7 +2458,8 @@ owned routing resources
 transport type
 ```
 
-The AI contract, capability model, public API inventory, and RFDS-019 protocol vectors shall remain synchronized.
+The AI contract, capability model, public API inventory, and RFDS-019 protocol vectors shall remain
+synchronized.
 
 ---
 
@@ -2550,7 +2562,8 @@ actually modelled by the simulator, so the two cannot drift.
 
 Simulator evidence shall always be labeled as simulator evidence.
 
-Simulator results shall not be used to claim physical accuracy, real transport timing, or hardware safety validation.
+Simulator results shall not be used to claim physical accuracy, real transport timing, or hardware
+safety validation.
 
 ---
 
@@ -2606,7 +2619,8 @@ The conformance suite shall provide:
 - recovery verification;
 - traceable evidence.
 
-Trace capture shall begin before initial connection and identity traffic so that connection-time protocol operations are not omitted from evidence.
+Trace capture shall begin before initial connection and identity traffic so that connection-time
+protocol operations are not omitted from evidence.
 
 ---
 

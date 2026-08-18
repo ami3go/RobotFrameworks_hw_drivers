@@ -117,7 +117,7 @@ coverage map against the reference's own `Commands A-Z` index — a source indep
 Syntax-section extraction the map was built from — and reports **0 unresolved discrepancies** across
 351 commands.
 
-```
+```console
 $ python3 scripts/validate_command_coverage.py
   map commands            : 351
   A-Z index commands      : 342
