@@ -33,7 +33,8 @@ Planning artifacts for the Keysight / Agilent 34970A and 34972A driver.
 | `RFDS001_AUDIT_v1.9.md` | v1.9 audited per-requirement against RFDS-001's 132 IDs | Closed — A1–A6 resolved in v1.10 |
 | `RF_Keysight349xx_Driver_Implementation_Plan_v1.10.md` | v1.9 + RFDS-001 audit findings | **Current** |
 | `../release/requirements_traceability.csv` | All 132 RFDS-001 requirements, dispositioned | **Seeded** |
-| `ACADEMIC_ASSESSMENT.md` | The corpus judged against doctoral criteria | Advisory — not an RFDS artifact |
+| `ACADEMIC_ASSESSMENT.md` | The corpus judged against doctoral criteria | Advisory — partially addressed |
+| `RESEARCH_FRAMING.md` | RQ, hypotheses, verified prior work, threats to validity | Advisory — 3 findings unfixable |
 | `../protocol/vendor_command_coverage.yaml` | 347 vendor commands → dispositions and 121 keywords | **Authoritative binding** |
 | `../reference/Keysight_34970A_34972A_Command_Reference.md` | Vendor command reference (§2.2 device source) | Held verbatim |
 | `../reference/SOURCE_VERIFICATION.md` | Per-item verification record with line citations | Complete |

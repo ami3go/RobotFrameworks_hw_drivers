@@ -1,5 +1,12 @@
 # Academic Assessment — `rf_keysight349xx` as Doctoral Work
 
+> **PARTIALLY ADDRESSED.** `RESEARCH_FRAMING.md` supplies the research question, hypotheses,
+> verified prior-work engagement, method description, and threats to validity. Three findings remain
+> **unfixable**: N=1 validation, retroactive pre-registration, and assessor independence. The overall
+> verdict is unchanged — still not doctoral work, now an honestly framed pilot study.
+> Engaging the literature also *weakened* two claims this corpus had made; see `RESEARCH_FRAMING.md`
+> §3.5.
+
 **Assessed corpus:** 11 specification revisions, 8 review/audit documents, 1 vendor command map
 (351 commands), 1 traceability matrix (132 requirements), 1 executable validator, 22 commits —
 ~38,600 lines
