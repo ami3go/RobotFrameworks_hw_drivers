@@ -28,9 +28,11 @@ Planning artifacts for the Keysight / Agilent 34970A and 34972A driver.
 | `DEEP_REVIEW_v1.7.md` | v1.7 — implementability axis | Closed — D1–D4 resolved in v1.8 |
 | `RF_Keysight349xx_Driver_Implementation_Plan_v1.8.md` | v1.7 + authoritative inventory corrected | Superseded |
 | `EXECUTABLE_REVIEW_v1.8.md` | v1.8 — ran the mandated checks instead of reading | Closed — E1–E4 resolved in v1.9 |
-| `RF_Keysight349xx_Driver_Implementation_Plan_v1.9.md` | v1.8 + reconciled extraction, gated checks | **Current** |
+| `RF_Keysight349xx_Driver_Implementation_Plan_v1.9.md` | v1.8 + reconciled extraction, gated checks | Superseded |
 | `../scripts/validate_command_coverage.py` | Guard 1, implemented and passing | **Runnable now** |
-| `RFDS001_AUDIT_v1.9.md` | v1.9 audited per-requirement against RFDS-001's 132 IDs | **OPEN — 6 major** |
+| `RFDS001_AUDIT_v1.9.md` | v1.9 audited per-requirement against RFDS-001's 132 IDs | Closed — A1–A6 resolved in v1.10 |
+| `RF_Keysight349xx_Driver_Implementation_Plan_v1.10.md` | v1.9 + RFDS-001 audit findings | **Current** |
+| `../release/requirements_traceability.csv` | All 132 RFDS-001 requirements, dispositioned | **Seeded** |
 | `../protocol/vendor_command_coverage.yaml` | 347 vendor commands → dispositions and 121 keywords | **Authoritative binding** |
 | `../reference/Keysight_34970A_34972A_Command_Reference.md` | Vendor command reference (§2.2 device source) | Held verbatim |
 | `../reference/SOURCE_VERIFICATION.md` | Per-item verification record with line citations | Complete |
@@ -129,26 +131,24 @@ deliverables and requires them to report `NOT_RUN` rather than `PASS` while thei
 
 Eight review passes have been run; all are closed.
 
-## Requirement audit
+## Requirement traceability
 
-`RFDS001_AUDIT_v1.9.md` audited v1.9 against RFDS-001's **132 numbered requirements** — the only
-guide carrying stable requirement IDs. No critical findings; **six major gaps**, all in areas the
-plan had never visited rather than areas it got wrong:
+`release/requirements_traceability.csv` is seeded with **all 132 RFDS-001 numbered requirements**,
+each carrying a disposition: 129 `NOT_RUN` (specified, verification pending Gate 1) and 3
+`NOT_APPLICABLE` with rationale. 51 carry an implementation-artifact reference.
 
-| ID | Gap |
-|---|---|
-| **A6** | Only **4 of 132** RFDS-001 IDs are cited. Nothing binds the requirement set into §52's traceability matrix — which is *why* A1–A5 went unnoticed |
-| A1 | No deviation schema and none of RFDS-001-DEV-002's five constraints, though the plan already contemplates two deviations |
-| A2 | No device-specific performance contract — none of PERF-001's ten fields (latency, stabilization, throughput, cancellation latency, …) |
-| A3 | §53's Definition of Done is not derived from RFDS-001-ACC-001's P1 acceptance criteria |
-| A4 | No driver-level resource declaration or access modes; default concurrency posture unstated |
-| A5 | Supply-chain evidence lacks licences, vulnerability-review status, and binary provenance |
+This was audit finding **A6**, and it was the systemic one. Before v1.10 the plan cited 4 of 132
+identifiers — all added reactively when a review happened to hit one — so a gap in an area the plan
+had never visited had no mechanism that would surface it. That is how A1–A5 survived nine passes.
+Seeding converts them from absences into visible rows.
 
-**A6 is the systemic one.** Fix it first: seeding the traceability CSV with all 132 identifiers
-converts the rest from "things nobody looked for" into rows that are visibly `NOT_RUN`.
+The audit's other five findings are all resolved in v1.10: the deviation schema and its five
+release-blocking constraints (§54.1), the device performance contract (§22.4), the resource
+declaration with access modes and a default-disabled concurrency posture (§5.5), supply-chain and
+security evidence (§50.1), and the Definition of Done now incorporating RFDS-001-ACC-001 (§53).
 
-The other 18 guides carry ~3,195 unnumbered `shall` statements and cannot be audited by ID; they
-were covered by `CYCLING_REVIEW_v1.3.md`.
+The other 18 guides carry ~3,195 unnumbered `shall` statements and cannot be seeded by identifier;
+they are traced by document and section.
 
 ## Open before Phase 1 Gate 1
 

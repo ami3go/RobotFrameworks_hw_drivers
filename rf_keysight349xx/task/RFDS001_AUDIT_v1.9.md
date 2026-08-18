@@ -1,5 +1,11 @@
 # RFDS-001 Requirement Audit — Spec v1.9
 
+> **STATUS: CLOSED — all findings resolved.** A1–A6 and the VIS dispositions applied in **v1.10**.
+> `release/requirements_traceability.csv` is now seeded with all **132** RFDS-001 identifiers, each
+> carrying a disposition — the A6 control that makes the rest visible.
+> **The current specification is `RF_Keysight349xx_Driver_Implementation_Plan_v1.10.md`.**
+> Retained as the historical record — do not read the findings below as open.
+
 **Audited:** `RF_Keysight349xx_Driver_Implementation_Plan_v1.9.md`
 **Against:** `AI_Guides/RFDS-001_Platform_Requirements_v1.1.md` — **132 numbered requirements**
 **Audit date:** 2026-08-18

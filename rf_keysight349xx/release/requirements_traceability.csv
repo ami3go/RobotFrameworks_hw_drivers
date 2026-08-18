@@ -1,0 +1,133 @@
+requirement_id,source_document,source_section,requirement_summary,implementation_artifact,test_artifact,evidence_artifact,status,deviation_id,notes
+RFDS-001-PUR-001,RFDS-001 Platform Requirements v1.1,Platform purpose,Platform purpose,,,,NOT_RUN,,Specified or partially specified; requirement not yet individually verified
+RFDS-001-VIS-001,RFDS-001 Platform Requirements v1.1,Coherent driver ecosystem,Coherent driver ecosystem,,,,NOT_APPLICABLE,,Platform-level ecosystem requirement; not addressable by a single driver.
+RFDS-001-VIS-002,RFDS-001 Platform Requirements v1.1,Platform priorities,Platform priorities,,,,NOT_APPLICABLE,,Platform-level priority statement; not addressable by a single driver.
+RFDS-001-GOAL-001,RFDS-001 Platform Requirements v1.1,Primary platform goals,Primary platform goals,,,,NOT_RUN,,Specified or partially specified; requirement not yet individually verified
+RFDS-001-GOAL-002,RFDS-001 Platform Requirements v1.1,Released-driver qualities,Released-driver qualities,,,,NOT_RUN,,Specified or partially specified; requirement not yet individually verified
+RFDS-001-GOAL-003,RFDS-001 Platform Requirements v1.1,AI planning support,AI planning support,,,,NOT_RUN,,Specified or partially specified; requirement not yet individually verified
+RFDS-001-SCP-001,RFDS-001 Platform Requirements v1.1,Platform scope,Platform scope,,,,NOT_RUN,,Specified or partially specified; requirement not yet individually verified
+RFDS-001-REQ-001,RFDS-001 Platform Requirements v1.1,Stable requirement identifiers,Stable requirement identifiers,,,,NOT_RUN,,Specified or partially specified; requirement not yet individually verified
+RFDS-001-REQ-002,RFDS-001 Platform Requirements v1.1,Identifier immutability,Identifier immutability,,,,NOT_RUN,,Specified or partially specified; requirement not yet individually verified
+RFDS-001-REQ-003,RFDS-001 Platform Requirements v1.1,Requirement trace chain,Requirement trace chain,,,,NOT_RUN,,Gap A6 recorded in RFDS001_AUDIT_v1.9.md; addressed in v1.10
+RFDS-001-REQ-004,RFDS-001 Platform Requirements v1.1,Subclause traceability,Subclause traceability,,,,NOT_RUN,,Specified or partially specified; requirement not yet individually verified
+RFDS-001-GOV-001,RFDS-001 Platform Requirements v1.1,Document precedence,Document precedence,§2.3,,,NOT_RUN,,Specified in the plan; verification pending Gate 1
+RFDS-001-GOV-002,RFDS-001 Platform Requirements v1.1,Specification ownership,Specification ownership,§2.3,,,NOT_RUN,,Specified in the plan; verification pending Gate 1
+RFDS-001-GOV-003,RFDS-001 Platform Requirements v1.1,Exact compliance baseline,Exact compliance baseline,"§2.1, §52",,,NOT_RUN,,Specified in the plan; verification pending Gate 1
+RFDS-001-GOV-004,RFDS-001 Platform Requirements v1.1,Controlled conflict resolution,Controlled conflict resolution,§2.3,,,NOT_RUN,,Specified in the plan; verification pending Gate 1
+RFDS-001-CLS-001,RFDS-001 Platform Requirements v1.1,Release-class declaration,Release-class declaration,§51,,,NOT_RUN,,Specified in the plan; verification pending Gate 1
+RFDS-001-CLS-002,RFDS-001 Platform Requirements v1.1,Mandatory applicability,Mandatory applicability,,,,NOT_RUN,,Specified or partially specified; requirement not yet individually verified
+RFDS-001-CLS-003,RFDS-001 Platform Requirements v1.1,Requirement disposition,Requirement disposition,§52,,,NOT_RUN,,Specified in the plan; verification pending Gate 1
+RFDS-001-ARCH-001,RFDS-001 Platform Requirements v1.1,Stable public API,Stable public API,,,,NOT_RUN,,Specified or partially specified; requirement not yet individually verified
+RFDS-001-ARCH-002,RFDS-001 Platform Requirements v1.1,Separation of concerns,Separation of concerns,,,,NOT_RUN,,Specified or partially specified; requirement not yet individually verified
+RFDS-001-ARCH-003,RFDS-001 Platform Requirements v1.1,Explicit state,Explicit state,,,,NOT_RUN,,Specified or partially specified; requirement not yet individually verified
+RFDS-001-ARCH-004,RFDS-001 Platform Requirements v1.1,Deterministic behaviour,Deterministic behaviour,,,,NOT_RUN,,Specified or partially specified; requirement not yet individually verified
+RFDS-001-ARCH-005,RFDS-001 Platform Requirements v1.1,Visible failure,Visible failure,,,,NOT_RUN,,Specified or partially specified; requirement not yet individually verified
+RFDS-001-ARCH-006,RFDS-001 Platform Requirements v1.1,Safe default behaviour,Safe default behaviour,,,,NOT_RUN,,Specified or partially specified; requirement not yet individually verified
+RFDS-001-ARCH-007,RFDS-001 Platform Requirements v1.1,Traceability,Traceability,,,,NOT_RUN,,Specified or partially specified; requirement not yet individually verified
+RFDS-001-ARCH-008,RFDS-001 Platform Requirements v1.1,Compatibility first,Compatibility first,,,,NOT_RUN,,Specified or partially specified; requirement not yet individually verified
+RFDS-001-ARCH-009,RFDS-001 Platform Requirements v1.1,AI-readable semantics,AI-readable semantics,,,,NOT_RUN,,Specified or partially specified; requirement not yet individually verified
+RFDS-001-ARCH-010,RFDS-001 Platform Requirements v1.1,Evidence-based release,Evidence-based release,,,,NOT_RUN,,Specified or partially specified; requirement not yet individually verified
+RFDS-001-CMP-001,RFDS-001 Platform Requirements v1.1,Public API use in tests,Public API use in tests,,,,NOT_RUN,,Specified or partially specified; requirement not yet individually verified
+RFDS-001-CMP-002,RFDS-001 Platform Requirements v1.1,Test-suite independence,Test-suite independence,,,,NOT_RUN,,Specified or partially specified; requirement not yet individually verified
+RFDS-001-CMP-003,RFDS-001 Platform Requirements v1.1,Authoritative protocol knowledge,Authoritative protocol knowledge,,,,NOT_RUN,,Specified or partially specified; requirement not yet individually verified
+RFDS-001-CMP-004,RFDS-001 Platform Requirements v1.1,Externalized configuration,Externalized configuration,,,,NOT_RUN,,Specified or partially specified; requirement not yet individually verified
+RFDS-001-CMP-005,RFDS-001 Platform Requirements v1.1,Enforceable safety,Enforceable safety,,,,NOT_RUN,,Specified or partially specified; requirement not yet individually verified
+RFDS-001-CMP-006,RFDS-001 Platform Requirements v1.1,Non-intrusive evidence hooks,Non-intrusive evidence hooks,,,,NOT_RUN,,Specified or partially specified; requirement not yet individually verified
+RFDS-001-PKG-001,RFDS-001 Platform Requirements v1.1,Production ZIP name,Production ZIP name,§3.2,,,NOT_RUN,,Specified in the plan; verification pending Gate 1
+RFDS-001-PKG-002,RFDS-001 Platform Requirements v1.1,Stable internal root,Stable internal root,§3.2,,,NOT_RUN,,Specified in the plan; verification pending Gate 1
+RFDS-001-PKG-003,RFDS-001 Platform Requirements v1.1,Pre-release naming,Pre-release naming,§3.2,,,NOT_RUN,,Specified in the plan; verification pending Gate 1
+RFDS-001-PKG-004,RFDS-001 Platform Requirements v1.1,Mandatory package paths,Mandatory package paths,§37,,,NOT_RUN,,Specified in the plan; verification pending Gate 1
+RFDS-001-PKG-005,RFDS-001 Platform Requirements v1.1,Controlled equivalent layouts,Controlled equivalent layouts,,,,NOT_RUN,,Specified or partially specified; requirement not yet individually verified
+RFDS-001-PKG-006,RFDS-001 Platform Requirements v1.1,Mandatory content,Mandatory content,,,,NOT_RUN,,Specified or partially specified; requirement not yet individually verified
+RFDS-001-MAN-001,RFDS-001 Platform Requirements v1.1,Authoritative release manifest,Authoritative release manifest,§37,,,NOT_RUN,,Specified in the plan; verification pending Gate 1
+RFDS-001-MAN-002,RFDS-001 Platform Requirements v1.1,Checksums,Checksums,§37,,,NOT_RUN,,Specified in the plan; verification pending Gate 1
+RFDS-001-MAN-003,RFDS-001 Platform Requirements v1.1,Software bill of materials,Software bill of materials,§37,,,NOT_RUN,,Specified in the plan; verification pending Gate 1
+RFDS-001-MAN-004,RFDS-001 Platform Requirements v1.1,Traceability index,Traceability index,,,,NOT_RUN,,Specified or partially specified; requirement not yet individually verified
+RFDS-001-API-001,RFDS-001 Platform Requirements v1.1,Discoverable public API,Discoverable public API,"§7, §9.2",,,NOT_RUN,,Specified in the plan; verification pending Gate 1
+RFDS-001-API-002,RFDS-001 Platform Requirements v1.1,Explicit export,Explicit export,§5,,,NOT_RUN,,Specified in the plan; verification pending Gate 1
+RFDS-001-API-003,RFDS-001 Platform Requirements v1.1,Common lifecycle capability names,Common lifecycle capability names,§7,,,NOT_RUN,,Specified in the plan; verification pending Gate 1
+RFDS-001-API-004,RFDS-001 Platform Requirements v1.1,Keyword naming,Keyword naming,,,,NOT_RUN,,Specified or partially specified; requirement not yet individually verified
+RFDS-001-API-005,RFDS-001 Platform Requirements v1.1,Public signature contract,Public signature contract,,,,NOT_RUN,,Specified or partially specified; requirement not yet individually verified
+RFDS-001-API-006,RFDS-001 Platform Requirements v1.1,Stable Robot-compatible results,Stable Robot-compatible results,,,,NOT_RUN,,Specified or partially specified; requirement not yet individually verified
+RFDS-001-API-007,RFDS-001 Platform Requirements v1.1,Connection lifecycle contract,Connection lifecycle contract,,,,NOT_RUN,,Specified or partially specified; requirement not yet individually verified
+RFDS-001-API-008,RFDS-001 Platform Requirements v1.1,Idempotency declaration,Idempotency declaration,,,,NOT_RUN,,Specified or partially specified; requirement not yet individually verified
+RFDS-001-API-009,RFDS-001 Platform Requirements v1.1,Deprecation control,Deprecation control,,,,NOT_RUN,,Specified or partially specified; requirement not yet individually verified
+RFDS-001-ERR-001,RFDS-001 Platform Requirements v1.1,Common exception categories,Common exception categories,§2.4,,,NOT_RUN,,Specified in the plan; verification pending Gate 1
+RFDS-001-ERR-002,RFDS-001 Platform Requirements v1.1,Stable machine-readable error identity,Stable machine-readable error identity,§2.4,,,NOT_RUN,,Specified in the plan; verification pending Gate 1
+RFDS-001-ERR-003,RFDS-001 Platform Requirements v1.1,Error context,Error context,§2.4,,,NOT_RUN,,Specified in the plan; verification pending Gate 1
+RFDS-001-PY-001,RFDS-001 Platform Requirements v1.1,Python architecture,Python architecture,,,,NOT_RUN,,Specified or partially specified; requirement not yet individually verified
+RFDS-001-IO-001,RFDS-001 Platform Requirements v1.1,Supported transport declaration,Supported transport declaration,,,,NOT_RUN,,Specified or partially specified; requirement not yet individually verified
+RFDS-001-IO-002,RFDS-001 Platform Requirements v1.1,Finite blocking operations,Finite blocking operations,"§5, §22",,,NOT_RUN,,Specified in the plan; verification pending Gate 1
+RFDS-001-IO-003,RFDS-001 Platform Requirements v1.1,Protocol serialization,Protocol serialization,§5,,,NOT_RUN,,Specified in the plan; verification pending Gate 1
+RFDS-001-IO-004,RFDS-001 Platform Requirements v1.1,Response validation,Response validation,,,,NOT_RUN,,Specified or partially specified; requirement not yet individually verified
+RFDS-001-IO-005,RFDS-001 Platform Requirements v1.1,Command-only operations,Command-only operations,,,,NOT_RUN,,Specified or partially specified; requirement not yet individually verified
+RFDS-001-IO-006,RFDS-001 Platform Requirements v1.1,Device error checks,Device error checks,,,,NOT_RUN,,Specified or partially specified; requirement not yet individually verified
+RFDS-001-IO-007,RFDS-001 Platform Requirements v1.1,Recovery visibility,Recovery visibility,,,,NOT_RUN,,Specified or partially specified; requirement not yet individually verified
+RFDS-001-IO-008,RFDS-001 Platform Requirements v1.1,Protocol observation,Protocol observation,"§2.1.1, §28",,,NOT_RUN,,Specified in the plan; verification pending Gate 1
+RFDS-001-AI-001,RFDS-001 Platform Requirements v1.1,Required AI Driver Contract,Required AI Driver Contract,§25,,,NOT_RUN,,Specified in the plan; verification pending Gate 1
+RFDS-001-AI-002,RFDS-001 Platform Requirements v1.1,Contract/API synchronization,Contract/API synchronization,"§25, §32.1",,,NOT_RUN,,Specified in the plan; verification pending Gate 1
+RFDS-001-AI-003,RFDS-001 Platform Requirements v1.1,Lock-file purpose,Lock-file purpose,§25,,,NOT_RUN,,Specified in the plan; verification pending Gate 1
+RFDS-001-CONF-001,RFDS-001 Platform Requirements v1.1,RFDS-019 integration,RFDS-019 integration,§28,,,NOT_RUN,,Specified in the plan; verification pending Gate 1
+RFDS-001-CONF-002,RFDS-001 Platform Requirements v1.1,No silent omission,No silent omission,"§20, §28",,,NOT_RUN,,Specified in the plan; verification pending Gate 1
+RFDS-001-CONF-003,RFDS-001 Platform Requirements v1.1,Boundary observation,Boundary observation,§28,,,NOT_RUN,,Specified in the plan; verification pending Gate 1
+RFDS-001-SIM-001,RFDS-001 Platform Requirements v1.1,Simulator declaration,Simulator declaration,§27,,,NOT_RUN,,Specified in the plan; verification pending Gate 1
+RFDS-001-SIM-002,RFDS-001 Platform Requirements v1.1,Simulator evidence boundary,Simulator evidence boundary,"§27, §27.2",,,NOT_RUN,,Specified in the plan; verification pending Gate 1
+RFDS-001-TEST-001,RFDS-001 Platform Requirements v1.1,Production test levels,Production test levels,§29,,,NOT_RUN,,Specified in the plan; verification pending Gate 1
+RFDS-001-TEST-002,RFDS-001 Platform Requirements v1.1,Independent execution,Independent execution,,,,NOT_RUN,,Specified or partially specified; requirement not yet individually verified
+RFDS-001-TEST-003,RFDS-001 Platform Requirements v1.1,Hardware test profiles,Hardware test profiles,§30,,,NOT_RUN,,Specified in the plan; verification pending Gate 1
+RFDS-001-TEST-004,RFDS-001 Platform Requirements v1.1,Defect regression coverage,Defect regression coverage,,,,NOT_RUN,,Specified or partially specified; requirement not yet individually verified
+RFDS-001-TEST-005,RFDS-001 Platform Requirements v1.1,Public-interface compatibility testing,Public-interface compatibility testing,,,,NOT_RUN,,Specified or partially specified; requirement not yet individually verified
+RFDS-001-CI-001,RFDS-001 Platform Requirements v1.1,Required validation jobs,Required validation jobs,,,,NOT_RUN,,Specified or partially specified; requirement not yet individually verified
+RFDS-001-CI-002,RFDS-001 Platform Requirements v1.1,Clean-environment proof,Clean-environment proof,§29.1,,,NOT_RUN,,Specified in the plan; verification pending Gate 1
+RFDS-001-SAFE-001,RFDS-001 Platform Requirements v1.1,Safety enforcement level,Safety enforcement level,,,,NOT_RUN,,Specified or partially specified; requirement not yet individually verified
+RFDS-001-SAFE-002,RFDS-001 Platform Requirements v1.1,Safe initialization,Safe initialization,§21,,,NOT_RUN,,Specified in the plan; verification pending Gate 1
+RFDS-001-SAFE-003,RFDS-001 Platform Requirements v1.1,Safe teardown,Safe teardown,"§21, §21.2",,,NOT_RUN,,Specified in the plan; verification pending Gate 1
+RFDS-001-SAFE-004,RFDS-001 Platform Requirements v1.1,Configurable limits,Configurable limits,§21,,,NOT_RUN,,Specified in the plan; verification pending Gate 1
+RFDS-001-SAFE-005,RFDS-001 Platform Requirements v1.1,Forbidden sequences,Forbidden sequences,,,,NOT_RUN,,Specified or partially specified; requirement not yet individually verified
+RFDS-001-SAFE-006,RFDS-001 Platform Requirements v1.1,Operator actions,Operator actions,,,,NOT_RUN,,Specified or partially specified; requirement not yet individually verified
+RFDS-001-SAFE-007,RFDS-001 Platform Requirements v1.1,Emergency handling,Emergency handling,,,,NOT_RUN,,Specified or partially specified; requirement not yet individually verified
+RFDS-001-RES-001,RFDS-001 Platform Requirements v1.1,Resource declaration,Resource declaration,,,,NOT_RUN,,Gap A4 recorded in RFDS001_AUDIT_v1.9.md; addressed in v1.10
+RFDS-001-RES-002,RFDS-001 Platform Requirements v1.1,Resource access mode,Resource access mode,,,,NOT_RUN,,Gap A4 recorded in RFDS001_AUDIT_v1.9.md; addressed in v1.10
+RFDS-001-RES-003,RFDS-001 Platform Requirements v1.1,Default concurrency policy,Default concurrency policy,§5.2 (partial - default posture stated in v1.10),,,NOT_RUN,,Specified in the plan; verification pending Gate 1
+RFDS-001-CFG-001,RFDS-001 Platform Requirements v1.1,Configuration model,Configuration model,§23,,,NOT_RUN,,Specified in the plan; verification pending Gate 1
+RFDS-001-CFG-002,RFDS-001 Platform Requirements v1.1,Portable examples,Portable examples,§23.1,,,NOT_RUN,,Specified in the plan; verification pending Gate 1
+RFDS-001-LOG-001,RFDS-001 Platform Requirements v1.1,Operational logging,Operational logging,§2.1.1,,,NOT_RUN,,Specified in the plan; verification pending Gate 1
+RFDS-001-LOG-002,RFDS-001 Platform Requirements v1.1,Secret handling,Secret handling,§2.1.1,,,NOT_RUN,,Specified in the plan; verification pending Gate 1
+RFDS-001-LOG-003,RFDS-001 Platform Requirements v1.1,Version evidence,Version evidence,,,,NOT_RUN,,Specified or partially specified; requirement not yet individually verified
+RFDS-001-LOG-004,RFDS-001 Platform Requirements v1.1,Trace correlation,Trace correlation,§2.1.1,,,NOT_RUN,,Specified in the plan; verification pending Gate 1
+RFDS-001-LOG-005,RFDS-001 Platform Requirements v1.1,Evidence retention,Evidence retention,,,,NOT_RUN,,Specified or partially specified; requirement not yet individually verified
+RFDS-001-DOC-001,RFDS-001 Platform Requirements v1.1,Required documentation topics,Required documentation topics,§33,,,NOT_RUN,,Specified in the plan; verification pending Gate 1
+RFDS-001-DOC-002,RFDS-001 Platform Requirements v1.1,Documentation consistency,Documentation consistency,,,,NOT_RUN,,Specified or partially specified; requirement not yet individually verified
+RFDS-001-DOC-003,RFDS-001 Platform Requirements v1.1,Generated documentation validation,Generated documentation validation,,,,NOT_RUN,,Specified or partially specified; requirement not yet individually verified
+RFDS-001-DOC-004,RFDS-001 Platform Requirements v1.1,Link and version checks,Link and version checks,,,,NOT_RUN,,Specified or partially specified; requirement not yet individually verified
+RFDS-001-EX-001,RFDS-001 Platform Requirements v1.1,Example count,Example count,§31,,,NOT_RUN,,Specified in the plan; verification pending Gate 1
+RFDS-001-EX-002,RFDS-001 Platform Requirements v1.1,Example quality,Example quality,,,,NOT_RUN,,Specified or partially specified; requirement not yet individually verified
+RFDS-001-EX-003,RFDS-001 Platform Requirements v1.1,Example manifest,Example manifest,§37,,,NOT_RUN,,Specified in the plan; verification pending Gate 1
+RFDS-001-EX-004,RFDS-001 Platform Requirements v1.1,Public API use,Public API use,,,,NOT_RUN,,Specified or partially specified; requirement not yet individually verified
+RFDS-001-EX-005,RFDS-001 Platform Requirements v1.1,Example validation,Example validation,,,,NOT_RUN,,Specified or partially specified; requirement not yet individually verified
+RFDS-001-LIFE-001,RFDS-001 Platform Requirements v1.1,Phase-and-gate lifecycle,Phase-and-gate lifecycle,§38,,,NOT_RUN,,Specified in the plan; verification pending Gate 1
+RFDS-001-LIFE-002,RFDS-001 Platform Requirements v1.1,Gate review dimensions,Gate review dimensions,"§38, §36",,,NOT_RUN,,Specified in the plan; verification pending Gate 1
+RFDS-001-REV-001,RFDS-001 Platform Requirements v1.1,Mandatory review dimensions,Mandatory review dimensions,§36,,,NOT_RUN,,Specified in the plan; verification pending Gate 1
+RFDS-001-REV-002,RFDS-001 Platform Requirements v1.1,Finding severity,Finding severity,§36,,,NOT_RUN,,Specified in the plan; verification pending Gate 1
+RFDS-001-REV-003,RFDS-001 Platform Requirements v1.1,Finding disposition,Finding disposition,§36,,,NOT_RUN,,Specified in the plan; verification pending Gate 1
+RFDS-001-DEV-001,RFDS-001 Platform Requirements v1.1,Formal deviation schema,Formal deviation schema,,,,NOT_RUN,,Gap A1 recorded in RFDS001_AUDIT_v1.9.md; addressed in v1.10
+RFDS-001-DEV-002,RFDS-001 Platform Requirements v1.1,Deviation constraints,Deviation constraints,,,,NOT_RUN,,Gap A1 recorded in RFDS001_AUDIT_v1.9.md; addressed in v1.10
+RFDS-001-VER-001,RFDS-001 Platform Requirements v1.1,Version separation,Version separation,,,,NOT_RUN,,Specified or partially specified; requirement not yet individually verified
+RFDS-001-VER-002,RFDS-001 Platform Requirements v1.1,Single release-version authority,Single release-version authority,,,,NOT_RUN,,Specified or partially specified; requirement not yet individually verified
+RFDS-001-VER-003,RFDS-001 Platform Requirements v1.1,Change categories,Change categories,,,,NOT_RUN,,Specified or partially specified; requirement not yet individually verified
+RFDS-001-VER-004,RFDS-001 Platform Requirements v1.1,Breaking-change control,Breaking-change control,,,,NOT_RUN,,Specified or partially specified; requirement not yet individually verified
+RFDS-001-VER-005,RFDS-001 Platform Requirements v1.1,Reproducible release relationship,Reproducible release relationship,,,,NOT_RUN,,Specified or partially specified; requirement not yet individually verified
+RFDS-001-COMP-001,RFDS-001 Platform Requirements v1.1,Compatibility surface,Compatibility surface,,,,NOT_RUN,,Specified or partially specified; requirement not yet individually verified
+RFDS-001-COMP-002,RFDS-001 Platform Requirements v1.1,Compatibility report,Compatibility report,§37,,,NOT_RUN,,Specified in the plan; verification pending Gate 1
+RFDS-001-SEC-001,RFDS-001 Platform Requirements v1.1,Secure project handling,Secure project handling,,,,NOT_RUN,,Specified or partially specified; requirement not yet individually verified
+RFDS-001-SEC-002,RFDS-001 Platform Requirements v1.1,Dependency evidence,Dependency evidence,,,,NOT_RUN,,Gap A5 recorded in RFDS001_AUDIT_v1.9.md; addressed in v1.10
+RFDS-001-SEC-003,RFDS-001 Platform Requirements v1.1,Binary provenance,Binary provenance,,,,NOT_RUN,,Gap A5 recorded in RFDS001_AUDIT_v1.9.md; addressed in v1.10
+RFDS-001-REL-001,RFDS-001 Platform Requirements v1.1,Failure behaviour,Failure behaviour,,,,NOT_RUN,,Specified or partially specified; requirement not yet individually verified
+RFDS-001-REL-002,RFDS-001 Platform Requirements v1.1,Recovery semantics,Recovery semantics,,,,NOT_RUN,,Specified or partially specified; requirement not yet individually verified
+RFDS-001-PERF-001,RFDS-001 Platform Requirements v1.1,Device-specific performance contract,Device-specific performance contract,,,,NOT_RUN,,Gap A2 recorded in RFDS001_AUDIT_v1.9.md; addressed in v1.10
+RFDS-001-GH-001,RFDS-001 Platform Requirements v1.1,Repository completeness,Repository completeness,,,,NOT_RUN,,Specified or partially specified; requirement not yet individually verified
+RFDS-001-GH-002,RFDS-001 Platform Requirements v1.1,Published documentation revision,Published documentation revision,,,,NOT_RUN,,Specified or partially specified; requirement not yet individually verified
+RFDS-001-ACC-001,RFDS-001 Platform Requirements v1.1,P1 production acceptance,P1 production acceptance,,,,NOT_RUN,,Gap A3 recorded in RFDS001_AUDIT_v1.9.md; addressed in v1.10
+RFDS-001-ACC-002,RFDS-001 Platform Requirements v1.1,B1 bench acceptance,B1 bench acceptance,,,,NOT_APPLICABLE,,"B1 bench acceptance; applies to a bench release including this driver, not to the driver alone (see §26)."
+RFDS-001-FAIL-001,RFDS-001 Platform Requirements v1.1,Platform review failure,Platform review failure,,,,NOT_RUN,,Specified or partially specified; requirement not yet individually verified
+RFDS-001-DOD-001,RFDS-001 Platform Requirements v1.1,Driver completion,Driver completion,,,,NOT_RUN,,Specified or partially specified; requirement not yet individually verified
