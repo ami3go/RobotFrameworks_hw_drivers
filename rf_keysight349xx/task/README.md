@@ -22,9 +22,10 @@ Planning artifacts for the Keysight / Agilent 34970A and 34972A driver.
 | `CYCLING_REVIEW_v1.3.md` | v1.3 checked guide-by-guide, one RFDS document at a time | Closed — all findings resolved in v1.4 |
 | `RF_Keysight349xx_Driver_Implementation_Plan_v1.4.md` | v1.3 + both cycling-review cycles | Superseded |
 | `RF_Keysight349xx_Driver_Implementation_Plan_v1.5.md` | v1.4 + all device-source resolutions | Superseded |
-| `RF_Keysight349xx_Driver_Implementation_Plan_v1.6.md` | v1.5 + keyword inventory reconciled with the vendor audit | **Current** |
-| `../protocol/vendor_command_coverage.yaml` | Vendor commands → dispositions and keywords | **Authoritative binding — but incomplete, see below** |
-| `ARTIFACT_REVIEW_v1.6.md` | v1.6 + the generated protocol artifacts | **OPEN — 2 critical, 3 major** |
+| `RF_Keysight349xx_Driver_Implementation_Plan_v1.6.md` | v1.5 + keyword inventory reconciled with the vendor audit | Superseded |
+| `ARTIFACT_REVIEW_v1.6.md` | v1.6 + the generated protocol artifacts | Closed — R1–R5 resolved in v1.7 |
+| `RF_Keysight349xx_Driver_Implementation_Plan_v1.7.md` | v1.6 + corrected command extraction | **Current** |
+| `../protocol/vendor_command_coverage.yaml` | 347 vendor commands → dispositions and 121 keywords | **Authoritative binding** |
 | `../reference/Keysight_34970A_34972A_Command_Reference.md` | Vendor command reference (§2.2 device source) | Held verbatim |
 | `../reference/SOURCE_VERIFICATION.md` | Per-item verification record with line citations | Complete |
 
@@ -83,23 +84,20 @@ classes, RFDS-012 GUI-L1, RFDS-018's ten bench sections, and RFDS-010's severity
 **Phase 1 Gate 1 is unblocked on guide conformance.** The remaining prerequisite is the device
 command reference, below.
 
-## Known defects in the current artifacts
+## Artifact defects found and fixed
 
-`ARTIFACT_REVIEW_v1.6.md` reviewed the artifacts generated in v1.4–v1.6 — the first pass to examine
-them — and found two critical defects, both self-inflicted:
+`ARTIFACT_REVIEW_v1.6.md` was the first pass to examine v1.4–v1.6 and the generated protocol
+artifacts. It found two critical defects, both self-inflicted, both fixed in v1.7:
 
-- **R1** — the coverage map omits `CALCulate:AVERage:MINimum?`, `:AVERage?` and `:MINimum:TIME?`, so
-  §9.2's generated table silently **deleted** `Get Channel Minimum`, `Get Channel Average` and
-  `Get Minimum Timestamp` from the public API. §13's statistics return schema still has `minimum`
-  and `average` fields that nothing now produces.
-- **R2** — the "193 commands, 100% coverage" claim is false. The extractor counted command *blocks*;
-  the reference documents several commands per block. Roughly 30 long-form commands are unlisted,
-  including the whole 2-wire `RESistance`, `FREQuency` and 2-wire `RTD` families.
+- **R1** — the map omitted three `CALCulate:AVERage` commands, so §9.2's generated table had
+  **deleted** `Get Channel Minimum`, `Get Channel Average` and `Get Minimum Timestamp` from the
+  public API while §13's return schema still declared `minimum` and `average` fields.
+- **R2** — "193 commands, 100% coverage" was false. The extractor read block *titles*; the reference
+  declares **347** commands in its per-block Syntax sections. The generator had asserted the map
+  against its own output, which is circular.
 
-Also: the drift guard added in v1.6 checks map ↔ `public_api.yaml`, not reference ↔ map — the edge
-that actually failed.
-
-**Do not treat the coverage map as complete until v1.7 lands.**
+v1.7 re-extracts from the Syntax sections and replaces the drift guard with two checks, the second
+of which compares reference ↔ map using an independent extraction — the edge R1 and R2 fell through.
 
 ## Open before Phase 1 Gate 1
 

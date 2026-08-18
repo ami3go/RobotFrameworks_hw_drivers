@@ -132,5 +132,9 @@ This confirms the internal DMM is optional *and* that it can be disabled in soft
 | OQ-5 — read-only calibration diagnostics | OPEN | Policy decision; `CALibration?` exists but exposure is a project call |
 | Relay cycle count read (§19) | OPEN | Policy decision |
 
-No device-behaviour question remains unresolved. The remaining items are deployment facts or
-project policy, neither of which the command reference can answer.
+**Scope of this claim (corrected in v1.7).** No device-behaviour question remains unresolved *for
+the enumerated command set*. The v1.6 command inventory was incomplete — it listed 193 block titles
+rather than the 347 commands the reference declares in its Syntax sections — so questions were never
+asked about commands that were never listed. Re-verified against the expanded 347-command inventory;
+the remaining items below are deployment facts or project policy, neither of which the command
+reference can answer.

@@ -1,261 +1,43 @@
 # Vendor Command Coverage — Keysight 34970A/34972A
 #
-# RFDS spec §20. Every command documented in the vendor reference carries an
-# explicit disposition. Generated from
-#   reference/Keysight_34970A_34972A_Command_Reference.md
-# by extracting every command block, then classifying each against spec v1.5.
+# RFDS spec §20. Every command the vendor reference declares carries an explicit disposition.
 #
-# Commands in reference : 193
-# Commands dispositioned: 193  (100% coverage — no command is unlisted)
+# EXTRACTION METHOD (v1.7): commands are read from each block's own Syntax section,
+# which is where the reference declares the exact command forms.
+#
+# The v1.6 map extracted block *titles* and claimed 193 commands at 100% coverage.
+# That was wrong: one block documents several commands, and the generator asserted
+# the map against its own extractor output, which is circular. See
+# task/ARTIFACT_REVIEW_v1.6.md findings R1 and R2.
+#
+# Commands declared in reference Syntax sections : 347
+# Commands dispositioned                        : 347
 #
 # Status counts:
-#   PUBLIC          145
-#   EXCLUDED        23
-#   INTERNAL        16
-#   UNKNOWN         9
+#   PUBLIC       272
+#   EXCLUDED     39
+#   INTERNAL     24
+#   UNKNOWN      12
 #
-# Note: the vendor reference documents command families under one entry — e.g.
-# CONFigure:VOLTage:DC also covers the AC form, and MEASure:FRESistance? covers
-# RESistance. Family members are noted rather than listed as separate rows, so
-# this file mirrors the reference's own structure exactly.
+# Distinct planned keywords: 121
 
 generated_from: reference/Keysight_34970A_34972A_Command_Reference.md
+extraction: "per-block Syntax sections"
 reference_version: "Keysight version 2.00, 2009-2014"
-spec_version: "1.5"
-command_count: 193
+spec_version: "1.7"
+command_count: 347
 
 commands:
-  - command: "ABORt"
-    status: PUBLIC
-    keyword: "Abort Scan"
-    spec_section: "§12"
-  - command: "FETCh?"
-    status: PUBLIC
-    keyword: "Fetch Readings"
-    spec_section: "§12"
-    note: "non-destructive; readings remain in memory"
-  - command: "INITiate"
-    status: PUBLIC
-    keyword: "Initiate Scan"
-    spec_section: "§12"
-  - command: "INPut:IMPedance:AUTO"
-    status: PUBLIC
-    keyword: "Configure DC Voltage"
-    spec_section: "§11"
-    note: "input impedance option on DCV"
-  - command: "R?"
-    status: PUBLIC
-    keyword: "Read Buffered Readings"
-    spec_section: "§12, §22.3"
-    note: "DESTRUCTIVE READ - removes readings; retry prohibited"
-  - command: "READ?"
-    status: PUBLIC
-    keyword: "Read Scan"
-    spec_section: "§12"
-    note: "INITiate + FETCh?; clears prior readings"
-  - command: "UNIT:TEMPerature"
-    status: PUBLIC
-    keyword: "Set Temperature Units"
-    spec_section: "§14"
-  - command: "CALCulate:AVERage:MAXimum?"
-    status: PUBLIC
-    keyword: "Get Channel Maximum"
-    spec_section: "§13"
-  - command: "CALCulate:AVERage:CLEar"
-    status: PUBLIC
-    keyword: "Clear Channel Statistics"
-    spec_section: "§13"
-  - command: "CALCulate:AVERage:COUNt?"
-    status: PUBLIC
-    keyword: "Get Channel Count"
-    spec_section: "§13"
-  - command: "CALCulate:AVERage:MAXimum:TIME?"
-    status: PUBLIC
-    keyword: "Get Maximum Timestamp"
-    spec_section: "§13"
-  - command: "CALCulate:AVERage:PTPeak?"
-    status: PUBLIC
-    keyword: "Get Channel Peak To Peak"
-    spec_section: "§13"
-  - command: "CALCulate:COMPare:DATA"
-    status: PUBLIC
-    keyword: "Configure Digital Pattern Alarm"
-    spec_section: "§17"
-  - command: "CALCulate:COMPare:MASK"
-    status: PUBLIC
-    keyword: "Configure Digital Pattern Mask"
-    spec_section: "§17"
-  - command: "CALCulate:COMPare:STATe"
-    status: PUBLIC
-    keyword: "Configure Digital Pattern Alarm"
-    spec_section: "§17"
-  - command: "CALCulate:COMPare:TYPE"
-    status: PUBLIC
-    keyword: "Configure Digital Pattern Alarm"
-    spec_section: "§17"
-  - command: "CALCulate:LIMit:UPPer"
-    status: PUBLIC
-    keyword: "Set Upper Alarm Limit"
-    spec_section: "§17"
-    note: "LOWer form in same family"
-  - command: "CALCulate:LIMit:UPPer:STATe"
-    status: PUBLIC
-    keyword: "Enable Upper Alarm"
-    spec_section: "§17"
-    note: "LOWer form in same family"
-  - command: "CALCulate:SCALe:OFFSet"
-    status: PUBLIC
-    keyword: "Set Scaling Offset"
-    spec_section: "§17"
-  - command: "CALCulate:SCALe:OFFSet:NULL"
-    status: PUBLIC
-    keyword: "Set Scaling Offset"
-    spec_section: "§17"
-    note: "null-measurement form"
-  - command: "CALCulate:SCALe:STATe"
-    status: PUBLIC
-    keyword: "Enable Scaling / Disable Scaling"
-    spec_section: "§17"
-  - command: "CALCulate:SCALe:UNIT"
-    status: PUBLIC
-    keyword: "Set Scaling Unit"
-    spec_section: "§17"
-  - command: "CALibration?"
-    status: EXCLUDED
-    spec_section: "§19"
-    note: "performs a calibration; service operation"
-  - command: "CALibration:COUNt?"
-    status: UNKNOWN
-    spec_section: "§19, OQ-5"
-    note: "read-only; public-diagnostic exposure is a project decision"
-  - command: "CALibration:SECure:CODE"
-    status: EXCLUDED
-    spec_section: "§19"
-    note: "calibration security change"
-  - command: "CALibration:SECure:STATe"
-    status: EXCLUDED
-    spec_section: "§19"
-    note: "calibration security change"
-  - command: "CALibration:STRing"
-    status: EXCLUDED
-    spec_section: "§19"
-    note: "calibration record write"
-  - command: "CALibration:VALue"
-    status: EXCLUDED
-    spec_section: "§19"
-    note: "calibration write"
-  - command: "CONFigure?"
-    status: PUBLIC
-    keyword: "Get Channel Configuration"
-    spec_section: "§11"
-  - command: "CONFigure:CURRent:DC"
-    status: PUBLIC
-    keyword: "Configure DC Current"
-    spec_section: "§11.3"
-    note: "34901A channels 21-22 only"
-  - command: "CONFigure:DIGital:BYTE"
-    status: PUBLIC
-    keyword: "Configure Digital Input"
-    spec_section: "§16.1"
-  - command: "CONFigure:PERiod"
-    status: PUBLIC
-    keyword: "Configure Period"
-    spec_section: "§11"
-    note: "FREQuency form in same family"
-  - command: "CONFigure:FRESistance"
-    status: PUBLIC
-    keyword: "Configure 4 Wire Resistance"
-    spec_section: "§14.1"
-    note: "RESistance form in same family"
-  - command: "CONFigure:TEMPerature"
-    status: PUBLIC
-    keyword: "Configure Temperature"
-    spec_section: "§14"
-  - command: "CONFigure:TOTalize"
-    status: PUBLIC
-    keyword: "Configure Totalizer"
-    spec_section: "§16.3"
-  - command: "CONFigure:VOLTage:DC"
-    status: PUBLIC
-    keyword: "Configure DC Voltage"
-    spec_section: "§11"
-    note: "AC form in same family"
-  - command: "DATA:LAST?"
-    status: PUBLIC
-    keyword: "Get Last Reading"
-    spec_section: "§12"
-  - command: "DATA:POINts?"
-    status: PUBLIC
-    keyword: "Get Reading Count"
-    spec_section: "§12"
-  - command: "DATA:POINts:EVENt:THReshold"
-    status: PUBLIC
-    keyword: "Set Reading Count Threshold"
-    spec_section: "§12"
-  - command: "DATA:REMove?"
-    status: PUBLIC
-    keyword: "Clear Reading Memory"
-    spec_section: "§12, §22.3"
-    note: "DESTRUCTIVE READ - removes n readings; retry prohibited"
-  - command: "DIAGnostic:DMM:CYCLes?"
-    status: UNKNOWN
-    spec_section: "§19, OQ-5"
-    note: "read-only maintenance counter; exposure is a project decision"
-  - command: "DIAGnostic:DMM:CYCLes:CLEar"
-    status: EXCLUDED
-    spec_section: "§19"
-    note: "counter reset"
-  - command: "DIAGnostic:POKE:SLOT:DATA"
-    status: EXCLUDED
-    spec_section: "§19"
-    note: "engineering/service operation"
-  - command: "DIAGnostic:RELay:CYCLes?"
-    status: UNKNOWN
-    spec_section: "§19, OQ-5"
-    note: "read-only relay maintenance counter; exposure pending"
-  - command: "DIAGnostic:RELay:CYCLes:CLEar"
-    status: EXCLUDED
-    spec_section: "§19"
-    note: "relay-cycle counter reset"
-  - command: "DISPlay"
-    status: PUBLIC
-    keyword: "Set Display State"
-    spec_section: "§9"
-    note: "low risk; front-panel only"
-  - command: "DISPlay:TEXT"
-    status: PUBLIC
-    keyword: "Set Display Text"
-    spec_section: "§9"
-  - command: "DISPlay:TEXT:CLEar"
-    status: PUBLIC
-    keyword: "Clear Display Text"
-    spec_section: "§9"
-  - command: "FORMat:READing:ALARm"
-    status: PUBLIC
-    keyword: "Set Reading Format"
-    spec_section: "§12"
-  - command: "FORMat:READing:CHANnel"
-    status: PUBLIC
-    keyword: "Set Reading Format"
-    spec_section: "§12"
-  - command: "FORMat:READing:TIME"
-    status: PUBLIC
-    keyword: "Set Reading Format"
-    spec_section: "§12"
-  - command: "FORMat:READing:TIME:TYPE"
-    status: PUBLIC
-    keyword: "Set Reading Format"
-    spec_section: "§12"
-  - command: "FORMat:READing:UNIT"
-    status: PUBLIC
-    keyword: "Set Reading Format"
-    spec_section: "§12"
   - command: "*CLS"
     status: PUBLIC
     keyword: "Clear Status"
     spec_section: "§9.1"
     note: "status registers only; no routing impact"
   - command: "*ESE"
+    status: INTERNAL
+    spec_section: "§9"
+    note: "status register plumbing"
+  - command: "*ESE?"
     status: INTERNAL
     spec_section: "§9"
     note: "status register plumbing"
@@ -268,11 +50,19 @@ commands:
     keyword: "Get Identity"
     spec_section: "§7"
     note: "connection identity; retry-safe per §22.1"
+  - command: "*OPC"
+    status: INTERNAL
+    spec_section: "§5"
+    note: "synchronisation primitive; not a public keyword"
   - command: "*OPC?"
     status: INTERNAL
     spec_section: "§5"
     note: "synchronisation primitive; not a public keyword"
   - command: "*PSC"
+    status: EXCLUDED
+    spec_section: "§19"
+    note: "power-on status clear; persistent instrument setting"
+  - command: "*PSC?"
     status: EXCLUDED
     spec_section: "§19"
     note: "power-on status clear; persistent instrument setting"
@@ -285,7 +75,15 @@ commands:
     keyword: "Reset Device"
     spec_section: "§9.1"
     note: "HIGH RISK: all relays open, both DACs 0 V, totalizer cleared"
+  - command: "*SAV"
+    status: UNKNOWN
+    spec_section: "§23"
+    note: "instrument state save; overlaps RFDS-014 profiles"
   - command: "*SRE"
+    status: INTERNAL
+    spec_section: "§9"
+    note: "status register plumbing"
+  - command: "*SRE?"
     status: INTERNAL
     spec_section: "§9"
     note: "status register plumbing"
@@ -306,6 +104,368 @@ commands:
     status: INTERNAL
     spec_section: "§5"
     note: "synchronisation primitive"
+  - command: "ABORt"
+    status: PUBLIC
+    keyword: "Abort Scan"
+    spec_section: "§12"
+  - command: "CALCulate:AVERage:AVERage?"
+    status: PUBLIC
+    keyword: "Get Channel Average"
+    spec_section: "§13"
+    note: "R1 - omitted from the v1.6 map"
+  - command: "CALCulate:AVERage:CLEar"
+    status: PUBLIC
+    keyword: "Clear Channel Statistics"
+    spec_section: "§13"
+  - command: "CALCulate:AVERage:COUNt?"
+    status: PUBLIC
+    keyword: "Get Channel Count"
+    spec_section: "§13"
+  - command: "CALCulate:AVERage:MAXimum:TIME?"
+    status: PUBLIC
+    keyword: "Get Maximum Timestamp"
+    spec_section: "§13"
+  - command: "CALCulate:AVERage:MAXimum?"
+    status: PUBLIC
+    keyword: "Get Channel Maximum"
+    spec_section: "§13"
+  - command: "CALCulate:AVERage:MINimum:TIME?"
+    status: PUBLIC
+    keyword: "Get Minimum Timestamp"
+    spec_section: "§13"
+    note: "R1 - omitted from the v1.6 map"
+  - command: "CALCulate:AVERage:MINimum?"
+    status: PUBLIC
+    keyword: "Get Channel Minimum"
+    spec_section: "§13"
+    note: "R1 - omitted from the v1.6 map"
+  - command: "CALCulate:AVERage:PTPeak?"
+    status: PUBLIC
+    keyword: "Get Channel Peak To Peak"
+    spec_section: "§13"
+  - command: "CALCulate:COMPare:DATA"
+    status: PUBLIC
+    keyword: "Configure Digital Pattern Alarm"
+    spec_section: "§17"
+  - command: "CALCulate:COMPare:DATA?"
+    status: PUBLIC
+    keyword: "Configure Digital Pattern Alarm"
+    spec_section: "§17"
+  - command: "CALCulate:COMPare:MASK"
+    status: PUBLIC
+    keyword: "Configure Digital Pattern Mask"
+    spec_section: "§17"
+  - command: "CALCulate:COMPare:MASK?"
+    status: PUBLIC
+    keyword: "Configure Digital Pattern Mask"
+    spec_section: "§17"
+  - command: "CALCulate:COMPare:STATe"
+    status: PUBLIC
+    keyword: "Configure Digital Pattern Alarm"
+    spec_section: "§17"
+  - command: "CALCulate:COMPare:STATe?"
+    status: PUBLIC
+    keyword: "Configure Digital Pattern Alarm"
+    spec_section: "§17"
+  - command: "CALCulate:COMPare:TYPE"
+    status: PUBLIC
+    keyword: "Configure Digital Pattern Alarm"
+    spec_section: "§17"
+  - command: "CALCulate:COMPare:TYPE?"
+    status: PUBLIC
+    keyword: "Configure Digital Pattern Alarm"
+    spec_section: "§17"
+  - command: "CALCulate:LIMit:LOWer"
+    status: PUBLIC
+    keyword: "Set Lower Alarm Limit"
+    spec_section: "§17"
+  - command: "CALCulate:LIMit:LOWer:STATe"
+    status: PUBLIC
+    keyword: "Enable Lower Alarm"
+    spec_section: "§17"
+  - command: "CALCulate:LIMit:LOWer:STATe?"
+    status: PUBLIC
+    keyword: "Enable Lower Alarm"
+    spec_section: "§17"
+  - command: "CALCulate:LIMit:LOWer?"
+    status: PUBLIC
+    keyword: "Set Lower Alarm Limit"
+    spec_section: "§17"
+  - command: "CALCulate:LIMit:UPPer"
+    status: PUBLIC
+    keyword: "Set Upper Alarm Limit"
+    spec_section: "§17"
+    note: "LOWer form in same family"
+  - command: "CALCulate:LIMit:UPPer:STATe"
+    status: PUBLIC
+    keyword: "Enable Upper Alarm"
+    spec_section: "§17"
+    note: "LOWer form in same family"
+  - command: "CALCulate:LIMit:UPPer:STATe?"
+    status: PUBLIC
+    keyword: "Enable Upper Alarm"
+    spec_section: "§17"
+    note: "LOWer form in same family"
+  - command: "CALCulate:LIMit:UPPer?"
+    status: PUBLIC
+    keyword: "Set Upper Alarm Limit"
+    spec_section: "§17"
+    note: "LOWer form in same family"
+  - command: "CALCulate:SCALe:GAIN"
+    status: PUBLIC
+    keyword: "Set Scaling Gain"
+    spec_section: "§17"
+    note: "R2 - §17 listed the keyword with no binding"
+  - command: "CALCulate:SCALe:GAIN?"
+    status: PUBLIC
+    keyword: "Set Scaling Gain"
+    spec_section: "§17"
+    note: "R2 - §17 listed the keyword with no binding"
+  - command: "CALCulate:SCALe:OFFSet"
+    status: PUBLIC
+    keyword: "Set Scaling Offset"
+    spec_section: "§17"
+  - command: "CALCulate:SCALe:OFFSet:NULL"
+    status: PUBLIC
+    keyword: "Set Scaling Offset"
+    spec_section: "§17"
+    note: "null-measurement form"
+  - command: "CALCulate:SCALe:OFFSet?"
+    status: PUBLIC
+    keyword: "Set Scaling Offset"
+    spec_section: "§17"
+  - command: "CALCulate:SCALe:STATe"
+    status: PUBLIC
+    keyword: "Enable Scaling / Disable Scaling"
+    spec_section: "§17"
+  - command: "CALCulate:SCALe:STATe?"
+    status: PUBLIC
+    keyword: "Enable Scaling / Disable Scaling"
+    spec_section: "§17"
+  - command: "CALCulate:SCALe:UNIT"
+    status: PUBLIC
+    keyword: "Set Scaling Unit"
+    spec_section: "§17"
+  - command: "CALCulate:SCALe:UNIT?"
+    status: PUBLIC
+    keyword: "Set Scaling Unit"
+    spec_section: "§17"
+  - command: "CALibration:COUNt?"
+    status: UNKNOWN
+    spec_section: "§19, OQ-5"
+    note: "read-only; public-diagnostic exposure is a project decision"
+  - command: "CALibration:SECure:CODE"
+    status: EXCLUDED
+    spec_section: "§19"
+    note: "calibration security change"
+  - command: "CALibration:SECure:STATe"
+    status: EXCLUDED
+    spec_section: "§19"
+    note: "calibration security change"
+  - command: "CALibration:SECure:STATe?"
+    status: EXCLUDED
+    spec_section: "§19"
+    note: "calibration security change"
+  - command: "CALibration:STRing"
+    status: EXCLUDED
+    spec_section: "§19"
+    note: "calibration record write"
+  - command: "CALibration:STRing?"
+    status: EXCLUDED
+    spec_section: "§19"
+    note: "calibration record write"
+  - command: "CALibration:VALue"
+    status: EXCLUDED
+    spec_section: "§19"
+    note: "calibration write"
+  - command: "CALibration:VALue?"
+    status: EXCLUDED
+    spec_section: "§19"
+    note: "calibration write"
+  - command: "CALibration?"
+    status: EXCLUDED
+    spec_section: "§19"
+    note: "performs a calibration; service operation"
+  - command: "CONFigure:CURRent:AC"
+    status: PUBLIC
+    keyword: "Configure AC Current"
+    spec_section: "§11.3"
+    note: "34901A ch 21-22 only"
+  - command: "CONFigure:CURRent:DC"
+    status: PUBLIC
+    keyword: "Configure DC Current"
+    spec_section: "§11.3"
+    note: "34901A channels 21-22 only"
+  - command: "CONFigure:DIGital:BYTE"
+    status: PUBLIC
+    keyword: "Configure Digital Input"
+    spec_section: "§16.1"
+  - command: "CONFigure:FREQuency"
+    status: PUBLIC
+    keyword: "Configure Frequency"
+    spec_section: "§11"
+  - command: "CONFigure:FRESistance"
+    status: PUBLIC
+    keyword: "Configure 4 Wire Resistance"
+    spec_section: "§14.1"
+    note: "RESistance form in same family"
+  - command: "CONFigure:PERiod"
+    status: PUBLIC
+    keyword: "Configure Period"
+    spec_section: "§11"
+    note: "FREQuency form in same family"
+  - command: "CONFigure:RESistance"
+    status: PUBLIC
+    keyword: "Configure Resistance"
+    spec_section: "§11"
+    note: "2-wire"
+  - command: "CONFigure:TEMPerature"
+    status: PUBLIC
+    keyword: "Configure Temperature"
+    spec_section: "§14"
+  - command: "CONFigure:TOTalize"
+    status: PUBLIC
+    keyword: "Configure Totalizer"
+    spec_section: "§16.3"
+  - command: "CONFigure:VOLTage:AC"
+    status: PUBLIC
+    keyword: "Configure AC Voltage"
+    spec_section: "§11"
+  - command: "CONFigure:VOLTage:DC"
+    status: PUBLIC
+    keyword: "Configure DC Voltage"
+    spec_section: "§11"
+    note: "AC form in same family"
+  - command: "CONFigure?"
+    status: PUBLIC
+    keyword: "Get Channel Configuration"
+    spec_section: "§11"
+  - command: "DATA:LAST?"
+    status: PUBLIC
+    keyword: "Get Last Reading"
+    spec_section: "§12"
+  - command: "DATA:POINts:EVENt:THReshold"
+    status: PUBLIC
+    keyword: "Set Reading Count Threshold"
+    spec_section: "§12"
+  - command: "DATA:POINts:EVENt:THReshold?"
+    status: PUBLIC
+    keyword: "Set Reading Count Threshold"
+    spec_section: "§12"
+  - command: "DATA:POINts?"
+    status: PUBLIC
+    keyword: "Get Reading Count"
+    spec_section: "§12"
+  - command: "DATA:REMove?"
+    status: PUBLIC
+    keyword: "Clear Reading Memory"
+    spec_section: "§12, §22.3"
+    note: "DESTRUCTIVE READ - removes n readings; retry prohibited"
+  - command: "DIAGnostic:DMM:CYCLes:CLEar"
+    status: EXCLUDED
+    spec_section: "§19"
+    note: "counter reset"
+  - command: "DIAGnostic:DMM:CYCLes?"
+    status: UNKNOWN
+    spec_section: "§19, OQ-5"
+    note: "read-only maintenance counter; exposure is a project decision"
+  - command: "DIAGnostic:PEEK:SLOT:DATA?"
+    status: EXCLUDED
+    spec_section: "§19"
+    note: "engineering/service read; counterpart of DIAGnostic:POKE"
+  - command: "DIAGnostic:POKE:SLOT:DATA"
+    status: EXCLUDED
+    spec_section: "§19"
+    note: "engineering/service operation"
+  - command: "DIAGnostic:RELay:CYCLes:CLEar"
+    status: EXCLUDED
+    spec_section: "§19"
+    note: "relay-cycle counter reset"
+  - command: "DIAGnostic:RELay:CYCLes?"
+    status: UNKNOWN
+    spec_section: "§19, OQ-5"
+    note: "read-only relay maintenance counter; exposure pending"
+  - command: "DISPlay"
+    status: PUBLIC
+    keyword: "Set Display State"
+    spec_section: "§9"
+    note: "low risk; front-panel only"
+  - command: "DISPlay:TEXT"
+    status: PUBLIC
+    keyword: "Set Display Text"
+    spec_section: "§9"
+  - command: "DISPlay:TEXT:CLEar"
+    status: PUBLIC
+    keyword: "Clear Display Text"
+    spec_section: "§9"
+  - command: "DISPlay:TEXT?"
+    status: PUBLIC
+    keyword: "Set Display Text"
+    spec_section: "§9"
+  - command: "DISPlay?"
+    status: PUBLIC
+    keyword: "Set Display State"
+    spec_section: "§9"
+    note: "low risk; front-panel only"
+  - command: "FETCh?"
+    status: PUBLIC
+    keyword: "Fetch Readings"
+    spec_section: "§12"
+    note: "non-destructive; readings remain in memory"
+  - command: "FORMat:READing:ALARm"
+    status: PUBLIC
+    keyword: "Set Reading Format"
+    spec_section: "§12"
+  - command: "FORMat:READing:ALARm?"
+    status: PUBLIC
+    keyword: "Set Reading Format"
+    spec_section: "§12"
+  - command: "FORMat:READing:CHANnel"
+    status: PUBLIC
+    keyword: "Set Reading Format"
+    spec_section: "§12"
+  - command: "FORMat:READing:CHANnel?"
+    status: PUBLIC
+    keyword: "Set Reading Format"
+    spec_section: "§12"
+  - command: "FORMat:READing:TIME"
+    status: PUBLIC
+    keyword: "Set Reading Format"
+    spec_section: "§12"
+  - command: "FORMat:READing:TIME:TYPE"
+    status: PUBLIC
+    keyword: "Set Reading Format"
+    spec_section: "§12"
+  - command: "FORMat:READing:TIME:TYPE?"
+    status: PUBLIC
+    keyword: "Set Reading Format"
+    spec_section: "§12"
+  - command: "FORMat:READing:TIME?"
+    status: PUBLIC
+    keyword: "Set Reading Format"
+    spec_section: "§12"
+  - command: "FORMat:READing:UNIT"
+    status: PUBLIC
+    keyword: "Set Reading Format"
+    spec_section: "§12"
+  - command: "FORMat:READing:UNIT?"
+    status: PUBLIC
+    keyword: "Set Reading Format"
+    spec_section: "§12"
+  - command: "INITiate"
+    status: PUBLIC
+    keyword: "Initiate Scan"
+    spec_section: "§12"
+  - command: "INPut:IMPedance:AUTO"
+    status: PUBLIC
+    keyword: "Configure DC Voltage"
+    spec_section: "§11"
+    note: "input impedance option on DCV"
+  - command: "INPut:IMPedance:AUTO?"
+    status: PUBLIC
+    keyword: "Configure DC Voltage"
+    spec_section: "§11"
+    note: "input impedance option on DCV"
   - command: "INSTrument:DMM"
     status: PUBLIC
     keyword: "Set Internal DMM State"
@@ -316,19 +476,34 @@ commands:
     keyword: "Get Internal DMM State"
     spec_section: "§4.4, §6"
     note: "discovery mechanism for the DMM capability gate"
-  - command: "LXI:IDENtify[:STATe]"
+  - command: "INSTrument:DMM?"
+    status: PUBLIC
+    keyword: "Set Internal DMM State"
+    spec_section: "§4.4"
+    note: "enables/disables the internal DMM"
+  - command: "LXI:IDENtify[:STATE]"
     status: PUBLIC
     keyword: "Set LXI Identify"
     spec_section: "§18.1"
     note: "34972A only; model-gated"
-  - command: "LXI:RESet"
-    status: EXCLUDED
+  - command: "LXI:IDENtify[:STATE]?"
+    status: PUBLIC
+    keyword: "Set LXI Identify"
     spec_section: "§18.1"
-    note: "resets LAN settings; severs the transport delivering it"
+    note: "34972A only; model-gated"
   - command: "LXI:RESTart"
     status: EXCLUDED
     spec_section: "§18.1"
     note: "restarts LAN; severs the transport delivering it"
+  - command: "LXI:RESet"
+    status: EXCLUDED
+    spec_section: "§18.1"
+    note: "resets LAN settings; severs the transport delivering it"
+  - command: "MEASure:CURRent:AC?"
+    status: PUBLIC
+    keyword: "Measure AC Current"
+    spec_section: "§11.3"
+    note: "34901A ch 21-22 only"
   - command: "MEASure:CURRent:DC?"
     status: PUBLIC
     keyword: "Measure DC Current"
@@ -339,16 +514,25 @@ commands:
     keyword: "Read Digital Byte"
     spec_section: "§16.1"
     note: "WORD form in same family"
-  - command: "MEASure:PERiod?"
+  - command: "MEASure:FREQuency?"
     status: PUBLIC
-    keyword: "Measure Period"
+    keyword: "Measure Frequency"
     spec_section: "§11"
-    note: "FREQuency form in same family"
   - command: "MEASure:FRESistance?"
     status: PUBLIC
     keyword: "Measure 4 Wire Resistance"
     spec_section: "§14.1"
     note: "RESistance form in same family"
+  - command: "MEASure:PERiod?"
+    status: PUBLIC
+    keyword: "Measure Period"
+    spec_section: "§11"
+    note: "FREQuency form in same family"
+  - command: "MEASure:RESistance?"
+    status: PUBLIC
+    keyword: "Measure Resistance"
+    spec_section: "§11"
+    note: "2-wire"
   - command: "MEASure:TEMPerature?"
     status: PUBLIC
     keyword: "Measure Temperature"
@@ -357,6 +541,10 @@ commands:
     status: PUBLIC
     keyword: "Read Totalizer"
     spec_section: "§16.3"
+  - command: "MEASure:VOLTage:AC?"
+    status: PUBLIC
+    keyword: "Measure AC Voltage"
+    spec_section: "§11"
   - command: "MEASure:VOLTage:DC?"
     status: PUBLIC
     keyword: "Measure DC Voltage"
@@ -374,7 +562,15 @@ commands:
     status: UNKNOWN
     spec_section: "§23"
     note: "instrument state storage; decision pending"
+  - command: "MEMory:STATe:NAME?"
+    status: UNKNOWN
+    spec_section: "§23"
+    note: "instrument state storage; decision pending"
   - command: "MEMory:STATe:RECall:AUTO"
+    status: UNKNOWN
+    spec_section: "§23"
+    note: "power-on state recall; persistent setting"
+  - command: "MEMory:STATe:RECall:AUTO?"
     status: UNKNOWN
     spec_section: "§23"
     note: "power-on state recall; persistent setting"
@@ -392,7 +588,17 @@ commands:
     keyword: "Configure USB Log Format"
     spec_section: "§18.2"
     note: "34972A only"
+  - command: "MMEMory:FORMat:READing:CSEParator?"
+    status: PUBLIC
+    keyword: "Configure USB Log Format"
+    spec_section: "§18.2"
+    note: "34972A only"
   - command: "MMEMory:FORMat:READing:RLIMit"
+    status: PUBLIC
+    keyword: "Configure USB Log Format"
+    spec_section: "§18.2"
+    note: "34972A only"
+  - command: "MMEMory:FORMat:READing:RLIMit?"
     status: PUBLIC
     keyword: "Configure USB Log Format"
     spec_section: "§18.2"
@@ -411,6 +617,11 @@ commands:
     keyword: "Set Scan Logging To USB"
     spec_section: "§18.2"
     note: "34972A only"
+  - command: "MMEMory:LOG[:ENABle]?"
+    status: PUBLIC
+    keyword: "Set Scan Logging To USB"
+    spec_section: "§18.2"
+    note: "34972A only"
   - command: "OUTPut:ALARm:CLEar:ALL"
     status: PUBLIC
     keyword: "Clear Alarm"
@@ -419,15 +630,37 @@ commands:
     status: PUBLIC
     keyword: "Configure Alarm Output"
     spec_section: "§17"
+  - command: "OUTPut:ALARm:MODE?"
+    status: PUBLIC
+    keyword: "Configure Alarm Output"
+    spec_section: "§17"
   - command: "OUTPut:ALARm:SLOPe"
     status: PUBLIC
     keyword: "Configure Alarm Output"
     spec_section: "§17"
+  - command: "OUTPut:ALARm:SLOPe?"
+    status: PUBLIC
+    keyword: "Configure Alarm Output"
+    spec_section: "§17"
+  - command: "OUTPut:ALARm{1|2|3|4}:CLEar"
+    status: PUBLIC
+    keyword: "Clear Alarm"
+    spec_section: "§17"
+    note: "per-alarm form"
   - command: "OUTPut:ALARm{1|2|3|4}:SOURce"
     status: PUBLIC
     keyword: "Configure Alarm Output"
     spec_section: "§17"
+  - command: "OUTPut:ALARm{1|2|3|4}:SOURce?"
+    status: PUBLIC
+    keyword: "Configure Alarm Output"
+    spec_section: "§17"
   - command: "ROUTe:CHANnel:ADVance:SOURce"
+    status: PUBLIC
+    keyword: "Configure Trigger Source"
+    spec_section: "§12"
+    note: "channel-advance source"
+  - command: "ROUTe:CHANnel:ADVance:SOURce?"
     status: PUBLIC
     keyword: "Configure Trigger Source"
     spec_section: "§12"
@@ -440,7 +673,20 @@ commands:
     status: PUBLIC
     keyword: "Set Channel Delay"
     spec_section: "§12"
+  - command: "ROUTe:CHANnel:DELay:AUTO?"
+    status: PUBLIC
+    keyword: "Set Channel Delay"
+    spec_section: "§12"
+  - command: "ROUTe:CHANnel:DELay?"
+    status: PUBLIC
+    keyword: "Set Channel Delay"
+    spec_section: "§12"
   - command: "ROUTe:CHANnel:FWIRe"
+    status: PUBLIC
+    keyword: "Set Four Wire Mode"
+    spec_section: "§14.1"
+    note: "pairing n+10 (34901A) / n+8 (34902A)"
+  - command: "ROUTe:CHANnel:FWIRe?"
     status: PUBLIC
     keyword: "Set Four Wire Mode"
     spec_section: "§14.1"
@@ -455,6 +701,11 @@ commands:
     keyword: "Close Channel Exclusive"
     spec_section: "§15.2"
     note: "opens all others on the module first"
+  - command: "ROUTe:CLOSe?"
+    status: PUBLIC
+    keyword: "Close Channel / Close Channels"
+    spec_section: "§15.2"
+    note: "topology-validated before transmission"
   - command: "ROUTe:DONE?"
     status: INTERNAL
     spec_section: "§15"
@@ -472,7 +723,20 @@ commands:
     status: PUBLIC
     keyword: "Set Monitor State"
     spec_section: "§12.1"
+  - command: "ROUTe:MONitor:STATe?"
+    status: PUBLIC
+    keyword: "Set Monitor State"
+    spec_section: "§12.1"
+  - command: "ROUTe:MONitor?"
+    status: PUBLIC
+    keyword: "Configure Channel Monitor"
+    spec_section: "§12.1"
+    note: "contends with scan for the internal DMM"
   - command: "ROUTe:OPEN"
+    status: PUBLIC
+    keyword: "Open Channel / Open Channels"
+    spec_section: "§15.2"
+  - command: "ROUTe:OPEN?"
     status: PUBLIC
     keyword: "Open Channel / Open Channels"
     spec_section: "§15.2"
@@ -484,193 +748,15 @@ commands:
     status: PUBLIC
     keyword: "Get Scan List Size"
     spec_section: "§12"
-  - command: "[SENSe:]CURRent:AC:BANDwidth"
+  - command: "ROUTe:SCAN?"
     status: PUBLIC
-    keyword: "Configure AC Current"
-    spec_section: "§11.3"
-    note: "34901A ch 21-22 only"
-  - command: "[SENSe:]CURRent:DC:RANGe"
-    status: PUBLIC
-    keyword: "Configure DC Current"
-    spec_section: "§11.3"
-    note: "34901A ch 21-22 only"
-  - command: "[SENSe:]CURRent:DC:RANGe:AUTO"
-    status: PUBLIC
-    keyword: "Configure DC Current"
-    spec_section: "§11.3"
-    note: "34901A ch 21-22 only"
-  - command: "[SENSe:]CURRent:DC:RESolution"
-    status: PUBLIC
-    keyword: "Configure DC Current"
-    spec_section: "§11.3"
-    note: "34901A ch 21-22 only"
-  - command: "[SENSe:]CURRent:DC:APERture"
-    status: PUBLIC
-    keyword: "Configure DC Current"
-    spec_section: "§11.3"
-    note: "34901A ch 21-22 only"
-  - command: "[SENSe:]CURRent:DC:NPLC"
-    status: PUBLIC
-    keyword: "Configure DC Current"
-    spec_section: "§11.3"
-    note: "34901A ch 21-22 only"
-  - command: "[SENSe:]DIGital:DATA:{BYTE|WORD}?"
-    status: PUBLIC
-    keyword: "Read Digital Byte / Read Digital Word"
-    spec_section: "§16.1"
-  - command: "[SENSe:]PERiod:APERture"
-    status: PUBLIC
-    keyword: "Configure Period"
-    spec_section: "§11"
-  - command: "[SENSe:]FREQuency:RANGe:LOWer"
-    status: PUBLIC
-    keyword: "Configure Frequency"
-    spec_section: "§11"
-  - command: "[SENSe:]PERiod:VOLTage:RANGe"
-    status: PUBLIC
-    keyword: "Configure Period"
-    spec_section: "§11"
-  - command: "[SENSe:]PERiod:VOLTage:RANGe:AUTO"
-    status: PUBLIC
-    keyword: "Configure Period"
-    spec_section: "§11"
-  - command: "[SENSe:]FRESistance:APERture"
-    status: PUBLIC
-    keyword: "Configure 4 Wire Resistance"
-    spec_section: "§14.1"
-  - command: "[SENSe:]FRESistance:NPLC"
-    status: PUBLIC
-    keyword: "Configure 4 Wire Resistance"
-    spec_section: "§14.1"
-  - command: "[SENSe:]FRESistance:OCOMpensated"
-    status: PUBLIC
-    keyword: "Configure 4 Wire Resistance"
-    spec_section: "§14.1"
-    note: "offset compensation"
-  - command: "[SENSe:]FRESistance:RANGe"
-    status: PUBLIC
-    keyword: "Configure 4 Wire Resistance"
-    spec_section: "§14.1"
-    note: "RESistance form in same family"
-  - command: "[SENSe:]FRESistance:RANGe:AUTO"
-    status: PUBLIC
-    keyword: "Configure 4 Wire Resistance"
-    spec_section: "§14.1"
-  - command: "[SENSe:]FRESistance:RESolution"
-    status: PUBLIC
-    keyword: "Configure 4 Wire Resistance"
-    spec_section: "§14.1"
-  - command: "[SENSe:]FUNCtion"
-    status: PUBLIC
-    keyword: "Set Channel Function / Get Channel Function"
-    spec_section: "§11"
-  - command: "[SENSe:]TEMPerature:APERture"
-    status: PUBLIC
-    keyword: "Configure Temperature"
-    spec_section: "§14"
-  - command: "[SENSe:]TEMPerature:NPLC"
-    status: PUBLIC
-    keyword: "Configure Temperature"
-    spec_section: "§14"
-  - command: "[SENSe:]TEMPerature:RJUNction?"
-    status: PUBLIC
-    keyword: "Get Reference Junction"
-    spec_section: "§14"
-  - command: "[SENSe:]TEMPerature:TRANsducer:FRTD:RESistance[:REFerence]"
-    status: PUBLIC
-    keyword: "Configure RTD"
-    spec_section: "§14"
-    note: "R0 reference resistance"
-  - command: "[SENSe:]TEMPerature:TRANsducer:FRTD:TYPE"
-    status: PUBLIC
-    keyword: "Configure RTD"
-    spec_section: "§14"
-    note: "4-wire RTD; RTD form in same family"
-  - command: "[SENSe:]TEMPerature:TRANsducer:TCouple:CHECk"
-    status: PUBLIC
-    keyword: "Configure Thermocouple"
-    spec_section: "§14"
-    note: "thermocouple check"
-  - command: "[SENSe:]TEMPerature:TRANsducer:TCouple:RJUNction"
-    status: PUBLIC
-    keyword: "Configure Thermocouple"
-    spec_section: "§14"
-    note: "fixed reference-junction value"
-  - command: "[SENSe:]TEMPerature:TRANsducer:TCouple:RJUNction:TYPE"
-    status: PUBLIC
-    keyword: "Configure Thermocouple"
-    spec_section: "§14"
-    note: "reference-junction type"
-  - command: "[SENSe:]TEMPerature:TRANsducer:TCouple:TYPE"
-    status: PUBLIC
-    keyword: "Configure Thermocouple"
-    spec_section: "§14"
-  - command: "[SENSe:]TEMPerature:TRANsducer:THERmistor:TYPE"
-    status: PUBLIC
-    keyword: "Configure Thermistor"
-    spec_section: "§14"
-  - command: "[SENSe:]TEMPerature:TRANsducer:TYPE"
-    status: PUBLIC
-    keyword: "Configure Temperature"
-    spec_section: "§14"
-    note: "selects TC / RTD / FRTD / thermistor"
-  - command: "[SENSe:]TOTalize:CLEar:IMMediate"
-    status: PUBLIC
-    keyword: "Clear Totalizer"
-    spec_section: "§16.3"
-  - command: "[SENSe:]TOTalize:DATA?"
-    status: PUBLIC
-    keyword: "Read Totalizer"
-    spec_section: "§16.3"
-  - command: "[SENSe:]TOTalize:SLOPe"
-    status: PUBLIC
-    keyword: "Set Totalizer Edge / Get Totalizer Edge"
-    spec_section: "§16.3"
-  - command: "[SENSe:]TOTalize:STARt[:IMMediate]"
-    status: PUBLIC
-    keyword: "Start Totalizer"
-    spec_section: "§16.3"
-  - command: "[SENSe:]TOTalize:STOP[:IMMediate]"
-    status: PUBLIC
-    keyword: "Stop Totalizer"
-    spec_section: "§16.3"
-  - command: "[SENSe:]TOTalize:TYPE"
-    status: PUBLIC
-    keyword: "Set Totalizer Read Mode"
-    spec_section: "§16.3"
-    note: "read-and-reset vs read-only"
-  - command: "[SENSe:]VOLTage:AC:BANDwidth"
-    status: PUBLIC
-    keyword: "Configure AC Voltage"
-    spec_section: "§11"
-  - command: "[SENSe:]VOLTage:DC:RANGe"
-    status: PUBLIC
-    keyword: "Configure DC Voltage"
-    spec_section: "§11"
-    note: "AC form in same family"
-  - command: "[SENSe:]VOLTage:DC:RANGe:AUTO"
-    status: PUBLIC
-    keyword: "Configure DC Voltage"
-    spec_section: "§11"
-  - command: "[SENSe:]VOLTage:DC:APERture"
-    status: PUBLIC
-    keyword: "Configure DC Voltage"
-    spec_section: "§11"
-    note: "integration aperture"
-  - command: "[SENSe:]VOLTage:DC:NPLC"
-    status: PUBLIC
-    keyword: "Configure DC Voltage"
-    spec_section: "§11"
-    note: "integration time in PLCs"
-  - command: "[SENSe:]VOLTage:DC:RESolution"
-    status: PUBLIC
-    keyword: "Configure DC Voltage"
-    spec_section: "§11"
-  - command: "[SENSe:]ZERO:AUTO"
-    status: PUBLIC
-    keyword: "Set Autozero"
-    spec_section: "§11"
+    keyword: "Configure Scan List / Get Scan List"
+    spec_section: "§12"
   - command: "SOURce:DIGital:DATA[:{BYTE|WORD}]"
+    status: PUBLIC
+    keyword: "Write Digital Byte / Write Digital Word"
+    spec_section: "§16.2"
+  - command: "SOURce:DIGital:DATA[:{BYTE|WORD}]?"
     status: PUBLIC
     keyword: "Write Digital Byte / Write Digital Word"
     spec_section: "§16.2"
@@ -683,11 +769,20 @@ commands:
     keyword: "Set DAC Voltage / Get DAC Voltage"
     spec_section: "§16.4"
     note: "-12 V to +12 V, 0.001 V resolution"
+  - command: "SOURce:VOLTage?"
+    status: PUBLIC
+    keyword: "Set DAC Voltage / Get DAC Voltage"
+    spec_section: "§16.4"
+    note: "-12 V to +12 V, 0.001 V resolution"
   - command: "STATus:ALARm:CONDition?"
     status: PUBLIC
     keyword: "Get Alarm State"
     spec_section: "§17"
   - command: "STATus:ALARm:ENABle"
+    status: INTERNAL
+    spec_section: "§17"
+    note: "status enable plumbing"
+  - command: "STATus:ALARm:ENABle?"
     status: INTERNAL
     spec_section: "§17"
     note: "status enable plumbing"
@@ -700,6 +795,10 @@ commands:
     spec_section: "§9"
     note: "status register plumbing"
   - command: "STATus:OPERation:ENABle"
+    status: INTERNAL
+    spec_section: "§9"
+    note: "status register plumbing"
+  - command: "STATus:OPERation:ENABle?"
     status: INTERNAL
     spec_section: "§9"
     note: "status register plumbing"
@@ -719,10 +818,18 @@ commands:
     status: INTERNAL
     spec_section: "§9"
     note: "status register plumbing"
+  - command: "STATus:QUEStionable:ENABle?"
+    status: INTERNAL
+    spec_section: "§9"
+    note: "status register plumbing"
   - command: "STATus:QUEStionable[:EVENt]?"
     status: INTERNAL
     spec_section: "§9"
     note: "status register plumbing"
+  - command: "SYSTem:ALARm?"
+    status: PUBLIC
+    keyword: "Get Alarm State"
+    spec_section: "§17"
   - command: "SYSTem:COMMunicate:LAN:CONTrol?"
     status: PUBLIC
     keyword: "Get LAN Configuration"
@@ -732,7 +839,15 @@ commands:
     status: EXCLUDED
     spec_section: "§18.1"
     note: "severs the transport delivering it; §22.2 reconciliation impossible"
+  - command: "SYSTem:COMMunicate:LAN:DHCP?"
+    status: EXCLUDED
+    spec_section: "§18.1"
+    note: "severs the transport delivering it; §22.2 reconciliation impossible"
   - command: "SYSTem:COMMunicate:LAN:DNS"
+    status: EXCLUDED
+    spec_section: "§18.1"
+    note: "LAN configuration write"
+  - command: "SYSTem:COMMunicate:LAN:DNS?"
     status: EXCLUDED
     spec_section: "§18.1"
     note: "LAN configuration write"
@@ -745,11 +860,23 @@ commands:
     status: EXCLUDED
     spec_section: "§18.1"
     note: "LAN configuration write"
+  - command: "SYSTem:COMMunicate:LAN:GATEway?"
+    status: EXCLUDED
+    spec_section: "§18.1"
+    note: "LAN configuration write"
   - command: "SYSTem:COMMunicate:LAN:HOSTname"
     status: EXCLUDED
     spec_section: "§18.1"
     note: "LAN configuration write"
+  - command: "SYSTem:COMMunicate:LAN:HOSTname?"
+    status: EXCLUDED
+    spec_section: "§18.1"
+    note: "LAN configuration write"
   - command: "SYSTem:COMMunicate:LAN:IPADdress"
+    status: EXCLUDED
+    spec_section: "§18.1"
+    note: "LAN configuration write"
+  - command: "SYSTem:COMMunicate:LAN:IPADdress?"
     status: EXCLUDED
     spec_section: "§18.1"
     note: "LAN configuration write"
@@ -762,7 +889,23 @@ commands:
     status: EXCLUDED
     spec_section: "§18.1"
     note: "LAN configuration write"
+  - command: "SYSTem:COMMunicate:LAN:SMASk?"
+    status: EXCLUDED
+    spec_section: "§18.1"
+    note: "LAN configuration write"
+  - command: "SYSTem:COMMunicate:LAN:TELNet:PROMpt"
+    status: EXCLUDED
+    spec_section: "§18.1"
+    note: "LAN configuration write"
+  - command: "SYSTem:COMMunicate:LAN:TELNet:PROMpt?"
+    status: EXCLUDED
+    spec_section: "§18.1"
+    note: "LAN configuration write"
   - command: "SYSTem:COMMunicate:LAN:TELNet:WMESsage"
+    status: EXCLUDED
+    spec_section: "§18.1"
+    note: "LAN configuration write"
+  - command: "SYSTem:COMMunicate:LAN:TELNet:WMESsage?"
     status: EXCLUDED
     spec_section: "§18.1"
     note: "LAN configuration write"
@@ -770,10 +913,6 @@ commands:
     status: EXCLUDED
     spec_section: "§18.1"
     note: "commits LAN changes; severs the transport"
-  - command: "SYSTem:ALARm?"
-    status: PUBLIC
-    keyword: "Get Alarm State"
-    spec_section: "§17"
   - command: "SYSTem:CPON"
     status: PUBLIC
     keyword: "Preset Module"
@@ -788,6 +927,10 @@ commands:
     status: PUBLIC
     keyword: "Set Instrument Date"
     spec_section: "§9"
+  - command: "SYSTem:DATE?"
+    status: PUBLIC
+    keyword: "Set Instrument Date"
+    spec_section: "§9"
   - command: "SYSTem:ERRor?"
     status: PUBLIC
     keyword: "Get Device Error"
@@ -797,7 +940,15 @@ commands:
     status: EXCLUDED
     spec_section: "§19"
     note: "enables/disables a remote interface; can sever communication"
+  - command: "SYSTem:INTerface?"
+    status: EXCLUDED
+    spec_section: "§19"
+    note: "enables/disables a remote interface; can sever communication"
   - command: "SYSTem:LANGuage"
+    status: EXCLUDED
+    spec_section: "§19"
+    note: "changes command language; breaks the protocol layer"
+  - command: "SYSTem:LANGuage?"
     status: EXCLUDED
     spec_section: "§19"
     note: "changes command language; breaks the protocol layer"
@@ -805,10 +956,6 @@ commands:
     status: PUBLIC
     keyword: "Get Line Frequency"
     spec_section: "§9"
-  - command: "SYSTEM:RWLock"
-    status: INTERNAL
-    spec_section: "§5.2"
-    note: "remote/local lockout"
   - command: "SYSTem:LOCK:NAME?"
     status: PUBLIC
     keyword: "Get Instrument Lock Name"
@@ -826,11 +973,23 @@ commands:
     keyword: "Acquire Instrument Lock"
     spec_section: "§5.2"
     note: "multi-session locking model"
+  - command: "SYSTem:LOCal"
+    status: INTERNAL
+    spec_section: "§5.2"
+    note: "RS-232 front-panel lockout; paired with SYSTem:REMote"
   - command: "SYSTem:PRESet"
     status: PUBLIC
     keyword: "Preset Device"
     spec_section: "§9.1"
     note: "HIGH RISK: identical module hardware effect to *RST"
+  - command: "SYSTem:REMote"
+    status: INTERNAL
+    spec_section: "§5.2"
+    note: "RS-232 front-panel lockout; paired with SYSTem:LOCal"
+  - command: "SYSTem:RWLock"
+    status: INTERNAL
+    spec_section: "§5.2"
+    note: "remote/local lockout"
   - command: "SYSTem:SECurity:IMMediate"
     status: EXCLUDED
     spec_section: "§19"
@@ -843,6 +1002,10 @@ commands:
     status: PUBLIC
     keyword: "Get Scan Start Time"
     spec_section: "§12"
+  - command: "SYSTem:TIME?"
+    status: PUBLIC
+    keyword: "Set Instrument Time"
+    spec_section: "§9"
   - command: "SYSTem:VERSion?"
     status: PUBLIC
     keyword: "Get SCPI Version"
@@ -851,7 +1014,15 @@ commands:
     status: PUBLIC
     keyword: "Set Trigger Count / Get Trigger Count"
     spec_section: "§12"
+  - command: "TRIGger:COUNt?"
+    status: PUBLIC
+    keyword: "Set Trigger Count / Get Trigger Count"
+    spec_section: "§12"
   - command: "TRIGger:SOURce"
+    status: PUBLIC
+    keyword: "Configure Trigger Source / Get Trigger Source"
+    spec_section: "§12"
+  - command: "TRIGger:SOURce?"
     status: PUBLIC
     keyword: "Configure Trigger Source / Get Trigger Source"
     spec_section: "§12"
@@ -859,3 +1030,523 @@ commands:
     status: PUBLIC
     keyword: "Set Trigger Timer / Get Trigger Timer"
     spec_section: "§12"
+  - command: "TRIGger:TIMer?"
+    status: PUBLIC
+    keyword: "Set Trigger Timer / Get Trigger Timer"
+    spec_section: "§12"
+  - command: "UNIT:TEMPerature"
+    status: PUBLIC
+    keyword: "Set Temperature Units"
+    spec_section: "§14"
+  - command: "UNIT:TEMPerature?"
+    status: PUBLIC
+    keyword: "Set Temperature Units"
+    spec_section: "§14"
+  - command: "[SENSe:]CURRent:AC:BANDwidth"
+    status: PUBLIC
+    keyword: "Configure AC Current"
+    spec_section: "§11.3"
+    note: "34901A ch 21-22 only"
+  - command: "[SENSe:]CURRent:AC:BANDwidth?"
+    status: PUBLIC
+    keyword: "Configure AC Current"
+    spec_section: "§11.3"
+    note: "34901A ch 21-22 only"
+  - command: "[SENSe:]CURRent:AC:RANGe"
+    status: PUBLIC
+    keyword: "Configure AC Current"
+    spec_section: "§11.3"
+    note: "34901A ch 21-22 only"
+  - command: "[SENSe:]CURRent:AC:RANGe:AUTO"
+    status: PUBLIC
+    keyword: "Configure AC Current"
+    spec_section: "§11.3"
+    note: "34901A ch 21-22 only"
+  - command: "[SENSe:]CURRent:AC:RANGe:AUTO?"
+    status: PUBLIC
+    keyword: "Configure AC Current"
+    spec_section: "§11.3"
+    note: "34901A ch 21-22 only"
+  - command: "[SENSe:]CURRent:AC:RANGe?"
+    status: PUBLIC
+    keyword: "Configure AC Current"
+    spec_section: "§11.3"
+    note: "34901A ch 21-22 only"
+  - command: "[SENSe:]CURRent:AC:RESolution"
+    status: PUBLIC
+    keyword: "Configure AC Current"
+    spec_section: "§11.3"
+    note: "34901A ch 21-22 only"
+  - command: "[SENSe:]CURRent:AC:RESolution?"
+    status: PUBLIC
+    keyword: "Configure AC Current"
+    spec_section: "§11.3"
+    note: "34901A ch 21-22 only"
+  - command: "[SENSe:]CURRent:DC:APERture"
+    status: PUBLIC
+    keyword: "Configure DC Current"
+    spec_section: "§11.3"
+    note: "34901A ch 21-22 only"
+  - command: "[SENSe:]CURRent:DC:APERture?"
+    status: PUBLIC
+    keyword: "Configure DC Current"
+    spec_section: "§11.3"
+    note: "34901A ch 21-22 only"
+  - command: "[SENSe:]CURRent:DC:NPLC"
+    status: PUBLIC
+    keyword: "Configure DC Current"
+    spec_section: "§11.3"
+    note: "34901A ch 21-22 only"
+  - command: "[SENSe:]CURRent:DC:NPLC?"
+    status: PUBLIC
+    keyword: "Configure DC Current"
+    spec_section: "§11.3"
+    note: "34901A ch 21-22 only"
+  - command: "[SENSe:]CURRent:DC:RANGe"
+    status: PUBLIC
+    keyword: "Configure DC Current"
+    spec_section: "§11.3"
+    note: "34901A ch 21-22 only"
+  - command: "[SENSe:]CURRent:DC:RANGe:AUTO"
+    status: PUBLIC
+    keyword: "Configure DC Current"
+    spec_section: "§11.3"
+    note: "34901A ch 21-22 only"
+  - command: "[SENSe:]CURRent:DC:RANGe:AUTO?"
+    status: PUBLIC
+    keyword: "Configure DC Current"
+    spec_section: "§11.3"
+    note: "34901A ch 21-22 only"
+  - command: "[SENSe:]CURRent:DC:RANGe?"
+    status: PUBLIC
+    keyword: "Configure DC Current"
+    spec_section: "§11.3"
+    note: "34901A ch 21-22 only"
+  - command: "[SENSe:]CURRent:DC:RESolution"
+    status: PUBLIC
+    keyword: "Configure DC Current"
+    spec_section: "§11.3"
+    note: "34901A ch 21-22 only"
+  - command: "[SENSe:]CURRent:DC:RESolution?"
+    status: PUBLIC
+    keyword: "Configure DC Current"
+    spec_section: "§11.3"
+    note: "34901A ch 21-22 only"
+  - command: "[SENSe:]DIGital:DATA:{BYTE|WORD}?"
+    status: PUBLIC
+    keyword: "Read Digital Byte / Read Digital Word"
+    spec_section: "§16.1"
+  - command: "[SENSe:]FREQuency:APERture"
+    status: PUBLIC
+    keyword: "Configure Frequency"
+    spec_section: "§11"
+    note: "frequency family"
+  - command: "[SENSe:]FREQuency:APERture?"
+    status: PUBLIC
+    keyword: "Configure Frequency"
+    spec_section: "§11"
+    note: "frequency family"
+  - command: "[SENSe:]FREQuency:RANGe:LOWer"
+    status: PUBLIC
+    keyword: "Configure Frequency"
+    spec_section: "§11"
+  - command: "[SENSe:]FREQuency:RANGe:LOWer?"
+    status: PUBLIC
+    keyword: "Configure Frequency"
+    spec_section: "§11"
+  - command: "[SENSe:]FREQuency:VOLTage:RANGe"
+    status: PUBLIC
+    keyword: "Configure Frequency"
+    spec_section: "§11"
+    note: "frequency family"
+  - command: "[SENSe:]FREQuency:VOLTage:RANGe:AUTO"
+    status: PUBLIC
+    keyword: "Configure Frequency"
+    spec_section: "§11"
+    note: "frequency family"
+  - command: "[SENSe:]FREQuency:VOLTage:RANGe:AUTO?"
+    status: PUBLIC
+    keyword: "Configure Frequency"
+    spec_section: "§11"
+    note: "frequency family"
+  - command: "[SENSe:]FREQuency:VOLTage:RANGe?"
+    status: PUBLIC
+    keyword: "Configure Frequency"
+    spec_section: "§11"
+    note: "frequency family"
+  - command: "[SENSe:]FRESistance:APERture"
+    status: PUBLIC
+    keyword: "Configure 4 Wire Resistance"
+    spec_section: "§14.1"
+  - command: "[SENSe:]FRESistance:APERture?"
+    status: PUBLIC
+    keyword: "Configure 4 Wire Resistance"
+    spec_section: "§14.1"
+  - command: "[SENSe:]FRESistance:NPLC"
+    status: PUBLIC
+    keyword: "Configure 4 Wire Resistance"
+    spec_section: "§14.1"
+  - command: "[SENSe:]FRESistance:NPLC?"
+    status: PUBLIC
+    keyword: "Configure 4 Wire Resistance"
+    spec_section: "§14.1"
+  - command: "[SENSe:]FRESistance:OCOMpensated"
+    status: PUBLIC
+    keyword: "Configure 4 Wire Resistance"
+    spec_section: "§14.1"
+    note: "offset compensation"
+  - command: "[SENSe:]FRESistance:OCOMpensated?"
+    status: PUBLIC
+    keyword: "Configure 4 Wire Resistance"
+    spec_section: "§14.1"
+    note: "offset compensation"
+  - command: "[SENSe:]FRESistance:RANGe"
+    status: PUBLIC
+    keyword: "Configure 4 Wire Resistance"
+    spec_section: "§14.1"
+    note: "RESistance form in same family"
+  - command: "[SENSe:]FRESistance:RANGe:AUTO"
+    status: PUBLIC
+    keyword: "Configure 4 Wire Resistance"
+    spec_section: "§14.1"
+  - command: "[SENSe:]FRESistance:RANGe:AUTO?"
+    status: PUBLIC
+    keyword: "Configure 4 Wire Resistance"
+    spec_section: "§14.1"
+  - command: "[SENSe:]FRESistance:RANGe?"
+    status: PUBLIC
+    keyword: "Configure 4 Wire Resistance"
+    spec_section: "§14.1"
+    note: "RESistance form in same family"
+  - command: "[SENSe:]FRESistance:RESolution"
+    status: PUBLIC
+    keyword: "Configure 4 Wire Resistance"
+    spec_section: "§14.1"
+  - command: "[SENSe:]FRESistance:RESolution?"
+    status: PUBLIC
+    keyword: "Configure 4 Wire Resistance"
+    spec_section: "§14.1"
+  - command: "[SENSe:]FUNCtion"
+    status: PUBLIC
+    keyword: "Set Channel Function / Get Channel Function"
+    spec_section: "§11"
+  - command: "[SENSe:]FUNCtion?"
+    status: PUBLIC
+    keyword: "Set Channel Function / Get Channel Function"
+    spec_section: "§11"
+  - command: "[SENSe:]PERiod:APERture"
+    status: PUBLIC
+    keyword: "Configure Period"
+    spec_section: "§11"
+  - command: "[SENSe:]PERiod:APERture?"
+    status: PUBLIC
+    keyword: "Configure Period"
+    spec_section: "§11"
+  - command: "[SENSe:]PERiod:VOLTage:RANGe"
+    status: PUBLIC
+    keyword: "Configure Period"
+    spec_section: "§11"
+  - command: "[SENSe:]PERiod:VOLTage:RANGe:AUTO"
+    status: PUBLIC
+    keyword: "Configure Period"
+    spec_section: "§11"
+  - command: "[SENSe:]PERiod:VOLTage:RANGe:AUTO?"
+    status: PUBLIC
+    keyword: "Configure Period"
+    spec_section: "§11"
+  - command: "[SENSe:]PERiod:VOLTage:RANGe?"
+    status: PUBLIC
+    keyword: "Configure Period"
+    spec_section: "§11"
+  - command: "[SENSe:]RESistance:APERture"
+    status: PUBLIC
+    keyword: "Configure Resistance"
+    spec_section: "§11"
+    note: "2-wire resistance family"
+  - command: "[SENSe:]RESistance:APERture?"
+    status: PUBLIC
+    keyword: "Configure Resistance"
+    spec_section: "§11"
+    note: "2-wire resistance family"
+  - command: "[SENSe:]RESistance:NPLC"
+    status: PUBLIC
+    keyword: "Configure Resistance"
+    spec_section: "§11"
+    note: "2-wire resistance family"
+  - command: "[SENSe:]RESistance:NPLC?"
+    status: PUBLIC
+    keyword: "Configure Resistance"
+    spec_section: "§11"
+    note: "2-wire resistance family"
+  - command: "[SENSe:]RESistance:OCOMpensated"
+    status: PUBLIC
+    keyword: "Configure Resistance"
+    spec_section: "§11"
+    note: "2-wire resistance family"
+  - command: "[SENSe:]RESistance:OCOMpensated?"
+    status: PUBLIC
+    keyword: "Configure Resistance"
+    spec_section: "§11"
+    note: "2-wire resistance family"
+  - command: "[SENSe:]RESistance:RANGe"
+    status: PUBLIC
+    keyword: "Configure Resistance"
+    spec_section: "§11"
+    note: "2-wire resistance family"
+  - command: "[SENSe:]RESistance:RANGe:AUTO"
+    status: PUBLIC
+    keyword: "Configure Resistance"
+    spec_section: "§11"
+    note: "2-wire resistance family"
+  - command: "[SENSe:]RESistance:RANGe:AUTO?"
+    status: PUBLIC
+    keyword: "Configure Resistance"
+    spec_section: "§11"
+    note: "2-wire resistance family"
+  - command: "[SENSe:]RESistance:RANGe?"
+    status: PUBLIC
+    keyword: "Configure Resistance"
+    spec_section: "§11"
+    note: "2-wire resistance family"
+  - command: "[SENSe:]RESistance:RESolution"
+    status: PUBLIC
+    keyword: "Configure Resistance"
+    spec_section: "§11"
+    note: "2-wire resistance family"
+  - command: "[SENSe:]RESistance:RESolution?"
+    status: PUBLIC
+    keyword: "Configure Resistance"
+    spec_section: "§11"
+    note: "2-wire resistance family"
+  - command: "[SENSe:]TEMPerature:APERture"
+    status: PUBLIC
+    keyword: "Configure Temperature"
+    spec_section: "§14"
+  - command: "[SENSe:]TEMPerature:APERture?"
+    status: PUBLIC
+    keyword: "Configure Temperature"
+    spec_section: "§14"
+  - command: "[SENSe:]TEMPerature:NPLC"
+    status: PUBLIC
+    keyword: "Configure Temperature"
+    spec_section: "§14"
+  - command: "[SENSe:]TEMPerature:NPLC?"
+    status: PUBLIC
+    keyword: "Configure Temperature"
+    spec_section: "§14"
+  - command: "[SENSe:]TEMPerature:RJUNction?"
+    status: PUBLIC
+    keyword: "Get Reference Junction"
+    spec_section: "§14"
+  - command: "[SENSe:]TEMPerature:TRANsducer:FRTD:RESistance[:REFerence]"
+    status: PUBLIC
+    keyword: "Configure RTD"
+    spec_section: "§14"
+    note: "R0 reference resistance"
+  - command: "[SENSe:]TEMPerature:TRANsducer:FRTD:RESistance[:REFerence]?"
+    status: PUBLIC
+    keyword: "Configure RTD"
+    spec_section: "§14"
+    note: "R0 reference resistance"
+  - command: "[SENSe:]TEMPerature:TRANsducer:FRTD:TYPE"
+    status: PUBLIC
+    keyword: "Configure RTD"
+    spec_section: "§14"
+    note: "4-wire RTD; RTD form in same family"
+  - command: "[SENSe:]TEMPerature:TRANsducer:FRTD:TYPE?"
+    status: PUBLIC
+    keyword: "Configure RTD"
+    spec_section: "§14"
+    note: "4-wire RTD; RTD form in same family"
+  - command: "[SENSe:]TEMPerature:TRANsducer:RTD:RESistance[:REFerence]"
+    status: PUBLIC
+    keyword: "Configure RTD"
+    spec_section: "§14"
+    note: "2-wire RTD - R2a: was unbound"
+  - command: "[SENSe:]TEMPerature:TRANsducer:RTD:RESistance[:REFerence]?"
+    status: PUBLIC
+    keyword: "Configure RTD"
+    spec_section: "§14"
+    note: "2-wire RTD - R2a: was unbound"
+  - command: "[SENSe:]TEMPerature:TRANsducer:RTD:TYPE"
+    status: PUBLIC
+    keyword: "Configure RTD"
+    spec_section: "§14"
+    note: "2-wire RTD - R2a: was unbound"
+  - command: "[SENSe:]TEMPerature:TRANsducer:RTD:TYPE?"
+    status: PUBLIC
+    keyword: "Configure RTD"
+    spec_section: "§14"
+    note: "2-wire RTD - R2a: was unbound"
+  - command: "[SENSe:]TEMPerature:TRANsducer:TCouple:CHECk"
+    status: PUBLIC
+    keyword: "Configure Thermocouple"
+    spec_section: "§14"
+    note: "thermocouple check"
+  - command: "[SENSe:]TEMPerature:TRANsducer:TCouple:CHECk?"
+    status: PUBLIC
+    keyword: "Configure Thermocouple"
+    spec_section: "§14"
+    note: "thermocouple check"
+  - command: "[SENSe:]TEMPerature:TRANsducer:TCouple:RJUNction"
+    status: PUBLIC
+    keyword: "Configure Thermocouple"
+    spec_section: "§14"
+    note: "fixed reference-junction value"
+  - command: "[SENSe:]TEMPerature:TRANsducer:TCouple:RJUNction:TYPE"
+    status: PUBLIC
+    keyword: "Configure Thermocouple"
+    spec_section: "§14"
+    note: "reference-junction type"
+  - command: "[SENSe:]TEMPerature:TRANsducer:TCouple:RJUNction:TYPE?"
+    status: PUBLIC
+    keyword: "Configure Thermocouple"
+    spec_section: "§14"
+    note: "reference-junction type"
+  - command: "[SENSe:]TEMPerature:TRANsducer:TCouple:RJUNction?"
+    status: PUBLIC
+    keyword: "Configure Thermocouple"
+    spec_section: "§14"
+    note: "fixed reference-junction value"
+  - command: "[SENSe:]TEMPerature:TRANsducer:TCouple:TYPE"
+    status: PUBLIC
+    keyword: "Configure Thermocouple"
+    spec_section: "§14"
+  - command: "[SENSe:]TEMPerature:TRANsducer:TCouple:TYPE?"
+    status: PUBLIC
+    keyword: "Configure Thermocouple"
+    spec_section: "§14"
+  - command: "[SENSe:]TEMPerature:TRANsducer:THERmistor:TYPE"
+    status: PUBLIC
+    keyword: "Configure Thermistor"
+    spec_section: "§14"
+  - command: "[SENSe:]TEMPerature:TRANsducer:THERmistor:TYPE?"
+    status: PUBLIC
+    keyword: "Configure Thermistor"
+    spec_section: "§14"
+  - command: "[SENSe:]TEMPerature:TRANsducer:TYPE"
+    status: PUBLIC
+    keyword: "Configure Temperature"
+    spec_section: "§14"
+    note: "selects TC / RTD / FRTD / thermistor"
+  - command: "[SENSe:]TEMPerature:TRANsducer:TYPE?"
+    status: PUBLIC
+    keyword: "Configure Temperature"
+    spec_section: "§14"
+    note: "selects TC / RTD / FRTD / thermistor"
+  - command: "[SENSe:]TOTalize:CLEar:IMMediate"
+    status: PUBLIC
+    keyword: "Clear Totalizer"
+    spec_section: "§16.3"
+  - command: "[SENSe:]TOTalize:DATA?"
+    status: PUBLIC
+    keyword: "Read Totalizer"
+    spec_section: "§16.3"
+  - command: "[SENSe:]TOTalize:SLOPe"
+    status: PUBLIC
+    keyword: "Set Totalizer Edge / Get Totalizer Edge"
+    spec_section: "§16.3"
+  - command: "[SENSe:]TOTalize:SLOPe?"
+    status: PUBLIC
+    keyword: "Set Totalizer Edge / Get Totalizer Edge"
+    spec_section: "§16.3"
+  - command: "[SENSe:]TOTalize:STARt:IMMediate"
+    status: PUBLIC
+    keyword: "Start Totalizer"
+    spec_section: "§16.3"
+  - command: "[SENSe:]TOTalize:STOP[:IMMediate]"
+    status: PUBLIC
+    keyword: "Stop Totalizer"
+    spec_section: "§16.3"
+  - command: "[SENSe:]TOTalize:TYPE"
+    status: PUBLIC
+    keyword: "Set Totalizer Read Mode"
+    spec_section: "§16.3"
+    note: "read-and-reset vs read-only"
+  - command: "[SENSe:]TOTalize:TYPE?"
+    status: PUBLIC
+    keyword: "Set Totalizer Read Mode"
+    spec_section: "§16.3"
+    note: "read-and-reset vs read-only"
+  - command: "[SENSe:]VOLTage:AC:BANDwidth"
+    status: PUBLIC
+    keyword: "Configure AC Voltage"
+    spec_section: "§11"
+  - command: "[SENSe:]VOLTage:AC:BANDwidth?"
+    status: PUBLIC
+    keyword: "Configure AC Voltage"
+    spec_section: "§11"
+  - command: "[SENSe:]VOLTage:AC:RANGe"
+    status: PUBLIC
+    keyword: "Configure AC Voltage"
+    spec_section: "§11"
+    note: "AC voltage family"
+  - command: "[SENSe:]VOLTage:AC:RANGe:AUTO"
+    status: PUBLIC
+    keyword: "Configure AC Voltage"
+    spec_section: "§11"
+    note: "AC voltage family"
+  - command: "[SENSe:]VOLTage:AC:RANGe:AUTO?"
+    status: PUBLIC
+    keyword: "Configure AC Voltage"
+    spec_section: "§11"
+    note: "AC voltage family"
+  - command: "[SENSe:]VOLTage:AC:RANGe?"
+    status: PUBLIC
+    keyword: "Configure AC Voltage"
+    spec_section: "§11"
+    note: "AC voltage family"
+  - command: "[SENSe:]VOLTage:DC:APERture"
+    status: PUBLIC
+    keyword: "Configure DC Voltage"
+    spec_section: "§11"
+    note: "integration aperture"
+  - command: "[SENSe:]VOLTage:DC:APERture?"
+    status: PUBLIC
+    keyword: "Configure DC Voltage"
+    spec_section: "§11"
+    note: "integration aperture"
+  - command: "[SENSe:]VOLTage:DC:NPLC"
+    status: PUBLIC
+    keyword: "Configure DC Voltage"
+    spec_section: "§11"
+    note: "integration time in PLCs"
+  - command: "[SENSe:]VOLTage:DC:NPLC?"
+    status: PUBLIC
+    keyword: "Configure DC Voltage"
+    spec_section: "§11"
+    note: "integration time in PLCs"
+  - command: "[SENSe:]VOLTage:DC:RANGe"
+    status: PUBLIC
+    keyword: "Configure DC Voltage"
+    spec_section: "§11"
+    note: "AC form in same family"
+  - command: "[SENSe:]VOLTage:DC:RANGe:AUTO"
+    status: PUBLIC
+    keyword: "Configure DC Voltage"
+    spec_section: "§11"
+  - command: "[SENSe:]VOLTage:DC:RANGe:AUTO?"
+    status: PUBLIC
+    keyword: "Configure DC Voltage"
+    spec_section: "§11"
+  - command: "[SENSe:]VOLTage:DC:RANGe?"
+    status: PUBLIC
+    keyword: "Configure DC Voltage"
+    spec_section: "§11"
+    note: "AC form in same family"
+  - command: "[SENSe:]VOLTage:DC:RESolution"
+    status: PUBLIC
+    keyword: "Configure DC Voltage"
+    spec_section: "§11"
+  - command: "[SENSe:]VOLTage:DC:RESolution?"
+    status: PUBLIC
+    keyword: "Configure DC Voltage"
+    spec_section: "§11"
+  - command: "[SENSe:]ZERO:AUTO"
+    status: PUBLIC
+    keyword: "Set Autozero"
+    spec_section: "§11"
+  - command: "[SENSe:]ZERO:AUTO?"
+    status: PUBLIC
+    keyword: "Set Autozero"
+    spec_section: "§11"
