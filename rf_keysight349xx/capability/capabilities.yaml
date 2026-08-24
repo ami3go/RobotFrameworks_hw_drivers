@@ -1,0 +1,27 @@
+schema_version: "1.0"
+driver: rf_keysight349xx
+capabilities:
+  - capability_id: connection
+    support: implemented
+  - capability_id: identity
+    support: implemented
+  - capability_id: multi_connection
+    support: implemented
+  - capability_id: error_queue
+    support: implemented
+  - capability_id: simulation
+    support: implemented
+  - capability_id: module_discovery
+    support: implemented
+  - capability_id: scpi_version
+    support: implemented
+future_capabilities:
+  - dc_voltage_measurement
+  - ac_voltage_measurement
+  - dc_current_measurement
+  - ac_current_measurement
+  - resistance_measurement
+  - frequency_measurement
+  - temperature_measurement
+  - relay_control
+  - digital_io

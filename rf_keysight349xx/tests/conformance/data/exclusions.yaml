@@ -1,0 +1,4 @@
+schema_version: "1.0"
+exclusions: []
+status: D0_NOT_EXECUTED
+note: Inventory and vectors exist; full Robot Framework RFDS-019 execution is not claimed in this D0 gate.

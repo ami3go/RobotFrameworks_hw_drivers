@@ -1,0 +1,12 @@
+schema_version: "1.0"
+unknowns:
+  - id: UNKNOWN-CONTINUITY-001
+    subject: continuity_measurement
+    blocking: false
+    status: UNKNOWN
+    reason: No continuity command has yet been established from the supplied command reference.
+  - id: UNKNOWN-DIODE-001
+    subject: diode_measurement
+    blocking: false
+    status: UNKNOWN
+    reason: No diode command has yet been established from the supplied command reference.

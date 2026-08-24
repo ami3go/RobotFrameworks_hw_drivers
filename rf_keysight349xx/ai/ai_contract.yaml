@@ -1,0 +1,571 @@
+schema_version: '3.0'
+contract_status: D0_IMPLEMENTATION_CONTRACT
+identity:
+  driver_id: rf_keysight349xx
+  version: 26.1.0
+  release_class: D0
+  models:
+  - 34970A
+  - 34972A
+  robot_library: rf_keysight349xx.library.Keysight349xxLibrary
+mental_model:
+  summary: Three-slot 34970A/34972A family driver; D0 covers lifecycle, identity, modules, SCPI version, and error queue.
+state_machine:
+  states:
+  - disconnected
+  - connecting
+  - connected
+  - faulted
+  initial: disconnected
+resources_consumed_provided:
+  consumed:
+  - explicit transport endpoint per alias
+  provided:
+  - cached identity
+  - cached module inventory
+  - SCPI error queue
+  - protocol trace
+dependencies:
+  runtime:
+  - robotframework>=7,<8
+  optional:
+  - pyvisa>=1.14
+  deviations:
+  - DEV-RFDSCORE-001
+capabilities:
+- keyword: Connect
+  signature: (resource=None, alias='default', timeout_s=None, **options)
+  purpose: 'RFDS public operation: Connect.'
+  inputs: []
+  outputs:
+    type: dict
+  preconditions: []
+  postconditions: []
+  side_effects:
+  - device protocol I/O
+  risk_level: low
+  timing:
+    bounded_by: communication timeout
+  stabilization_delay_s: 0.0
+  retry_policy: No blind retry of state-changing operations.
+  errors:
+  - DriverValidationError
+  - DriverStateError
+  - DriverConnectionError
+  - DriverTimeoutError
+  - DriverProtocolError
+  exclusive_resources:
+  - selected session lock
+  protocol_vector: CONN-001
+- keyword: Disconnect
+  signature: (alias=None)
+  purpose: 'RFDS public operation: Disconnect.'
+  inputs: []
+  outputs:
+    type: None
+  preconditions: []
+  postconditions: []
+  side_effects:
+  - device protocol I/O
+  risk_level: low
+  timing:
+    bounded_by: communication timeout
+  stabilization_delay_s: 0.0
+  retry_policy: No blind retry of state-changing operations.
+  errors:
+  - DriverValidationError
+  - DriverStateError
+  - DriverConnectionError
+  - DriverTimeoutError
+  - DriverProtocolError
+  exclusive_resources:
+  - selected session lock
+  protocol_vector: CONN-002
+- keyword: Is Connected
+  signature: (alias=None)
+  purpose: 'RFDS public operation: Is Connected.'
+  inputs: []
+  outputs:
+    type: bool
+  preconditions: []
+  postconditions: []
+  side_effects: []
+  risk_level: low
+  timing:
+    bounded_by: local execution
+  stabilization_delay_s: 0.0
+  retry_policy: No blind retry of state-changing operations.
+  errors:
+  - DriverValidationError
+  - DriverStateError
+  - DriverConnectionError
+  - DriverTimeoutError
+  - DriverProtocolError
+  exclusive_resources: []
+  protocol_vector: null
+- keyword: Get Connection State
+  signature: (alias=None, refresh=False)
+  purpose: 'RFDS public operation: Get Connection State.'
+  inputs: []
+  outputs:
+    type: dict
+  preconditions: []
+  postconditions: []
+  side_effects:
+  - device protocol I/O
+  risk_level: low
+  timing:
+    bounded_by: communication timeout
+  stabilization_delay_s: 0.0
+  retry_policy: No blind retry of state-changing operations.
+  errors:
+  - DriverValidationError
+  - DriverStateError
+  - DriverConnectionError
+  - DriverTimeoutError
+  - DriverProtocolError
+  exclusive_resources:
+  - selected session lock
+  protocol_vector: CONN-003
+- keyword: Check Communication
+  signature: (alias=None)
+  purpose: 'RFDS public operation: Check Communication.'
+  inputs: []
+  outputs:
+    type: bool
+  preconditions:
+  - connected session required
+  postconditions: []
+  side_effects:
+  - device protocol I/O
+  risk_level: low
+  timing:
+    bounded_by: communication timeout
+  stabilization_delay_s: 0.0
+  retry_policy: No blind retry of state-changing operations.
+  errors:
+  - DriverValidationError
+  - DriverStateError
+  - DriverConnectionError
+  - DriverTimeoutError
+  - DriverProtocolError
+  exclusive_resources:
+  - selected session lock
+  protocol_vector: CONN-004
+- keyword: Get Identity
+  signature: (alias=None, refresh=False)
+  purpose: 'RFDS public operation: Get Identity.'
+  inputs: []
+  outputs:
+    type: str
+  preconditions:
+  - connected session required
+  postconditions: []
+  side_effects:
+  - device protocol I/O
+  risk_level: low
+  timing:
+    bounded_by: communication timeout
+  stabilization_delay_s: 0.0
+  retry_policy: No blind retry of state-changing operations.
+  errors:
+  - DriverValidationError
+  - DriverStateError
+  - DriverConnectionError
+  - DriverTimeoutError
+  - DriverProtocolError
+  exclusive_resources:
+  - selected session lock
+  protocol_vector: IDN-001
+- keyword: Get Driver Information
+  signature: ()
+  purpose: 'RFDS public operation: Get Driver Information.'
+  inputs: []
+  outputs:
+    type: dict
+  preconditions: []
+  postconditions: []
+  side_effects: []
+  risk_level: low
+  timing:
+    bounded_by: local execution
+  stabilization_delay_s: 0.0
+  retry_policy: No blind retry of state-changing operations.
+  errors:
+  - DriverValidationError
+  - DriverStateError
+  - DriverConnectionError
+  - DriverTimeoutError
+  - DriverProtocolError
+  exclusive_resources: []
+  protocol_vector: null
+- keyword: Get Driver Capabilities
+  signature: ()
+  purpose: 'RFDS public operation: Get Driver Capabilities.'
+  inputs: []
+  outputs:
+    type: list[str]
+  preconditions: []
+  postconditions: []
+  side_effects: []
+  risk_level: low
+  timing:
+    bounded_by: local execution
+  stabilization_delay_s: 0.0
+  retry_policy: No blind retry of state-changing operations.
+  errors:
+  - DriverValidationError
+  - DriverStateError
+  - DriverConnectionError
+  - DriverTimeoutError
+  - DriverProtocolError
+  exclusive_resources: []
+  protocol_vector: null
+- keyword: Set Communication Timeout
+  signature: (timeout_s, alias=None)
+  purpose: 'RFDS public operation: Set Communication Timeout.'
+  inputs: []
+  outputs:
+    type: float
+  preconditions: []
+  postconditions: []
+  side_effects: []
+  risk_level: low
+  timing:
+    bounded_by: local execution
+  stabilization_delay_s: 0.0
+  retry_policy: No blind retry of state-changing operations.
+  errors:
+  - DriverValidationError
+  - DriverStateError
+  - DriverConnectionError
+  - DriverTimeoutError
+  - DriverProtocolError
+  exclusive_resources: []
+  protocol_vector: null
+- keyword: Get Communication Timeout
+  signature: (alias=None)
+  purpose: 'RFDS public operation: Get Communication Timeout.'
+  inputs: []
+  outputs:
+    type: float
+  preconditions: []
+  postconditions: []
+  side_effects: []
+  risk_level: low
+  timing:
+    bounded_by: local execution
+  stabilization_delay_s: 0.0
+  retry_policy: No blind retry of state-changing operations.
+  errors:
+  - DriverValidationError
+  - DriverStateError
+  - DriverConnectionError
+  - DriverTimeoutError
+  - DriverProtocolError
+  exclusive_resources: []
+  protocol_vector: null
+- keyword: List Connections
+  signature: ()
+  purpose: 'RFDS public operation: List Connections.'
+  inputs: []
+  outputs:
+    type: list[dict]
+  preconditions: []
+  postconditions: []
+  side_effects: []
+  risk_level: low
+  timing:
+    bounded_by: local execution
+  stabilization_delay_s: 0.0
+  retry_policy: No blind retry of state-changing operations.
+  errors:
+  - DriverValidationError
+  - DriverStateError
+  - DriverConnectionError
+  - DriverTimeoutError
+  - DriverProtocolError
+  exclusive_resources: []
+  protocol_vector: null
+- keyword: Select Connection
+  signature: (alias)
+  purpose: 'RFDS public operation: Select Connection.'
+  inputs: []
+  outputs:
+    type: dict
+  preconditions: []
+  postconditions: []
+  side_effects: []
+  risk_level: low
+  timing:
+    bounded_by: local execution
+  stabilization_delay_s: 0.0
+  retry_policy: No blind retry of state-changing operations.
+  errors:
+  - DriverValidationError
+  - DriverStateError
+  - DriverConnectionError
+  - DriverTimeoutError
+  - DriverProtocolError
+  exclusive_resources: []
+  protocol_vector: null
+- keyword: Disconnect All
+  signature: ()
+  purpose: 'RFDS public operation: Disconnect All.'
+  inputs: []
+  outputs:
+    type: None
+  preconditions: []
+  postconditions: []
+  side_effects:
+  - device protocol I/O
+  risk_level: low
+  timing:
+    bounded_by: communication timeout
+  stabilization_delay_s: 0.0
+  retry_policy: No blind retry of state-changing operations.
+  errors:
+  - DriverValidationError
+  - DriverStateError
+  - DriverConnectionError
+  - DriverTimeoutError
+  - DriverProtocolError
+  exclusive_resources:
+  - selected session lock
+  protocol_vector: CONN-005
+- keyword: Get Active Connection
+  signature: ()
+  purpose: 'RFDS public operation: Get Active Connection.'
+  inputs: []
+  outputs:
+    type: str | None
+  preconditions: []
+  postconditions: []
+  side_effects: []
+  risk_level: low
+  timing:
+    bounded_by: local execution
+  stabilization_delay_s: 0.0
+  retry_policy: No blind retry of state-changing operations.
+  errors:
+  - DriverValidationError
+  - DriverStateError
+  - DriverConnectionError
+  - DriverTimeoutError
+  - DriverProtocolError
+  exclusive_resources: []
+  protocol_vector: null
+- keyword: Get Installed Modules
+  signature: (alias=None)
+  purpose: 'RFDS public operation: Get Installed Modules.'
+  inputs: []
+  outputs:
+    type: list[dict]
+  preconditions: []
+  postconditions: []
+  side_effects: []
+  risk_level: low
+  timing:
+    bounded_by: local execution
+  stabilization_delay_s: 0.0
+  retry_policy: No blind retry of state-changing operations.
+  errors:
+  - DriverValidationError
+  - DriverStateError
+  - DriverConnectionError
+  - DriverTimeoutError
+  - DriverProtocolError
+  exclusive_resources: []
+  protocol_vector: null
+- keyword: Get Module Information
+  signature: (slot, alias=None, refresh=False)
+  purpose: 'RFDS public operation: Get Module Information.'
+  inputs: []
+  outputs:
+    type: dict
+  preconditions:
+  - connected session required
+  postconditions: []
+  side_effects:
+  - device protocol I/O
+  risk_level: low
+  timing:
+    bounded_by: communication timeout
+  stabilization_delay_s: 0.0
+  retry_policy: No blind retry of state-changing operations.
+  errors:
+  - DriverValidationError
+  - DriverStateError
+  - DriverConnectionError
+  - DriverTimeoutError
+  - DriverProtocolError
+  exclusive_resources:
+  - selected session lock
+  protocol_vector: MOD-001
+- keyword: Get SCPI Version
+  signature: (alias=None)
+  purpose: 'RFDS public operation: Get SCPI Version.'
+  inputs: []
+  outputs:
+    type: str
+  preconditions:
+  - connected session required
+  postconditions: []
+  side_effects:
+  - device protocol I/O
+  risk_level: low
+  timing:
+    bounded_by: communication timeout
+  stabilization_delay_s: 0.0
+  retry_policy: No blind retry of state-changing operations.
+  errors:
+  - DriverValidationError
+  - DriverStateError
+  - DriverConnectionError
+  - DriverTimeoutError
+  - DriverProtocolError
+  exclusive_resources:
+  - selected session lock
+  protocol_vector: SYS-001
+- keyword: Get Device Error
+  signature: (alias=None)
+  purpose: 'RFDS public operation: Get Device Error.'
+  inputs: []
+  outputs:
+    type: dict
+  preconditions:
+  - connected session required
+  postconditions: []
+  side_effects:
+  - device protocol I/O
+  risk_level: low
+  timing:
+    bounded_by: communication timeout
+  stabilization_delay_s: 0.0
+  retry_policy: No blind retry of state-changing operations.
+  errors:
+  - DriverValidationError
+  - DriverStateError
+  - DriverConnectionError
+  - DriverTimeoutError
+  - DriverProtocolError
+  exclusive_resources:
+  - selected session lock
+  protocol_vector: ERR-001
+- keyword: Get All Device Errors
+  signature: (alias=None, max_count=100)
+  purpose: 'RFDS public operation: Get All Device Errors.'
+  inputs: []
+  outputs:
+    type: list[dict]
+  preconditions:
+  - connected session required
+  postconditions: []
+  side_effects:
+  - device protocol I/O
+  risk_level: low
+  timing:
+    bounded_by: communication timeout
+  stabilization_delay_s: 0.0
+  retry_policy: No blind retry of state-changing operations.
+  errors:
+  - DriverValidationError
+  - DriverStateError
+  - DriverConnectionError
+  - DriverTimeoutError
+  - DriverProtocolError
+  exclusive_resources:
+  - selected session lock
+  protocol_vector: ERR-002
+- keyword: Clear Device Errors
+  signature: (alias=None)
+  purpose: 'RFDS public operation: Clear Device Errors.'
+  inputs: []
+  outputs:
+    type: None
+  preconditions:
+  - connected session required
+  postconditions: []
+  side_effects:
+  - device protocol I/O
+  risk_level: low
+  timing:
+    bounded_by: communication timeout
+  stabilization_delay_s: 0.0
+  retry_policy: No blind retry of state-changing operations.
+  errors:
+  - DriverValidationError
+  - DriverStateError
+  - DriverConnectionError
+  - DriverTimeoutError
+  - DriverProtocolError
+  exclusive_resources:
+  - selected session lock
+  protocol_vector: ERR-003
+- keyword: Device Error Queue Should Be Empty
+  signature: (alias=None)
+  purpose: 'RFDS public operation: Device Error Queue Should Be Empty.'
+  inputs: []
+  outputs:
+    type: None
+  preconditions:
+  - connected session required
+  postconditions: []
+  side_effects:
+  - device protocol I/O
+  risk_level: low
+  timing:
+    bounded_by: communication timeout
+  stabilization_delay_s: 0.0
+  retry_policy: No blind retry of state-changing operations.
+  errors:
+  - DriverValidationError
+  - DriverStateError
+  - DriverConnectionError
+  - DriverTimeoutError
+  - DriverProtocolError
+  exclusive_resources:
+  - selected session lock
+  protocol_vector: ERR-004
+error_catalogue:
+- DriverValidationError
+- DriverStateError
+- DriverConnectionError
+- DriverTimeoutError
+- DriverProtocolError
+- DriverResponseError
+- DriverDeviceError
+- DriverNotSupportedError
+- DriverConcurrencyError
+safety_rules:
+- No raw I/O, calibration, reset, switching, DAC, or digital-output API in D0.
+- 'Simulation requires explicit SIM:: resource.'
+- No hardware I/O on import or construction.
+verification_objectives:
+- public API synchronization
+- exact protocol vectors
+- strict parser failure behavior
+- zero-I/O import
+setup_teardown_contract:
+  setup: Construct library then Connect explicitly.
+  teardown: Disconnect or Disconnect All.
+limitations:
+- RFDS-019 runtime NOT_RUN
+- HIL NOT_RUN
+- measurement/switching/temperature deferred
+- DEV-RFDSCORE-001 open
+planning_hints:
+- Discover modules after Connect before planning module-dependent operations.
+- Do not invent absent measurement/switching keywords.
+unknown_handling:
+  policy: Keep unsupported behavior explicit; never invent commands.
+  items:
+  - continuity_measurement
+  - diode_measurement
+  - bench_specific_safe_states
+conformance_rules:
+  public_api: api/public_api.yaml
+  rfds019_inventory: tests/conformance/data/keyword_inventory.yaml
+  protocol_vectors: tests/conformance/data/protocol_vectors.yaml
+  runtime_status: NOT_RUN
+  hardware_status: NOT_RUN

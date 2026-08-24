@@ -1,0 +1,11 @@
+{
+  "schema_version": "1.0",
+  "plugin_id": "keysight.349xx",
+  "driver_name": "rf_keysight349xx",
+  "version": "26.1.0",
+  "models": [
+    "34970A",
+    "34972A"
+  ],
+  "simulation_supported": true
+}

@@ -1,0 +1,6 @@
+"""Verified command constants for the initial implementation slice."""
+IDN = "*IDN?"
+CLEAR_STATUS = "*CLS"
+SYSTEM_ERROR = "SYST:ERR?"
+SYSTEM_VERSION = "SYST:VERS?"
+SYSTEM_CARD_TYPE = "SYST:CTYP? {slot}"

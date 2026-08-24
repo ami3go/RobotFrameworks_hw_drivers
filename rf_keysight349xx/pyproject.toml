@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rf-keysight349xx"
+version = "26.1.0"
+description = "Robot Framework driver for Keysight/Agilent 34970A and 34972A"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+authors = [{name = "Robot Framework Driver Project"}]
+keywords = ["Robot Framework", "Keysight", "Agilent", "34970A", "34972A", "SCPI", "DAQ"]
+dependencies = ["robotframework>=7,<8"]
+
+[project.optional-dependencies]
+visa = ["pyvisa>=1.14"]
+dev = ["pytest>=8", "pytest-cov>=5", "ruff>=0.5", "mypy>=1.10", "build>=1.2", "mkdocs>=1.6", "pyyaml>=6.0"]
+rfds = ["rfds-core>=1.0,<2.0"]
+
+[project.entry-points."rfds.drivers"]
+rf_keysight349xx = "rf_keysight349xx.plugin:Keysight349xxPluginProvider"
+
+[tool.setuptools]
+packages = ["rf_keysight349xx", "rf_keysight349xx.core", "rf_keysight349xx.protocol", "rf_keysight349xx.transports"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests/unit"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.mypy]
+python_version = "3.10"
+warn_unused_ignores = true
+ignore_missing_imports = true

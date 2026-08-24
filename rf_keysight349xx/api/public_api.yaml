@@ -1,0 +1,152 @@
+api_spec: RFDS-002
+api_spec_version: "1.1"
+driver: rf_keysight349xx
+package_version: "26.1.0"
+library:
+  class: rf_keysight349xx.library.Keysight349xxLibrary
+  scope: SUITE
+  auto_keywords: false
+capabilities:
+  - connection
+  - error_queue
+  - identity
+  - module_discovery
+  - multi_connection
+  - scpi_version
+  - simulation
+capabilities_not_applicable:
+  channel_selection: "Deferred until channel/module capability implementation phase."
+  output_control: "Not declared in D0."
+  relay_control: "Deferred to switching/routing phase."
+  device_reset: "Deferred pending safety review."
+  file_transfer: "Deferred to 34972A-specific phase."
+  safe_shutdown: "No persistent output-changing public keywords in D0."
+  raw_io: "Disabled by design in D0."
+  digital_io: "Deferred to 34907A phase."
+keywords:
+  - keyword: "Connect"
+    python_method: connect
+    signature: "(resource=None, alias='default', timeout_s=None, **options)"
+    return_type: "dict"
+    device_facing: true
+    protocol_vector: CONN-001
+  - keyword: "Disconnect"
+    python_method: disconnect
+    signature: "(alias=None)"
+    return_type: "None"
+    device_facing: true
+    protocol_vector: CONN-002
+  - keyword: "Is Connected"
+    python_method: is_connected
+    signature: "(alias=None)"
+    return_type: "bool"
+    device_facing: false
+    protocol_vector: null
+  - keyword: "Get Connection State"
+    python_method: get_connection_state
+    signature: "(alias=None, refresh=False)"
+    return_type: "dict"
+    device_facing: true
+    protocol_vector: CONN-003
+  - keyword: "Check Communication"
+    python_method: check_communication
+    signature: "(alias=None)"
+    return_type: "bool"
+    device_facing: true
+    protocol_vector: CONN-004
+  - keyword: "Get Identity"
+    python_method: get_identity
+    signature: "(alias=None, refresh=False)"
+    return_type: "str"
+    device_facing: true
+    protocol_vector: IDN-001
+  - keyword: "Get Driver Information"
+    python_method: get_driver_information
+    signature: "()"
+    return_type: "dict"
+    device_facing: false
+    protocol_vector: null
+  - keyword: "Get Driver Capabilities"
+    python_method: get_driver_capabilities
+    signature: "()"
+    return_type: "list[str]"
+    device_facing: false
+    protocol_vector: null
+  - keyword: "Set Communication Timeout"
+    python_method: set_communication_timeout
+    signature: "(timeout_s, alias=None)"
+    return_type: "float"
+    device_facing: false
+    protocol_vector: null
+  - keyword: "Get Communication Timeout"
+    python_method: get_communication_timeout
+    signature: "(alias=None)"
+    return_type: "float"
+    device_facing: false
+    protocol_vector: null
+  - keyword: "List Connections"
+    python_method: list_connections
+    signature: "()"
+    return_type: "list[dict]"
+    device_facing: false
+    protocol_vector: null
+  - keyword: "Select Connection"
+    python_method: select_connection
+    signature: "(alias)"
+    return_type: "dict"
+    device_facing: false
+    protocol_vector: null
+  - keyword: "Disconnect All"
+    python_method: disconnect_all
+    signature: "()"
+    return_type: "None"
+    device_facing: true
+    protocol_vector: CONN-005
+  - keyword: "Get Active Connection"
+    python_method: get_active_connection
+    signature: "()"
+    return_type: "str | None"
+    device_facing: false
+    protocol_vector: null
+  - keyword: "Get Installed Modules"
+    python_method: get_installed_modules
+    signature: "(alias=None)"
+    return_type: "list[dict]"
+    device_facing: false
+    protocol_vector: null
+  - keyword: "Get Module Information"
+    python_method: get_module_information
+    signature: "(slot, alias=None, refresh=False)"
+    return_type: "dict"
+    device_facing: true
+    protocol_vector: MOD-001
+  - keyword: "Get SCPI Version"
+    python_method: get_scpi_version
+    signature: "(alias=None)"
+    return_type: "str"
+    device_facing: true
+    protocol_vector: SYS-001
+  - keyword: "Get Device Error"
+    python_method: get_device_error
+    signature: "(alias=None)"
+    return_type: "dict"
+    device_facing: true
+    protocol_vector: ERR-001
+  - keyword: "Get All Device Errors"
+    python_method: get_all_device_errors
+    signature: "(alias=None, max_count=100)"
+    return_type: "list[dict]"
+    device_facing: true
+    protocol_vector: ERR-002
+  - keyword: "Clear Device Errors"
+    python_method: clear_device_errors
+    signature: "(alias=None)"
+    return_type: "None"
+    device_facing: true
+    protocol_vector: ERR-003
+  - keyword: "Device Error Queue Should Be Empty"
+    python_method: device_error_queue_should_be_empty
+    signature: "(alias=None)"
+    return_type: "None"
+    device_facing: true
+    protocol_vector: ERR-004

@@ -1,0 +1,170 @@
+schema_version: "1.0"
+keywords:
+  - keyword: "Connect"
+    canonical_keyword: "Connect"
+    driver_method: connect
+    signature: "(resource=None, alias='default', timeout_s=None, **options)"
+    return_type: "dict"
+    device_facing: true
+    protocol_vector: CONN-001
+    execution_status: NOT_RUN
+  - keyword: "Disconnect"
+    canonical_keyword: "Disconnect"
+    driver_method: disconnect
+    signature: "(alias=None)"
+    return_type: "None"
+    device_facing: true
+    protocol_vector: CONN-002
+    execution_status: NOT_RUN
+  - keyword: "Is Connected"
+    canonical_keyword: "Is Connected"
+    driver_method: is_connected
+    signature: "(alias=None)"
+    return_type: "bool"
+    device_facing: false
+    protocol_vector: null
+    execution_status: NOT_RUN
+  - keyword: "Get Connection State"
+    canonical_keyword: "Get Connection State"
+    driver_method: get_connection_state
+    signature: "(alias=None, refresh=False)"
+    return_type: "dict"
+    device_facing: true
+    protocol_vector: CONN-003
+    execution_status: NOT_RUN
+  - keyword: "Check Communication"
+    canonical_keyword: "Check Communication"
+    driver_method: check_communication
+    signature: "(alias=None)"
+    return_type: "bool"
+    device_facing: true
+    protocol_vector: CONN-004
+    execution_status: NOT_RUN
+  - keyword: "Get Identity"
+    canonical_keyword: "Get Identity"
+    driver_method: get_identity
+    signature: "(alias=None, refresh=False)"
+    return_type: "str"
+    device_facing: true
+    protocol_vector: IDN-001
+    execution_status: NOT_RUN
+  - keyword: "Get Driver Information"
+    canonical_keyword: "Get Driver Information"
+    driver_method: get_driver_information
+    signature: "()"
+    return_type: "dict"
+    device_facing: false
+    protocol_vector: null
+    execution_status: NOT_RUN
+  - keyword: "Get Driver Capabilities"
+    canonical_keyword: "Get Driver Capabilities"
+    driver_method: get_driver_capabilities
+    signature: "()"
+    return_type: "list[str]"
+    device_facing: false
+    protocol_vector: null
+    execution_status: NOT_RUN
+  - keyword: "Set Communication Timeout"
+    canonical_keyword: "Set Communication Timeout"
+    driver_method: set_communication_timeout
+    signature: "(timeout_s, alias=None)"
+    return_type: "float"
+    device_facing: false
+    protocol_vector: null
+    execution_status: NOT_RUN
+  - keyword: "Get Communication Timeout"
+    canonical_keyword: "Get Communication Timeout"
+    driver_method: get_communication_timeout
+    signature: "(alias=None)"
+    return_type: "float"
+    device_facing: false
+    protocol_vector: null
+    execution_status: NOT_RUN
+  - keyword: "List Connections"
+    canonical_keyword: "List Connections"
+    driver_method: list_connections
+    signature: "()"
+    return_type: "list[dict]"
+    device_facing: false
+    protocol_vector: null
+    execution_status: NOT_RUN
+  - keyword: "Select Connection"
+    canonical_keyword: "Select Connection"
+    driver_method: select_connection
+    signature: "(alias)"
+    return_type: "dict"
+    device_facing: false
+    protocol_vector: null
+    execution_status: NOT_RUN
+  - keyword: "Disconnect All"
+    canonical_keyword: "Disconnect All"
+    driver_method: disconnect_all
+    signature: "()"
+    return_type: "None"
+    device_facing: true
+    protocol_vector: CONN-005
+    execution_status: NOT_RUN
+  - keyword: "Get Active Connection"
+    canonical_keyword: "Get Active Connection"
+    driver_method: get_active_connection
+    signature: "()"
+    return_type: "str | None"
+    device_facing: false
+    protocol_vector: null
+    execution_status: NOT_RUN
+  - keyword: "Get Installed Modules"
+    canonical_keyword: "Get Installed Modules"
+    driver_method: get_installed_modules
+    signature: "(alias=None)"
+    return_type: "list[dict]"
+    device_facing: false
+    protocol_vector: null
+    execution_status: NOT_RUN
+  - keyword: "Get Module Information"
+    canonical_keyword: "Get Module Information"
+    driver_method: get_module_information
+    signature: "(slot, alias=None, refresh=False)"
+    return_type: "dict"
+    device_facing: true
+    protocol_vector: MOD-001
+    execution_status: NOT_RUN
+  - keyword: "Get SCPI Version"
+    canonical_keyword: "Get SCPI Version"
+    driver_method: get_scpi_version
+    signature: "(alias=None)"
+    return_type: "str"
+    device_facing: true
+    protocol_vector: SYS-001
+    execution_status: NOT_RUN
+  - keyword: "Get Device Error"
+    canonical_keyword: "Get Device Error"
+    driver_method: get_device_error
+    signature: "(alias=None)"
+    return_type: "dict"
+    device_facing: true
+    protocol_vector: ERR-001
+    execution_status: NOT_RUN
+  - keyword: "Get All Device Errors"
+    canonical_keyword: "Get All Device Errors"
+    driver_method: get_all_device_errors
+    signature: "(alias=None, max_count=100)"
+    return_type: "list[dict]"
+    device_facing: true
+    protocol_vector: ERR-002
+    execution_status: NOT_RUN
+  - keyword: "Clear Device Errors"
+    canonical_keyword: "Clear Device Errors"
+    driver_method: clear_device_errors
+    signature: "(alias=None)"
+    return_type: "None"
+    device_facing: true
+    protocol_vector: ERR-003
+    execution_status: NOT_RUN
+  - keyword: "Device Error Queue Should Be Empty"
+    canonical_keyword: "Device Error Queue Should Be Empty"
+    driver_method: device_error_queue_should_be_empty
+    signature: "(alias=None)"
+    return_type: "None"
+    device_facing: true
+    protocol_vector: ERR-004
+    execution_status: NOT_RUN

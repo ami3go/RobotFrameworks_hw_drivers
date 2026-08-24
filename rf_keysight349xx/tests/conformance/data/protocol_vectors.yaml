@@ -1,0 +1,50 @@
+schema_version: "1.0"
+vectors:
+  - id: CONN-001
+    keyword: Connect
+    profile: simulator_34972a
+    expected_outbound:
+      - "*IDN?\n"
+      - "SYST:CTYP? 100\n"
+      - "SYST:CTYP? 200\n"
+      - "SYST:CTYP? 300\n"
+  - id: CONN-002
+    keyword: Disconnect
+    expected_outbound: []
+    note: Transport close only; no device command is sent in the D0 slice.
+  - id: CONN-003
+    keyword: Get Connection State
+    variant: refresh_true
+    expected_outbound: ["*IDN?\n"]
+  - id: CONN-004
+    keyword: Check Communication
+    expected_outbound: ["*IDN?\n"]
+  - id: CONN-005
+    keyword: Disconnect All
+    expected_outbound: []
+  - id: IDN-001
+    keyword: Get Identity
+    variant: refresh_true
+    expected_outbound: ["*IDN?\n"]
+  - id: MOD-001
+    keyword: Get Module Information
+    variant: refresh_true
+    arguments: {slot: 300}
+    expected_outbound: ["SYST:CTYP? 300\n"]
+  - id: SYS-001
+    keyword: Get SCPI Version
+    expected_outbound: ["SYST:VERS?\n"]
+    expected_inbound: "1994.0"
+  - id: ERR-001
+    keyword: Get Device Error
+    expected_outbound: ["SYST:ERR?\n"]
+  - id: ERR-002
+    keyword: Get All Device Errors
+    expected_outbound: ["SYST:ERR?\n"]
+    note: Repeated until code 0; exact count depends on queue state.
+  - id: ERR-003
+    keyword: Clear Device Errors
+    expected_outbound: ["*CLS\n"]
+  - id: ERR-004
+    keyword: Device Error Queue Should Be Empty
+    expected_outbound: ["SYST:ERR?\n"]
