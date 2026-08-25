@@ -1,0 +1,69 @@
+schema_version: "1.0"
+source: "Keysight/Agilent 34970A/34972A Command Reference"
+driver_version: "26.2.0"
+commands:
+  - command: "*IDN?"
+    status: PUBLIC
+    keyword: "Get Identity"
+  - command: "SYSTem:CTYPe?"
+    status: PUBLIC
+    keyword: "Get Module Information"
+  - command: "SYSTem:VERSion?"
+    status: PUBLIC
+    keyword: "Get SCPI Version"
+  - command: "SYSTem:ERRor?"
+    status: PUBLIC
+    keywords: ["Get Device Error", "Get All Device Errors", "Device Error Queue Should Be Empty"]
+  - command: "*CLS"
+    status: PUBLIC
+    keyword: "Clear Device Errors"
+  - command: "MEASure:VOLTage:DC?"
+    status: PUBLIC
+    keyword: "Measure DC Voltage"
+  - command: "MEASure:VOLTage:AC?"
+    status: PUBLIC
+    keyword: "Measure AC Voltage"
+  - command: "MEASure:CURRent:DC?"
+    status: PUBLIC
+    keyword: "Measure DC Current"
+  - command: "MEASure:CURRent:AC?"
+    status: PUBLIC
+    keyword: "Measure AC Current"
+  - command: "MEASure:RESistance?"
+    status: PUBLIC
+    keyword: "Measure Resistance"
+  - command: "MEASure:FRESistance?"
+    status: PUBLIC
+    keyword: "Measure 4 Wire Resistance"
+  - command: "MEASure:FREQuency?"
+    status: PUBLIC
+    keyword: "Measure Frequency"
+  - command: "MEASure:PERiod?"
+    status: PUBLIC
+    keyword: "Measure Period"
+  - command: "MEASure:TEMPerature?"
+    status: DEFERRED
+    reason: "Temperature phase not yet implemented."
+  - command: "READ?"
+    status: DEFERRED
+    reason: "Scanner/acquisition phase not yet implemented."
+  - command: "FETCh?"
+    status: DEFERRED
+    reason: "Scanner/acquisition phase not yet implemented."
+  - command: "INITiate"
+    status: DEFERRED
+    reason: "Scanner/acquisition phase not yet implemented."
+  - command: "ROUTe:SCAN"
+    status: DEFERRED
+    reason: "Scanner/acquisition phase not yet implemented."
+  - command: "CALibration subsystem"
+    status: EXCLUDED
+    reason: "Calibration/service operations are not exposed without separate service procedure and safety approval."
+  - command: "DIAGnostic:POKE subsystem"
+    status: EXCLUDED
+    reason: "Engineering/service operation not suitable for general Robot Framework automation."
+unknowns:
+  - capability: continuity_measurement
+    reason: "No corresponding MEASure command established in supplied command reference."
+  - capability: diode_measurement
+    reason: "No corresponding MEASure command established in supplied command reference."

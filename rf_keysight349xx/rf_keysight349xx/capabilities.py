@@ -1,4 +1,4 @@
-"""Static capability registry for the implemented D0 slice."""
+"""Static capability registry for the implemented engineering slice."""
 
 CAPABILITY_IDS = tuple(sorted({
     "connection",
@@ -8,15 +8,22 @@ CAPABILITY_IDS = tuple(sorted({
     "simulation",
     "module_discovery",
     "scpi_version",
+    "channel_selection",
+    "dc_voltage_measurement",
+    "ac_voltage_measurement",
+    "dc_current_measurement",
+    "ac_current_measurement",
+    "resistance_measurement",
+    "frequency_measurement",
+    "period_measurement",
 }))
 
 CAPABILITIES_NOT_APPLICABLE = {
-    "channel_selection": "Deferred until channel/module capability implementation phase.",
-    "output_control": "No generic output-control group is exposed in the current D0 slice.",
+    "output_control": "No generic output-control group is exposed in the current engineering slice.",
     "relay_control": "Deferred to switching/routing implementation phase.",
     "device_reset": "Deferred because *RST is state-changing and requires completed safety review.",
     "file_transfer": "34972A-only file functionality is deferred to the model-specific phase.",
-    "safe_shutdown": "No persistent output-changing public keywords are exposed in this D0 slice.",
+    "safe_shutdown": "No persistent output-changing public keywords are exposed in this slice.",
     "raw_io": "Raw I/O is intentionally disabled until safety and state invalidation rules are complete.",
     "dc_voltage_source": "Not a mainframe-wide capability; 34907A DAC support is deferred.",
     "dc_current_source": "Not supported as a generic source capability by this driver plan.",
@@ -25,4 +32,8 @@ CAPABILITIES_NOT_APPLICABLE = {
     "resistance_simulation": "Not applicable to 34970A/34972A.",
     "waveform_generation": "Not applicable to 34970A/34972A.",
     "digital_io": "34907A digital I/O is deferred to its dedicated implementation phase.",
+    "temperature_measurement": "Deferred to the temperature implementation phase.",
+    "power_measurement": "The mainframe does not provide a direct generic power measurement keyword in this phase.",
+    "capacitance_measurement": "Not documented as a 34970A/34972A internal-DMM measurement capability.",
+    "continuity_measurement": "Not established by the supplied command reference; remains UNKNOWN rather than invented.",
 }

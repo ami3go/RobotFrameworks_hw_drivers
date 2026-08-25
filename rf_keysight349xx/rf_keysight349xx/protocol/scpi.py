@@ -32,7 +32,14 @@ class ScpiProtocol:
         except Exception as exc:
             raise DriverConnectionError(f"transport write failed for {command!r}", operation=operation_id) from exc
 
-    def query(self, command: str, *, timeout_s: float, operation_id: str) -> str:
+    def query(
+        self,
+        command: str,
+        *,
+        timeout_s: float,
+        operation_id: str,
+        replay_policy: ReplayPolicy = ReplayPolicy.IF_IDEMPOTENT,
+    ) -> str:
         request = ReadRequest(
             maximum_length=self.max_response_bytes,
             terminator=self.terminator,
@@ -44,7 +51,7 @@ class ScpiProtocol:
                 self._encode(command),
                 request,
                 timeout_s=timeout_s,
-                replay_policy=ReplayPolicy.IF_IDEMPOTENT,
+                replay_policy=replay_policy,
                 operation_id=operation_id,
             )
         except TimeoutError as exc:

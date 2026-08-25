@@ -1,0 +1,11 @@
+schema_version: "1.0"
+release_class: D0
+release_version: 26.2.0
+software_unit_tests: PASS
+software_unit_test_count: 43
+public_api_keywords: 31
+rfds019_static_vectors: 20
+robot_framework_runtime_tests: NOT_RUN
+rfds019_conformance_runtime: NOT_RUN
+hardware_validation: NOT_RUN
+blocking_unknowns: []

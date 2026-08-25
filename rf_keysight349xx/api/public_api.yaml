@@ -1,152 +1,280 @@
 api_spec: RFDS-002
-api_spec_version: "1.1"
+api_spec_version: '1.1'
 driver: rf_keysight349xx
-package_version: "26.1.0"
+package_version: 26.2.0
 library:
   class: rf_keysight349xx.library.Keysight349xxLibrary
   scope: SUITE
   auto_keywords: false
 capabilities:
-  - connection
-  - error_queue
-  - identity
-  - module_discovery
-  - multi_connection
-  - scpi_version
-  - simulation
+- ac_current_measurement
+- ac_voltage_measurement
+- channel_selection
+- connection
+- dc_current_measurement
+- dc_voltage_measurement
+- error_queue
+- frequency_measurement
+- identity
+- module_discovery
+- multi_connection
+- period_measurement
+- resistance_measurement
+- scpi_version
+- simulation
 capabilities_not_applicable:
-  channel_selection: "Deferred until channel/module capability implementation phase."
-  output_control: "Not declared in D0."
-  relay_control: "Deferred to switching/routing phase."
-  device_reset: "Deferred pending safety review."
-  file_transfer: "Deferred to 34972A-specific phase."
-  safe_shutdown: "No persistent output-changing public keywords in D0."
-  raw_io: "Disabled by design in D0."
-  digital_io: "Deferred to 34907A phase."
+  output_control: Not declared in D0.
+  relay_control: Deferred to switching/routing phase.
+  device_reset: Deferred pending safety review.
+  file_transfer: Deferred to 34972A-specific phase.
+  safe_shutdown: No persistent output-changing public keywords in D0.
+  raw_io: Disabled by design in D0.
+  digital_io: Deferred to 34907A phase.
+  temperature_measurement: Deferred to the temperature implementation phase.
+  continuity_measurement: Not established by the supplied 34970A/34972A command reference; no keyword is invented.
+  capacitance_measurement: Not documented as an internal-DMM capability in the supplied command reference.
 keywords:
-  - keyword: "Connect"
-    python_method: connect
-    signature: "(resource=None, alias='default', timeout_s=None, **options)"
-    return_type: "dict"
-    device_facing: true
-    protocol_vector: CONN-001
-  - keyword: "Disconnect"
-    python_method: disconnect
-    signature: "(alias=None)"
-    return_type: "None"
-    device_facing: true
-    protocol_vector: CONN-002
-  - keyword: "Is Connected"
-    python_method: is_connected
-    signature: "(alias=None)"
-    return_type: "bool"
-    device_facing: false
-    protocol_vector: null
-  - keyword: "Get Connection State"
-    python_method: get_connection_state
-    signature: "(alias=None, refresh=False)"
-    return_type: "dict"
-    device_facing: true
-    protocol_vector: CONN-003
-  - keyword: "Check Communication"
-    python_method: check_communication
-    signature: "(alias=None)"
-    return_type: "bool"
-    device_facing: true
-    protocol_vector: CONN-004
-  - keyword: "Get Identity"
-    python_method: get_identity
-    signature: "(alias=None, refresh=False)"
-    return_type: "str"
-    device_facing: true
-    protocol_vector: IDN-001
-  - keyword: "Get Driver Information"
-    python_method: get_driver_information
-    signature: "()"
-    return_type: "dict"
-    device_facing: false
-    protocol_vector: null
-  - keyword: "Get Driver Capabilities"
-    python_method: get_driver_capabilities
-    signature: "()"
-    return_type: "list[str]"
-    device_facing: false
-    protocol_vector: null
-  - keyword: "Set Communication Timeout"
-    python_method: set_communication_timeout
-    signature: "(timeout_s, alias=None)"
-    return_type: "float"
-    device_facing: false
-    protocol_vector: null
-  - keyword: "Get Communication Timeout"
-    python_method: get_communication_timeout
-    signature: "(alias=None)"
-    return_type: "float"
-    device_facing: false
-    protocol_vector: null
-  - keyword: "List Connections"
-    python_method: list_connections
-    signature: "()"
-    return_type: "list[dict]"
-    device_facing: false
-    protocol_vector: null
-  - keyword: "Select Connection"
-    python_method: select_connection
-    signature: "(alias)"
-    return_type: "dict"
-    device_facing: false
-    protocol_vector: null
-  - keyword: "Disconnect All"
-    python_method: disconnect_all
-    signature: "()"
-    return_type: "None"
-    device_facing: true
-    protocol_vector: CONN-005
-  - keyword: "Get Active Connection"
-    python_method: get_active_connection
-    signature: "()"
-    return_type: "str | None"
-    device_facing: false
-    protocol_vector: null
-  - keyword: "Get Installed Modules"
-    python_method: get_installed_modules
-    signature: "(alias=None)"
-    return_type: "list[dict]"
-    device_facing: false
-    protocol_vector: null
-  - keyword: "Get Module Information"
-    python_method: get_module_information
-    signature: "(slot, alias=None, refresh=False)"
-    return_type: "dict"
-    device_facing: true
-    protocol_vector: MOD-001
-  - keyword: "Get SCPI Version"
-    python_method: get_scpi_version
-    signature: "(alias=None)"
-    return_type: "str"
-    device_facing: true
-    protocol_vector: SYS-001
-  - keyword: "Get Device Error"
-    python_method: get_device_error
-    signature: "(alias=None)"
-    return_type: "dict"
-    device_facing: true
-    protocol_vector: ERR-001
-  - keyword: "Get All Device Errors"
-    python_method: get_all_device_errors
-    signature: "(alias=None, max_count=100)"
-    return_type: "list[dict]"
-    device_facing: true
-    protocol_vector: ERR-002
-  - keyword: "Clear Device Errors"
-    python_method: clear_device_errors
-    signature: "(alias=None)"
-    return_type: "None"
-    device_facing: true
-    protocol_vector: ERR-003
-  - keyword: "Device Error Queue Should Be Empty"
-    python_method: device_error_queue_should_be_empty
-    signature: "(alias=None)"
-    return_type: "None"
-    device_facing: true
-    protocol_vector: ERR-004
+- keyword: Connect
+  python_method: connect
+  signature: (resource=None, alias='default', timeout_s=None, **options)
+  return_type: dict
+  device_facing: true
+  protocol_vector: CONN-001
+- keyword: Disconnect
+  python_method: disconnect
+  signature: (alias=None)
+  return_type: None
+  device_facing: true
+  protocol_vector: CONN-002
+- keyword: Is Connected
+  python_method: is_connected
+  signature: (alias=None)
+  return_type: bool
+  device_facing: false
+  protocol_vector: null
+- keyword: Get Connection State
+  python_method: get_connection_state
+  signature: (alias=None, refresh=False)
+  return_type: dict
+  device_facing: true
+  protocol_vector: CONN-003
+- keyword: Check Communication
+  python_method: check_communication
+  signature: (alias=None)
+  return_type: bool
+  device_facing: true
+  protocol_vector: CONN-004
+- keyword: Get Identity
+  python_method: get_identity
+  signature: (alias=None, refresh=False)
+  return_type: str
+  device_facing: true
+  protocol_vector: IDN-001
+- keyword: Get Driver Information
+  python_method: get_driver_information
+  signature: ()
+  return_type: dict
+  device_facing: false
+  protocol_vector: null
+- keyword: Get Driver Capabilities
+  python_method: get_driver_capabilities
+  signature: ()
+  return_type: list[str]
+  device_facing: false
+  protocol_vector: null
+- keyword: Set Communication Timeout
+  python_method: set_communication_timeout
+  signature: (timeout_s, alias=None)
+  return_type: float
+  device_facing: false
+  protocol_vector: null
+- keyword: Get Communication Timeout
+  python_method: get_communication_timeout
+  signature: (alias=None)
+  return_type: float
+  device_facing: false
+  protocol_vector: null
+- keyword: List Connections
+  python_method: list_connections
+  signature: ()
+  return_type: list[dict]
+  device_facing: false
+  protocol_vector: null
+- keyword: Select Connection
+  python_method: select_connection
+  signature: (alias)
+  return_type: dict
+  device_facing: false
+  protocol_vector: null
+- keyword: Disconnect All
+  python_method: disconnect_all
+  signature: ()
+  return_type: None
+  device_facing: true
+  protocol_vector: CONN-005
+- keyword: Get Active Connection
+  python_method: get_active_connection
+  signature: ()
+  return_type: str | None
+  device_facing: false
+  protocol_vector: null
+- keyword: Get Installed Modules
+  python_method: get_installed_modules
+  signature: (alias=None)
+  return_type: list[dict]
+  device_facing: false
+  protocol_vector: null
+- keyword: Get Module Information
+  python_method: get_module_information
+  signature: (slot, alias=None, refresh=False)
+  return_type: dict
+  device_facing: true
+  protocol_vector: MOD-001
+- keyword: Get SCPI Version
+  python_method: get_scpi_version
+  signature: (alias=None)
+  return_type: str
+  device_facing: true
+  protocol_vector: SYS-001
+- keyword: Get Device Error
+  python_method: get_device_error
+  signature: (alias=None)
+  return_type: dict
+  device_facing: true
+  protocol_vector: ERR-001
+- keyword: Get All Device Errors
+  python_method: get_all_device_errors
+  signature: (alias=None, max_count=100)
+  return_type: list[dict]
+  device_facing: true
+  protocol_vector: ERR-002
+- keyword: Clear Device Errors
+  python_method: clear_device_errors
+  signature: (alias=None)
+  return_type: None
+  device_facing: true
+  protocol_vector: ERR-003
+- keyword: Device Error Queue Should Be Empty
+  python_method: device_error_queue_should_be_empty
+  signature: (alias=None)
+  return_type: None
+  device_facing: true
+  protocol_vector: ERR-004
+- keyword: List Channels
+  python_method: list_channels
+  signature: (alias=None)
+  return_type: list[str]
+  device_facing: false
+  protocol_vector: null
+  capability_id: channel_selection
+  risk: low
+  preconditions: [connected]
+  side_effects: []
+  exclusive_resources: []
+- keyword: Validate Channel
+  python_method: validate_channel
+  signature: (channel, alias=None)
+  return_type: bool
+  device_facing: false
+  protocol_vector: null
+  capability_id: channel_selection
+  risk: low
+  preconditions: [connected]
+  side_effects: []
+  exclusive_resources: []
+- keyword: Measure DC Voltage
+  python_method: measure_dc_voltage
+  signature: (channel, range_value=None, resolution=None, alias=None)
+  return_type: float
+  device_facing: true
+  protocol_vector: MEAS-DCV-001
+  capability_id: dc_voltage_measurement
+  risk: low
+  preconditions: [connected]
+  side_effects: [overwrites_current_scan_list_with_selected_channel, configures_selected_channel_for_dc_voltage, initiates_measurement_cycle]
+  exclusive_resources: [selected_session]
+  unit: V
+- keyword: Measure AC Voltage
+  python_method: measure_ac_voltage
+  signature: (channel, range_value=None, resolution=None, alias=None)
+  return_type: float
+  device_facing: true
+  protocol_vector: MEAS-ACV-001
+  capability_id: ac_voltage_measurement
+  risk: low
+  preconditions: [connected]
+  side_effects: [overwrites_current_scan_list_with_selected_channel, configures_selected_channel_for_ac_voltage, initiates_measurement_cycle]
+  exclusive_resources: [selected_session]
+  unit: V
+- keyword: Measure DC Current
+  python_method: measure_dc_current
+  signature: (channel, range_value=None, resolution=None, alias=None)
+  return_type: float
+  device_facing: true
+  protocol_vector: MEAS-DCI-001
+  capability_id: dc_current_measurement
+  risk: low
+  preconditions: [connected]
+  side_effects: [overwrites_current_scan_list_with_selected_channel, configures_34901A_channel_21_or_22_for_dc_current, initiates_measurement_cycle]
+  exclusive_resources: [selected_session]
+  unit: A
+- keyword: Measure AC Current
+  python_method: measure_ac_current
+  signature: (channel, range_value=None, resolution=None, alias=None)
+  return_type: float
+  device_facing: true
+  protocol_vector: MEAS-ACI-001
+  capability_id: ac_current_measurement
+  risk: low
+  preconditions: [connected]
+  side_effects: [overwrites_current_scan_list_with_selected_channel, configures_34901A_channel_21_or_22_for_ac_current, initiates_measurement_cycle]
+  exclusive_resources: [selected_session]
+  unit: A
+- keyword: Measure Resistance
+  python_method: measure_resistance
+  signature: (channel, range_value=None, resolution=None, alias=None)
+  return_type: float
+  device_facing: true
+  protocol_vector: MEAS-RES-001
+  capability_id: resistance_measurement
+  risk: medium
+  preconditions: [connected]
+  side_effects: [overwrites_current_scan_list_with_selected_channel, configures_selected_channel_for_two_wire_resistance, applies_internal_resistance_test_stimulus, initiates_measurement_cycle]
+  exclusive_resources: [selected_session]
+  unit: ohm
+- keyword: Measure 4 Wire Resistance
+  python_method: measure_4_wire_resistance
+  signature: (channel, range_value=None, resolution=None, alias=None)
+  return_type: float
+  device_facing: true
+  protocol_vector: MEAS-FRES-001
+  capability_id: resistance_measurement
+  risk: medium
+  preconditions: [connected]
+  side_effects: [overwrites_current_scan_list_with_selected_channel, configures_paired_channels_for_four_wire_resistance, applies_internal_resistance_test_stimulus, initiates_measurement_cycle]
+  exclusive_resources: [selected_session]
+  unit: ohm
+- keyword: Measure Frequency
+  python_method: measure_frequency
+  signature: (channel, range_value=None, resolution=None, alias=None)
+  return_type: float
+  device_facing: true
+  protocol_vector: MEAS-FREQ-001
+  capability_id: frequency_measurement
+  risk: low
+  preconditions: [connected]
+  side_effects: [overwrites_current_scan_list_with_selected_channel, configures_selected_channel_for_frequency, initiates_measurement_cycle]
+  exclusive_resources: [selected_session]
+  unit: Hz
+- keyword: Measure Period
+  python_method: measure_period
+  signature: (channel, range_value=None, resolution=None, alias=None)
+  return_type: float
+  device_facing: true
+  protocol_vector: MEAS-PER-001
+  capability_id: period_measurement
+  risk: low
+  preconditions: [connected]
+  side_effects: [overwrites_current_scan_list_with_selected_channel, configures_selected_channel_for_period, initiates_measurement_cycle]
+  exclusive_resources: [selected_session]
+  unit: s

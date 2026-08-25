@@ -10,3 +10,7 @@ Simulator Smoke
     Should Contain    ${idn}    34972A
     ${mods}=    Get Installed Modules    alias=daq
     Should Not Be Empty    ${mods}
+    ${channels}=    List Channels    alias=daq
+    Should Contain    ${channels}    101
+    ${voltage}=    Measure DC Voltage    101    alias=daq
+    Should Be True    ${voltage} > 0

@@ -1,27 +1,27 @@
-schema_version: "1.0"
+schema_version: "1.1"
 driver: rf_keysight349xx
+package_version: "26.2.0"
 capabilities:
-  - capability_id: connection
+  - {capability_id: connection, support: implemented}
+  - {capability_id: identity, support: implemented}
+  - {capability_id: multi_connection, support: implemented}
+  - {capability_id: error_queue, support: implemented}
+  - {capability_id: simulation, support: implemented}
+  - {capability_id: module_discovery, support: implemented}
+  - {capability_id: scpi_version, support: implemented}
+  - {capability_id: channel_selection, support: implemented, source: cached installed-module inventory}
+  - {capability_id: dc_voltage_measurement, support: implemented, modules: [34901A, 34902A, 34908A], unit: V}
+  - {capability_id: ac_voltage_measurement, support: implemented, modules: [34901A, 34902A, 34908A], unit: V}
+  - {capability_id: dc_current_measurement, support: implemented, modules: [34901A], channels: [21, 22], unit: A}
+  - {capability_id: ac_current_measurement, support: implemented, modules: [34901A], channels: [21, 22], unit: A}
+  - capability_id: resistance_measurement
     support: implemented
-  - capability_id: identity
-    support: implemented
-  - capability_id: multi_connection
-    support: implemented
-  - capability_id: error_queue
-    support: implemented
-  - capability_id: simulation
-    support: implemented
-  - capability_id: module_discovery
-    support: implemented
-  - capability_id: scpi_version
-    support: implemented
-future_capabilities:
-  - dc_voltage_measurement
-  - ac_voltage_measurement
-  - dc_current_measurement
-  - ac_current_measurement
-  - resistance_measurement
-  - frequency_measurement
-  - temperature_measurement
-  - relay_control
-  - digital_io
+    modules: [34901A, 34902A, 34908A]
+    unit: ohm
+    notes:
+      - 34908A supports two-wire resistance only.
+      - Four-wire source channels are 01..10 on 34901A and 01..08 on 34902A.
+  - {capability_id: frequency_measurement, support: implemented, modules: [34901A, 34902A, 34908A], unit: Hz}
+  - {capability_id: period_measurement, support: implemented, modules: [34901A, 34902A, 34908A], unit: s}
+future_capabilities: [temperature_measurement, relay_control, digital_io, trigger_control, data_logging]
+unknown_capabilities: [continuity_measurement, diode_measurement]

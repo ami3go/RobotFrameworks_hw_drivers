@@ -9,7 +9,8 @@ from ._rfds_compat import BaseInstrumentLibrary
 from ._robot_compat import keyword, library
 from .capabilities import CAPABILITY_IDS
 from .converters import as_slot
-from .core import Keysight349xxCore
+from .core import Keysight349xxCore, MeasurementEngine
+from .core.measurement import canonical_channel, channel_exists, list_measurement_channels
 from .exceptions import DriverDeviceError, DriverResponseError
 from .protocol.parsers import parse_identity
 from .transports import TransportFactory
@@ -47,9 +48,9 @@ class Keysight349xxLibrary(BaseInstrumentLibrary):
     """Robot Framework driver for Keysight/Agilent 34970A and 34972A.
 
     The current D0 implementation covers deterministic connection, identity,
-    installed-module discovery, SCPI-version query, and the SCPI device-error
-    queue.  Measurement and switching capability groups are intentionally not
-    exported until their full RFDS groups and protocol vectors are implemented.
+    installed-module discovery, SCPI-version and error-queue operations, plus
+    validated single-channel voltage, current, resistance, frequency, and period
+    measurements.  Scanning and switching remain intentionally deferred.
     """
 
     ROBOT_LIBRARY_SCOPE = "SUITE"
@@ -163,3 +164,70 @@ class Keysight349xxLibrary(BaseInstrumentLibrary):
         item = self.get_device_error(alias)
         if int(item["code"]) != 0:
             raise AssertionError(f"device error queue is not empty: {item['raw']}")
+
+    @keyword("List Channels", tags=["rfds:query", "rfds:channel", "rfds:low_risk"])
+    def list_channels(self, alias=None) -> list[str]:
+        """Return canonical channels supported by the implemented measurement group."""
+        session = self._session(alias)
+        return list_measurement_channels(session.modules)
+
+    @keyword("Validate Channel", tags=["rfds:query", "rfds:channel", "rfds:low_risk"])
+    def validate_channel(self, channel, alias=None) -> bool:
+        """Return whether a well-formed channel exists in the implemented measurement set."""
+        session = self._session(alias)
+        canonical_channel(channel)
+        return channel_exists(session.modules, channel)
+
+    def _measure_scalar(self, measurement_key: str, channel, range_value=None, resolution=None, alias=None) -> float:
+        return self._execute_operation(
+            f"measure_{measurement_key}",
+            lambda session, timeout: MeasurementEngine(session.transport).measure(
+                measurement_key,
+                session.modules,
+                channel,
+                range_value=range_value,
+                resolution=resolution,
+                timeout_s=timeout,
+            ),
+            alias=alias,
+        )
+
+    @keyword("Measure DC Voltage", tags=["rfds:measurement", "rfds:low_risk"])
+    def measure_dc_voltage(self, channel, range_value=None, resolution=None, alias=None) -> float:
+        """Acquire one DC voltage reading in volts from a supported multiplexer channel."""
+        return self._measure_scalar("dc_voltage", channel, range_value, resolution, alias)
+
+    @keyword("Measure AC Voltage", tags=["rfds:measurement", "rfds:low_risk"])
+    def measure_ac_voltage(self, channel, range_value=None, resolution=None, alias=None) -> float:
+        """Acquire one AC voltage reading in volts from a supported multiplexer channel."""
+        return self._measure_scalar("ac_voltage", channel, range_value, resolution, alias)
+
+    @keyword("Measure DC Current", tags=["rfds:measurement", "rfds:low_risk"])
+    def measure_dc_current(self, channel, range_value=None, resolution=None, alias=None) -> float:
+        """Acquire one DC current reading in amperes."""
+        return self._measure_scalar("dc_current", channel, range_value, resolution, alias)
+
+    @keyword("Measure AC Current", tags=["rfds:measurement", "rfds:low_risk"])
+    def measure_ac_current(self, channel, range_value=None, resolution=None, alias=None) -> float:
+        """Acquire one AC current reading in amperes from 34901A channel 21 or 22."""
+        return self._measure_scalar("ac_current", channel, range_value, resolution, alias)
+
+    @keyword("Measure Resistance", tags=["rfds:measurement", "rfds:medium_risk"])
+    def measure_resistance(self, channel, range_value=None, resolution=None, alias=None) -> float:
+        """Acquire one two-wire resistance reading in ohms."""
+        return self._measure_scalar("resistance", channel, range_value, resolution, alias)
+
+    @keyword("Measure 4 Wire Resistance", tags=["rfds:measurement", "rfds:medium_risk"])
+    def measure_4_wire_resistance(self, channel, range_value=None, resolution=None, alias=None) -> float:
+        """Acquire one four-wire resistance reading in ohms."""
+        return self._measure_scalar("four_wire_resistance", channel, range_value, resolution, alias)
+
+    @keyword("Measure Frequency", tags=["rfds:measurement", "rfds:low_risk"])
+    def measure_frequency(self, channel, range_value=None, resolution=None, alias=None) -> float:
+        """Acquire one frequency reading in hertz."""
+        return self._measure_scalar("frequency", channel, range_value, resolution, alias)
+
+    @keyword("Measure Period", tags=["rfds:measurement", "rfds:low_risk"])
+    def measure_period(self, channel, range_value=None, resolution=None, alias=None) -> float:
+        """Acquire one period reading in seconds."""
+        return self._measure_scalar("period", channel, range_value, resolution, alias)
