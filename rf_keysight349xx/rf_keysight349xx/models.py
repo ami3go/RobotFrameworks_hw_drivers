@@ -67,6 +67,7 @@ class DriverSession:
     identity: InstrumentIdentity | None = None
     modules: dict[int, ModuleInfo] = field(default_factory=dict)
     probe_identity_raw: str | None = None
+    scan_start_time_utc: str | None = None
     connected_at_monotonic: float = field(default_factory=monotonic)
     lock: Lock = field(default_factory=Lock, repr=False)
 

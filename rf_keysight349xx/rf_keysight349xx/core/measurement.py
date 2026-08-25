@@ -238,10 +238,28 @@ def parse_scalar_measurement(raw: str, *, measurement_key: str, channel: str) ->
 
 
 class MeasurementEngine:
-    """Execute validated single-channel measurement queries."""
+    """Execute validated single-channel measurement and configuration commands."""
 
     def __init__(self, transport) -> None:
         self.scpi = ScpiProtocol(transport)
+
+    def configure(
+        self,
+        measurement_key: str,
+        modules: Mapping[int, ModuleInfo],
+        channel: object,
+        *,
+        range_value: object | None,
+        resolution: object | None,
+        timeout_s: float,
+    ) -> str:
+        canonical, _module = validate_measurement_channel(modules, channel, measurement_key)
+        query = build_measurement_query(
+            measurement_key, canonical, range_value=range_value, resolution=resolution
+        )
+        command = query.replace("MEAS:", "CONF:", 1).replace("?", "", 1)
+        self.scpi.write(command, timeout_s=timeout_s, operation_id=f"configure.{measurement_key}.{canonical}")
+        return canonical
 
     def measure(
         self,

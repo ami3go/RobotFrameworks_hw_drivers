@@ -16,6 +16,10 @@ CAPABILITY_IDS = tuple(sorted({
     "resistance_measurement",
     "frequency_measurement",
     "period_measurement",
+    "scan_configuration",
+    "trigger_configuration",
+    "acquisition",
+    "reading_memory",
 }))
 
 CAPABILITIES_NOT_APPLICABLE = {
@@ -35,5 +39,5 @@ CAPABILITIES_NOT_APPLICABLE = {
     "temperature_measurement": "Deferred to the temperature implementation phase.",
     "power_measurement": "The mainframe does not provide a direct generic power measurement keyword in this phase.",
     "capacitance_measurement": "Not documented as a 34970A/34972A internal-DMM measurement capability.",
-    "continuity_measurement": "Not established by the supplied command reference; remains UNKNOWN rather than invented.",
+    "continuity_measurent": "Not established by the supplied command reference; remains UNKNOWN rather than invented.",
 }
