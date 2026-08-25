@@ -1,6 +1,6 @@
 """Core device-domain services."""
 from .instrument import Keysight349xxCore
 from .measurement import MeasurementEngine
-from .acquisition import AcquisitionEngine
+from .acquisition_ext import AcquisitionEngine
 
 __all__ = ["Keysight349xxCore", "MeasurementEngine", "AcquisitionEngine"]

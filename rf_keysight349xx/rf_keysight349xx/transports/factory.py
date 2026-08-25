@@ -4,7 +4,7 @@ from __future__ import annotations
 from typing import Any
 
 from ..exceptions import DriverNotSupportedError, DriverValidationError
-from .simulator import SimulatorTransport
+from .simulator_acquisition import SimulatorTransport
 from .visa import VisaTransport
 
 
@@ -20,17 +20,12 @@ class TransportFactory:
             model = upper.split("::", 1)[1].strip() or "34972A"
             modules = options.get("simulator_modules")
             if isinstance(modules, str):
-                # form: 100=34901A,200=0,300=34907A
                 parsed = {}
                 for item in modules.split(","):
                     slot_text, model_text = item.split("=", 1)
                     parsed[int(slot_text.strip())] = model_text.strip().upper()
                 modules = parsed
-            return SimulatorTransport(
-                model=model,
-                modules=modules,
-                strict=bool(options.get("strict_simulator", True)),
-            )
+            return SimulatorTransport(model=model, modules=modules, strict=bool(options.get("strict_simulator", True)))
         if "::" in resource:
             return VisaTransport(resource, backend=options.get("visa_backend"), default_timeout_s=timeout_s)
         raise DriverNotSupportedError(

@@ -2,6 +2,6 @@
 
 from .base import Transport
 from .factory import TransportFactory
-from .simulator import SimulatorTransport
+from .simulator_acquisition import SimulatorTransport
 
 __all__ = ["Transport", "TransportFactory", "SimulatorTransport"]
